@@ -10,7 +10,10 @@ export const propertiesService = {
                 fotos (
                     id,
                     url,
+                    url_original,
+                    thumbnail,
                     es_portada,
+                    es_plano,
                     orden,
                     descripcion
                 )
@@ -24,18 +27,29 @@ export const propertiesService = {
 
         const { data, error } = await query.order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase fetch error:', error);
+            throw error;
+        }
 
-        return (data || []).map(p => ({
-            ...p,
-            id: String(p.id),
-            // Map schema columns to UI Property type
-            banos_completos: p.banos || 0,
-            sup_cubierta: p.superficie_cubierta || 0,
-            foto_portada: p.foto_portada_url || p.fotos?.find((f: any) => f.es_portada)?.url || p.fotos?.[0]?.url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c',
-            moneda: p.tipo_operacion === 'venta' ? p.moneda_venta : p.moneda_alquiler,
-            precio: p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler,
-        }));
+        const props = (data || []).map(p => {
+            // Find cover photo: priority es_portada -> first image -> default
+            const coverPhoto = p.fotos?.find((f: any) => f.es_portada) || p.fotos?.[0];
+            const foto_portada = coverPhoto?.thumbnail || coverPhoto?.url || p.foto_portada_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c';
+
+            return {
+                ...p,
+                id: String(p.id),
+                banos_completos: p.banos || 0,
+                sup_cubierta: p.superficie_cubierta || 0,
+                foto_portada,
+                moneda: p.tipo_operacion === 'venta' ? (p.moneda_venta || 'USD') : (p.moneda_alquiler || 'ARS'),
+                precio: p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler,
+            };
+        });
+
+        console.log(`Fetched ${props.length} properties. First:`, props[0]);
+        return props;
     },
 
     saveProperty: async (property: Partial<Property>) => {
@@ -102,7 +116,10 @@ export const propertiesService = {
             for (const [index, photo] of (fotos as Photo[]).entries()) {
                 const photoData = {
                     url: photo.url,
+                    url_original: photo.url_original,
+                    thumbnail: photo.thumbnail,
                     es_portada: photo.es_portada,
+                    es_plano: photo.es_plano,
                     orden: photo.orden ?? index,
                     descripcion: photo.descripcion,
                     propiedad_id: savedId

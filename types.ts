@@ -16,6 +16,8 @@ export interface Profile {
 export interface Photo {
   id?: string;
   url: string;
+  url_original?: string;
+  thumbnail?: string;
   es_portada: boolean;
   es_plano?: boolean;
   orden: number;
