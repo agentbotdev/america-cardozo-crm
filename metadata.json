@@ -1,0 +1,5 @@
+{
+  "name": "AGENTBOT CRM v1",
+  "description": "A comprehensive, iOS-styled Real Estate CRM frontend designed for managing properties, leads, clients, and visits with placeholders for Supabase, Tokko, and n8n integrations.",
+  "requestFramePermissions": []
+}
