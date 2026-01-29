@@ -40,6 +40,8 @@ export const propertiesService = {
             return {
                 ...p,
                 id: String(p.id),
+                tipo: p.tipo_propiedad || 'otro', // Map tipo_propiedad to tipo
+                direccion_completa: p.direccion || p.direccion_publica || '',
                 banos_completos: p.banos || 0,
                 sup_cubierta: p.superficie_cubierta || 0,
                 foto_portada,

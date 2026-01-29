@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Property } from '../types';
 import {
   Plus, MapPin, Search, X, Heart,
@@ -241,6 +242,7 @@ const DevelopmentCard = React.memo(({ development, onView }: { development: Deve
 
 // --- 2. PROPERTY DETAIL VIEW ---
 const PropertyDetailView = ({ property, onClose, onEdit }: any) => {
+  const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showGallery, setShowGallery] = useState(false);
 
@@ -296,7 +298,9 @@ const PropertyDetailView = ({ property, onClose, onEdit }: any) => {
                   <span className="text-xl text-slate-400">{property.moneda}</span>
                   {precio?.toLocaleString()}
                 </h2>
-                <button className="w-full py-6 bg-white text-slate-900 rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Programar Visita</button>
+                <button
+                  onClick={() => navigate(`/visitas?propertyId=${property.id}`)}
+                  className="w-full py-6 bg-white text-slate-900 rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Programar Visita</button>
               </div>
             </div>
           </div>

@@ -49,6 +49,8 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
   const [history, setHistory] = useState<LeadHistory[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [propSearch, setPropSearch] = useState('');
 
   useEffect(() => {
     if (lead) {
@@ -217,8 +219,64 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
             <motion.div key="propiedades" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="p-10 space-y-8">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-black text-slate-900 tracking-tight">Propiedades de Interés</h3>
-                <span className="bg-slate-900 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">{consultedProperties.length} Unidades</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsAssigning(!isAssigning)}
+                    className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-slate-900 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4"
+                  >
+                    {isAssigning ? <X size={14} /> : <Plus size={14} />} {isAssigning ? 'Cerrar' : 'Asignar Propiedad'}
+                  </button>
+                  <span className="bg-slate-100 text-slate-400 border border-slate-200 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">{consultedProperties.length} Unidades</span>
+                </div>
               </div>
+
+              {isAssigning && (
+                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4 animate-slide-down">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-3.5 text-slate-300" size={18} />
+                    <input
+                      type="text"
+                      placeholder="Buscar propiedad por título o dirección..."
+                      value={propSearch}
+                      onChange={(e) => setPropSearch(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all"
+                    />
+                  </div>
+                  <div className="max-h-[200px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                    {properties
+                      .filter(p => !lead.propiedades_enviadas_ids?.includes(p.id))
+                      .filter(p => p.titulo.toLowerCase().includes(propSearch.toLowerCase()) || p.direccion_completa?.toLowerCase().includes(propSearch.toLowerCase()))
+                      .slice(0, 10)
+                      .map(p => (
+                        <div key={p.id} className="bg-white p-3 rounded-xl border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0"><img src={p.foto_portada} className="w-full h-full object-cover" alt="" /></div>
+                            <div>
+                              <p className="text-xs font-black text-slate-900 truncate max-w-[200px]">{p.titulo}</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase">{p.id}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await leadsService.assignPropertyToLead(lead.id, p.id);
+                                lead.propiedades_enviadas_ids = [...(lead.propiedades_enviadas_ids || []), p.id];
+                                setIsAssigning(false);
+                                setPropSearch('');
+                              } catch (err) {
+                                console.error('Error assigning property:', err);
+                                alert('Error al asignar propiedad');
+                              }
+                            }}
+                            className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-6">
                 {consultedProperties.length > 0 ? consultedProperties.map(prop => (
                   <div key={prop.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all">
@@ -416,8 +474,8 @@ const Leads: React.FC = () => {
 
   const filteredLeads = useMemo(() => {
     let result = leads.filter(lead => {
-      const matchesSearch = lead.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesFilter = activeFilter === 'todos' || lead.temperatura === activeFilter;
+      const matchesSearch = (lead.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      const matchesFilter = activeFilter === 'todos' || lead.estado_temperatura === activeFilter;
       return matchesSearch && matchesFilter;
     });
 

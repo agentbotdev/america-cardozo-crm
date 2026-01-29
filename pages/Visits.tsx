@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Visit, VisitStatus, Lead, Property } from '../types';
 import { Calendar as CalendarIcon, Clock, MapPin, CheckCircle, Plus, LayoutList, CalendarDays, X, Check, Map, User, ChevronLeft, ChevronRight, Edit, ArrowRight, Share2, Globe, Mail, Trash2, Building, Building2, ChevronUp, ChevronDown } from 'lucide-react';
 import { googleCalendarService } from '../services/googleCalendarService';
@@ -15,7 +16,9 @@ const VisitFormModal: React.FC<{
     properties: Property[];
 }> = ({ isOpen, onClose, onSave, visitToEdit, leads, properties }) => {
     const [formData, setFormData] = useState<Partial<Visit> & { sync_google?: boolean }>({
+        lead_id: '',
         lead_nombre: '',
+        property_id: '',
         property_titulo: '',
         fecha: new Date().toISOString().split('T')[0],
         hora: '10:00',
@@ -32,7 +35,9 @@ const VisitFormModal: React.FC<{
             setFormData(visitToEdit);
         } else {
             setFormData({
+                lead_id: leads[0]?.id || '',
                 lead_nombre: leads[0]?.nombre || '',
+                property_id: properties[0]?.id || '',
                 property_titulo: properties[0]?.titulo || '',
                 fecha: new Date().toISOString().split('T')[0],
                 hora: '10:00',
@@ -85,24 +90,30 @@ const VisitFormModal: React.FC<{
                     <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Lead / Cliente</label>
                         <select
-                            value={formData.lead_nombre}
-                            onChange={e => setFormData({ ...formData, lead_nombre: e.target.value })}
+                            value={formData.lead_id}
+                            onChange={e => {
+                                const lead = leads.find(l => l.id === e.target.value);
+                                setFormData({ ...formData, lead_id: e.target.value, lead_nombre: lead?.nombre || '' });
+                            }}
                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none"
                         >
                             <option value="">Seleccionar Lead...</option>
-                            {leads.map(l => <option key={l.id} value={l.nombre}>{l.nombre}</option>)}
+                            {leads.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
                         </select>
                     </div>
                     {formData.tipo_reunion === 'propiedad' && (
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Propiedad</label>
                             <select
-                                value={formData.property_titulo}
-                                onChange={e => setFormData({ ...formData, property_titulo: e.target.value })}
+                                value={formData.property_id}
+                                onChange={e => {
+                                    const prop = properties.find(p => p.id === e.target.value);
+                                    setFormData({ ...formData, property_id: e.target.value, property_titulo: prop?.titulo || '' });
+                                }}
                                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none"
                             >
                                 <option value="">Seleccionar Propiedad...</option>
-                                {properties.map(p => <option key={p.id} value={p.titulo}>{p.titulo}</option>)}
+                                {properties.map(p => <option key={p.id} value={p.id}>{p.titulo}</option>)}
                             </select>
                         </div>
                     )}
@@ -428,8 +439,13 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
 };
 
 const Visits: React.FC = () => {
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const preselectedPropertyId = queryParams.get('propertyId');
+
     const [view, setView] = useState<'calendar' | 'pipeline'>('calendar');
     const [isModalOpen, setIsModalOpen] = useState(false);
+
     const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
     const [visits, setVisits] = useState<Visit[]>([]);
     const [leads, setLeads] = useState<Lead[]>([]);
@@ -437,6 +453,17 @@ const Visits: React.FC = () => {
     const [visitToEdit, setVisitToEdit] = useState<Visit | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    // ... useEffect to open modal if preselectedPropertyId changes ...
+    useEffect(() => {
+        if (preselectedPropertyId && properties.length > 0) {
+            const prop = properties.find(p => p.id === preselectedPropertyId);
+            if (prop) {
+                setVisitToEdit(null);
+                setIsModalOpen(true);
+            }
+        }
+    }, [preselectedPropertyId, properties]);
 
     useEffect(() => {
         loadData();
