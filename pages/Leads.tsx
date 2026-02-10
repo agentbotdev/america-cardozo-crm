@@ -489,13 +489,13 @@ const Leads: React.FC = () => {
   }, [searchTerm, activeFilter, sortBy, leads]);
 
   return (
-    <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu px-4 md:px-0">
+    <>
       <AnimatePresence>
         {selectedLead && (
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/10 backdrop-blur-[4px] z-[90]"
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-[4px] z-[200]"
               onClick={() => setSelectedLead(null)}
             />
             <LeadDetailPanel
@@ -512,223 +512,225 @@ const Leads: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-8">
-        <div>
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-3">Lead Pipeline</h1>
-          <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión inteligente y calificación con AgentBot IA.</p>
-        </div>
-        <button
-          onClick={() => { setEditingLead(null); setIsModalOpen(true); }}
-          className="w-full sm:w-auto bg-slate-900 text-white px-12 py-5 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 active:scale-95"
-        >
-          <Plus size={20} strokeWidth={3} /> NUEVO LEAD
-        </button>
-      </div>
+      <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu px-4 md:px-0">
 
-      <LeadFormModal
-        isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); setEditingLead(null); }}
-        leadToEdit={editingLead}
-        onSave={async (updatedData: any) => {
-          try {
-            await leadsService.saveLead(updatedData);
-            await loadData();
-            setIsModalOpen(false);
-            setEditingLead(null);
-          } catch (error) {
-            console.error('Error saving lead:', error);
-            alert('Error al guardar el lead');
-          }
-        }}
-      />
-
-      <div className="bg-white rounded-[3rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col">
-        {/* Toolbar */}
-        <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 md:gap-8 bg-white sticky top-0 z-20">
-          <div className="flex flex-wrap gap-3 md:gap-5 items-center">
-            <div className="bg-slate-50 p-1.5 md:p-2 rounded-[2rem] md:rounded-[2.5rem] flex gap-2 shadow-inner overflow-x-auto no-scrollbar max-w-full border border-slate-100">
-              {(['todos', 'caliente', 'tibio', 'frio'] as const).map(filter => (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeFilter === filter ? 'bg-white text-slate-900 shadow-lg ring-1 ring-black/5' : 'text-slate-400 hover:text-slate-600'
-                    } `}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-2xl px-6 py-4 outline-none hover:border-indigo-200 transition-all shadow-sm cursor-pointer appearance-none min-w-[180px]"
-              >
-                <option value="date">Recientes</option>
-                <option value="price_asc">Presupuesto ↑</option>
-                <option value="price_desc">Presupuesto ↓</option>
-              </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
-                <ArrowRight size={14} className="rotate-90" />
-              </div>
-            </div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-8">
+          <div>
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-3">Lead Pipeline</h1>
+            <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión inteligente y calificación con AgentBot IA.</p>
           </div>
-
-          <div className="relative group w-full lg:w-[450px]">
-            <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre o interés..."
-              className="w-full pl-16 pr-8 py-5 rounded-[2.2rem] bg-slate-50/50 border border-slate-100 text-sm font-bold text-slate-700 outline-none focus:ring-[10px] focus:ring-indigo-50/50 focus:border-indigo-100 transition-all"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <button
+            onClick={() => { setEditingLead(null); setIsModalOpen(true); }}
+            className="w-full sm:w-auto bg-slate-900 text-white px-12 py-5 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 active:scale-95"
+          >
+            <Plus size={20} strokeWidth={3} /> NUEVO LEAD
+          </button>
         </div>
 
-        {/* Mobile View (Cards) */}
-        <div className="lg:hidden p-6 space-y-4">
-          {loading ? (
-            <div className="py-20 text-center">
-              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Leads...</p>
-            </div>
-          ) : filteredLeads.length > 0 ? (
-            filteredLeads.map((lead) => (
-              <div
-                key={lead.id}
-                onClick={() => setSelectedLead(lead)}
-                className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] space-y-4 active:scale-95 transition-transform"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
-                      {lead.nombre.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-black text-slate-800 leading-tight">{lead.nombre}</p>
-                      <p className="text-[10px] text-slate-400 font-bold">{lead.telefono}</p>
-                    </div>
-                  </div>
-                  <div className="p-2 bg-white rounded-lg border border-slate-100">
-                    <ArrowRight size={14} className="text-slate-300" />
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${statusColors[lead.temperatura] || 'bg-slate-100 text-slate-600'}`}>
-                    {lead.temperatura}
-                  </span>
-                  <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${stageColors[lead.etapa] || 'bg-slate-100 text-slate-600'}`}>
-                    {lead.etapa}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 pt-2">
-                  <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500" style={{ width: `${lead.score}%` }} />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-900">{lead.score}%</span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="py-20 text-center">
-              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay leads</p>
-            </div>
-          )}
-        </div>
+        <LeadFormModal
+          isOpen={isModalOpen}
+          onClose={() => { setIsModalOpen(false); setEditingLead(null); }}
+          leadToEdit={editingLead}
+          onSave={async (updatedData: any) => {
+            try {
+              await leadsService.saveLead(updatedData);
+              await loadData();
+              setIsModalOpen(false);
+              setEditingLead(null);
+            } catch (error) {
+              console.error('Error saving lead:', error);
+              alert('Error al guardar el lead');
+            }
+          }}
+        />
 
-        {/* Desktop View (Table) */}
-        <div className="hidden lg:block overflow-x-auto no-scrollbar">
-          {loading ? (
-            <div className="py-48 text-center bg-slate-50/20">
-              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-slate-400 font-black uppercase tracking-[0.4em]">Cargando Leads...</p>
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse min-w-[1000px]">
-              <thead className="bg-slate-50/30 text-[10px] uppercase text-slate-400 font-black tracking-[0.3em] border-b border-slate-50">
-                <tr>
-                  <th className="px-10 py-7">Perfil del Prospecto</th>
-                  <th className="px-10 py-7">Tipo de Interés</th>
-                  <th className="px-10 py-7">Pipeline / Status</th>
-                  <th className="px-10 py-7">Inteligencia AgentBot</th>
-                  <th className="px-10 py-7 text-right">Detalle</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredLeads.length > 0 ? filteredLeads.map((lead, idx) => (
-                  <motion.tr
-                    key={lead.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    onClick={() => setSelectedLead(lead)}
-                    className="group hover:bg-slate-50/50 transition-all cursor-pointer border-l-4 border-l-transparent hover:border-l-indigo-600"
+        <div className="bg-white rounded-[3rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col">
+          {/* Toolbar */}
+          <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 md:gap-8 bg-white sticky top-0 z-20">
+            <div className="flex flex-wrap gap-3 md:gap-5 items-center">
+              <div className="bg-slate-50 p-1.5 md:p-2 rounded-[2rem] md:rounded-[2.5rem] flex gap-2 shadow-inner overflow-x-auto no-scrollbar max-w-full border border-slate-100">
+                {(['todos', 'caliente', 'tibio', 'frio'] as const).map(filter => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeFilter === filter ? 'bg-white text-slate-900 shadow-lg ring-1 ring-black/5' : 'text-slate-400 hover:text-slate-600'
+                      } `}
                   >
-                    <td className="px-10 py-8">
-                      <div className="flex items-center gap-5">
-                        <div className="w-12 h-12 rounded-[1.2rem] bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 ring-2 ring-white">
-                          {lead.nombre.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="text-[15px] font-black text-slate-800 group-hover:text-indigo-600 transition-colors leading-none mb-2">{lead.nombre}</p>
-                          <div className="flex items-center gap-2">
-                            <Smartphone size={10} className="text-slate-400" />
-                            <p className="text-[11px] text-slate-400 font-bold tracking-tight">{lead.telefono}</p>
+                    {filter}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-2xl px-6 py-4 outline-none hover:border-indigo-200 transition-all shadow-sm cursor-pointer appearance-none min-w-[180px]"
+                >
+                  <option value="date">Recientes</option>
+                  <option value="price_asc">Presupuesto ↑</option>
+                  <option value="price_desc">Presupuesto ↓</option>
+                </select>
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                  <ArrowRight size={14} className="rotate-90" />
+                </div>
+              </div>
+            </div>
+
+            <div className="relative group w-full lg:w-[450px]">
+              <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o interés..."
+                className="w-full pl-16 pr-8 py-5 rounded-[2.2rem] bg-slate-50/50 border border-slate-100 text-sm font-bold text-slate-700 outline-none focus:ring-[10px] focus:ring-indigo-50/50 focus:border-indigo-100 transition-all"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Mobile View (Cards) */}
+          <div className="lg:hidden p-6 space-y-4">
+            {loading ? (
+              <div className="py-20 text-center">
+                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Leads...</p>
+              </div>
+            ) : filteredLeads.length > 0 ? (
+              filteredLeads.map((lead) => (
+                <div
+                  key={lead.id}
+                  onClick={() => setSelectedLead(lead)}
+                  className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] space-y-4 active:scale-95 transition-transform"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                        {lead.nombre.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-800 leading-tight">{lead.nombre}</p>
+                        <p className="text-[10px] text-slate-400 font-bold">{lead.telefono}</p>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-white rounded-lg border border-slate-100">
+                      <ArrowRight size={14} className="text-slate-300" />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${statusColors[lead.temperatura] || 'bg-slate-100 text-slate-600'}`}>
+                      {lead.temperatura}
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${stageColors[lead.etapa] || 'bg-slate-100 text-slate-600'}`}>
+                      {lead.etapa}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 pt-2">
+                    <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500" style={{ width: `${lead.score}%` }} />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-900">{lead.score}%</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-20 text-center">
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay leads</p>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop View (Table) */}
+          <div className="hidden lg:block overflow-x-auto no-scrollbar">
+            {loading ? (
+              <div className="py-48 text-center bg-slate-50/20">
+                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-400 font-black uppercase tracking-[0.4em]">Cargando Leads...</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse min-w-[1000px]">
+                <thead className="bg-slate-50/30 text-[10px] uppercase text-slate-400 font-black tracking-[0.3em] border-b border-slate-50">
+                  <tr>
+                    <th className="px-10 py-7">Perfil del Prospecto</th>
+                    <th className="px-10 py-7">Tipo de Interés</th>
+                    <th className="px-10 py-7">Pipeline / Status</th>
+                    <th className="px-10 py-7">Inteligencia AgentBot</th>
+                    <th className="px-10 py-7 text-right">Detalle</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredLeads.length > 0 ? filteredLeads.map((lead, idx) => (
+                    <motion.tr
+                      key={lead.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      onClick={() => setSelectedLead(lead)}
+                      className="group hover:bg-slate-50/50 transition-all cursor-pointer border-l-4 border-l-transparent hover:border-l-indigo-600"
+                    >
+                      <td className="px-10 py-8">
+                        <div className="flex items-center gap-5">
+                          <div className="w-12 h-12 rounded-[1.2rem] bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 ring-2 ring-white">
+                            {lead.nombre.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-[15px] font-black text-slate-800 group-hover:text-indigo-600 transition-colors leading-none mb-2">{lead.nombre}</p>
+                            <div className="flex items-center gap-2">
+                              <Smartphone size={10} className="text-slate-400" />
+                              <p className="text-[11px] text-slate-400 font-bold tracking-tight">{lead.telefono}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-10 py-8">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">{(lead.tipo_operacion_buscada || 'venta').toUpperCase()}</span>
-                        <span className="text-sm font-black text-slate-700 leading-none">{lead.tipo_propiedad_buscada?.[0] || 'Inmueble'}</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-8">
-                      <div className="flex gap-3">
-                        <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm ${statusColors[lead.temperatura] || 'bg-slate-100 text-slate-600'} `}>
-                          {lead.temperatura}
-                        </span>
-                        <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm ${stageColors[lead.etapa] || 'bg-slate-100 text-slate-600'} `}>
-                          {lead.etapa}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-8">
-                      <div className="flex items-center gap-4">
-                        <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-50">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${lead.score}%` }}
-                            className={`h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.4)] ${lead.score > 70 ? 'bg-emerald-500' : lead.score > 40 ? 'bg-indigo-500' : 'bg-rose-500'}`}
-                          />
+                      </td>
+                      <td className="px-10 py-8">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">{(lead.tipo_operacion_buscada || 'venta').toUpperCase()}</span>
+                          <span className="text-sm font-black text-slate-700 leading-none">{lead.tipo_propiedad_buscada?.[0] || 'Inmueble'}</span>
                         </div>
-                        <span className="text-[11px] font-black text-slate-900 tracking-widest">{lead.score}/100</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-8 text-right">
-                      <div className="p-3.5 text-slate-200 group-hover:text-indigo-600 transition-all hover:bg-white hover:shadow-lg rounded-[1.2rem] inline-block border border-transparent hover:border-slate-100">
-                        <ArrowRight size={20} strokeWidth={3} />
-                      </div>
-                    </td>
-                  </motion.tr>
-                )) : (
-                  <tr>
-                    <td colSpan={5} className="py-48 text-center bg-slate-50/20">
-                      <Users size={64} className="mx-auto mb-8 text-slate-200 animate-pulse" />
-                      <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-lg">No se han encontrado prospectos</p>
-                      <button onClick={() => { setSearchTerm(''); setActiveFilter('todos'); }} className="mt-6 text-indigo-600 font-black uppercase text-xs tracking-widest hover:underline">Reiniciar Búsqueda</button>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
+                      </td>
+                      <td className="px-10 py-8">
+                        <div className="flex gap-3">
+                          <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm ${statusColors[lead.temperatura] || 'bg-slate-100 text-slate-600'} `}>
+                            {lead.temperatura}
+                          </span>
+                          <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm ${stageColors[lead.etapa] || 'bg-slate-100 text-slate-600'} `}>
+                            {lead.etapa}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-10 py-8">
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-50">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${lead.score}%` }}
+                              className={`h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.4)] ${lead.score > 70 ? 'bg-emerald-500' : lead.score > 40 ? 'bg-indigo-500' : 'bg-rose-500'}`}
+                            />
+                          </div>
+                          <span className="text-[11px] font-black text-slate-900 tracking-widest">{lead.score}/100</span>
+                        </div>
+                      </td>
+                      <td className="px-10 py-8 text-right">
+                        <div className="p-3.5 text-slate-200 group-hover:text-indigo-600 transition-all hover:bg-white hover:shadow-lg rounded-[1.2rem] inline-block border border-transparent hover:border-slate-100">
+                          <ArrowRight size={20} strokeWidth={3} />
+                        </div>
+                      </td>
+                    </motion.tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={5} className="py-48 text-center bg-slate-50/20">
+                        <Users size={64} className="mx-auto mb-8 text-slate-200 animate-pulse" />
+                        <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-lg">No se han encontrado prospectos</p>
+                        <button onClick={() => { setSearchTerm(''); setActiveFilter('todos'); }} className="mt-6 text-indigo-600 font-black uppercase text-xs tracking-widest hover:underline">Reiniciar Búsqueda</button>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
-  );
+      </>
+      );
 };
 
-export default Leads;
+      export default Leads;

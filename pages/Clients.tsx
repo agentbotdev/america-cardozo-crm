@@ -264,14 +264,13 @@ const Clients: React.FC = () => {
   const inactiveTabClass = "text-slate-400 hover:text-slate-600 hover:bg-slate-100/50";
 
   return (
-    <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu">
-
+    <>
       <AnimatePresence>
         {selectedClient && (
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/10 backdrop-blur-[4px] z-[100]"
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-[4px] z-[200]"
               onClick={() => setSelectedClient(null)}
             />
             <LeadDetailPanel
@@ -288,236 +287,239 @@ const Clients: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <ClientFormModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setClientToEdit(null);
-        }}
-        onSave={handleSaveClient}
-        clientToEdit={clientToEdit}
-      />
+      <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu">
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-8">
-        <div>
-          <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-3">Cartera Clientes</h1>
-          <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión avanzada de relaciones con Flor IA.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-center gap-5 w-full md:w-auto">
-          <div className="bg-slate-100/50 p-1.5 rounded-[1.8rem] flex shadow-inner border border-slate-100 w-full sm:w-auto justify-center">
-            <button onClick={() => setViewMode('list')} className={`flex-1 sm:flex-none p-4 rounded-2xl transition-all ${viewMode === 'list' ? 'bg-white shadow-xl text-slate-900' : 'text-slate-300 hover:text-slate-400'}`}><ListIcon size={20} /></button>
-            <button onClick={() => setViewMode('metrics')} className={`flex-1 sm:flex-none p-4 rounded-2xl transition-all ${viewMode === 'metrics' ? 'bg-white shadow-xl text-slate-900' : 'text-slate-300 hover:text-slate-400'}`}><BarChart3 size={20} /></button>
+        <ClientFormModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setClientToEdit(null);
+          }}
+          onSave={handleSaveClient}
+          clientToEdit={clientToEdit}
+        />
+
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-8">
+          <div>
+            <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-3">Cartera Clientes</h1>
+            <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión avanzada de relaciones con Flor IA.</p>
           </div>
-          <button
-            onClick={() => {
-              setClientToEdit(null);
-              setIsModalOpen(true);
-            }}
-            className="w-full sm:w-auto bg-slate-900 text-white px-8 sm:px-12 py-4 sm:py-5 rounded-[2.5rem] font-black text-[10px] sm:text-[12px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-indigo-100 active:scale-95"
-          >
-            <Plus size={18} strokeWidth={3} /> NUEVO CLIENTE
-          </button>
-        </div>
-      </div>
-
-      {viewMode === 'metrics' && <ClientMetrics clients={clients} />}
-
-      {/* Main Content Card */}
-      <div className="bg-white/40 backdrop-blur-xl rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-white/60 flex flex-col min-h-[700px]">
-
-        {/* 1. TOP BAR: MAIN SECTIONS */}
-        <div className="p-6 border-b border-slate-100 flex flex-wrap gap-3 bg-white/60 items-center sticky top-0 z-20">
-          <button onClick={() => setMainTab('todos')} className={`${tabBaseClass} ${mainTab === 'todos' ? activeTabClass : inactiveTabClass}`}>Todos</button>
-          <button onClick={() => setMainTab('ventas')} className={`${tabBaseClass} ${mainTab === 'ventas' ? activeTabClass : inactiveTabClass}`}>Ventas</button>
-          <button onClick={() => setMainTab('alquileres')} className={`${tabBaseClass} ${mainTab === 'alquileres' ? activeTabClass : inactiveTabClass}`}>Alquileres</button>
-          <div className="w-px h-10 bg-slate-100 mx-3 self-center"></div>
-          <button onClick={() => setMainTab('por_estado')} className={`${tabBaseClass} ${mainTab === 'por_estado' ? activeTabClass : inactiveTabClass}`}>Estado</button>
-          <button onClick={() => setMainTab('por_etapa')} className={`${tabBaseClass} ${mainTab === 'por_etapa' ? activeTabClass : inactiveTabClass}`}>Etapa</button>
-
-          <div className="ml-auto relative w-full lg:w-[350px] mt-4 lg:mt-0">
-            <Search size={18} className="absolute left-5 top-4 text-slate-300" strokeWidth={3} />
-            <input
-              type="text"
-              placeholder="Buscar cliente por nombre..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-14 pr-6 py-4 rounded-[1.5rem] bg-slate-50/50 border border-slate-100 text-sm font-bold focus:bg-white focus:ring-4 focus:ring-indigo-100 outline-none w-full transition-all shadow-sm"
-            />
+          <div className="flex flex-col sm:flex-row items-center gap-5 w-full md:w-auto">
+            <div className="bg-slate-100/50 p-1.5 rounded-[1.8rem] flex shadow-inner border border-slate-100 w-full sm:w-auto justify-center">
+              <button onClick={() => setViewMode('list')} className={`flex-1 sm:flex-none p-4 rounded-2xl transition-all ${viewMode === 'list' ? 'bg-white shadow-xl text-slate-900' : 'text-slate-300 hover:text-slate-400'}`}><ListIcon size={20} /></button>
+              <button onClick={() => setViewMode('metrics')} className={`flex-1 sm:flex-none p-4 rounded-2xl transition-all ${viewMode === 'metrics' ? 'bg-white shadow-xl text-slate-900' : 'text-slate-300 hover:text-slate-400'}`}><BarChart3 size={20} /></button>
+            </div>
+            <button
+              onClick={() => {
+                setClientToEdit(null);
+                setIsModalOpen(true);
+              }}
+              className="w-full sm:w-auto bg-slate-900 text-white px-8 sm:px-12 py-4 sm:py-5 rounded-[2.5rem] font-black text-[10px] sm:text-[12px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-indigo-100 active:scale-95"
+            >
+              <Plus size={18} strokeWidth={3} /> NUEVO CLIENTE
+            </button>
           </div>
         </div>
 
-        {/* 2. SUB-SECTIONS (Conditional) */}
+        {viewMode === 'metrics' && <ClientMetrics clients={clients} />}
 
-        {/* Sub-tabs for "Por Estado" */}
-        {mainTab === 'por_estado' && (
-          <div className="p-3 bg-indigo-50/50 border-b border-indigo-100 flex gap-2 overflow-x-auto no-scrollbar animate-slide-up">
-            {(['Frio', 'Tibio', 'Caliente', 'En seguimiento', 'Visita agendada', 'Cerrado', 'Perdido', 'Pausado', 'Derivado'] as ClientStatus[]).map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusSubTab(status)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap 
+        {/* Main Content Card */}
+        <div className="bg-white/40 backdrop-blur-xl rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-white/60 flex flex-col min-h-[700px]">
+
+          {/* 1. TOP BAR: MAIN SECTIONS */}
+          <div className="p-6 border-b border-slate-100 flex flex-wrap gap-3 bg-white/60 items-center sticky top-0 z-20">
+            <button onClick={() => setMainTab('todos')} className={`${tabBaseClass} ${mainTab === 'todos' ? activeTabClass : inactiveTabClass}`}>Todos</button>
+            <button onClick={() => setMainTab('ventas')} className={`${tabBaseClass} ${mainTab === 'ventas' ? activeTabClass : inactiveTabClass}`}>Ventas</button>
+            <button onClick={() => setMainTab('alquileres')} className={`${tabBaseClass} ${mainTab === 'alquileres' ? activeTabClass : inactiveTabClass}`}>Alquileres</button>
+            <div className="w-px h-10 bg-slate-100 mx-3 self-center"></div>
+            <button onClick={() => setMainTab('por_estado')} className={`${tabBaseClass} ${mainTab === 'por_estado' ? activeTabClass : inactiveTabClass}`}>Estado</button>
+            <button onClick={() => setMainTab('por_etapa')} className={`${tabBaseClass} ${mainTab === 'por_etapa' ? activeTabClass : inactiveTabClass}`}>Etapa</button>
+
+            <div className="ml-auto relative w-full lg:w-[350px] mt-4 lg:mt-0">
+              <Search size={18} className="absolute left-5 top-4 text-slate-300" strokeWidth={3} />
+              <input
+                type="text"
+                placeholder="Buscar cliente por nombre..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-14 pr-6 py-4 rounded-[1.5rem] bg-slate-50/50 border border-slate-100 text-sm font-bold focus:bg-white focus:ring-4 focus:ring-indigo-100 outline-none w-full transition-all shadow-sm"
+              />
+            </div>
+          </div>
+
+          {/* 2. SUB-SECTIONS (Conditional) */}
+
+          {/* Sub-tabs for "Por Estado" */}
+          {mainTab === 'por_estado' && (
+            <div className="p-3 bg-indigo-50/50 border-b border-indigo-100 flex gap-2 overflow-x-auto no-scrollbar animate-slide-up">
+              {(['Frio', 'Tibio', 'Caliente', 'En seguimiento', 'Visita agendada', 'Cerrado', 'Perdido', 'Pausado', 'Derivado'] as ClientStatus[]).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusSubTab(status)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap 
                     ${statusSubTab === status
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-white text-indigo-400 hover:bg-indigo-100'}`}
-              >
-                {status}
-              </button>
-            ))}
-          </div>
-        )}
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'bg-white text-indigo-400 hover:bg-indigo-100'}`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {/* Sub-tabs for "Por Etapa" */}
-        {mainTab === 'por_etapa' && (
-          <div className="p-3 bg-purple-50/50 border-b border-purple-100 flex gap-2 overflow-x-auto no-scrollbar animate-slide-up">
-            {(['Inicio', 'Indagación', 'Bajada producto', 'Seguimiento', 'Pre-cierre', 'Cierre', 'Derivación humano', 'Visita agendada'] as SalesStage[]).map((stage) => (
-              <button
-                key={stage}
-                onClick={() => setStageSubTab(stage)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap 
+          {/* Sub-tabs for "Por Etapa" */}
+          {mainTab === 'por_etapa' && (
+            <div className="p-3 bg-purple-50/50 border-b border-purple-100 flex gap-2 overflow-x-auto no-scrollbar animate-slide-up">
+              {(['Inicio', 'Indagación', 'Bajada producto', 'Seguimiento', 'Pre-cierre', 'Cierre', 'Derivación humano', 'Visita agendada'] as SalesStage[]).map((stage) => (
+                <button
+                  key={stage}
+                  onClick={() => setStageSubTab(stage)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap 
                     ${stageSubTab === stage
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-white text-purple-400 hover:bg-purple-100'}`}
-              >
-                {stage}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Mobile View (Cards) */}
-        <div className="lg:hidden p-6 space-y-4 bg-white/40">
-          {loading ? (
-            <div className="py-20 text-center">
-              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando...</p>
+                      ? 'bg-purple-600 text-white shadow-md'
+                      : 'bg-white text-purple-400 hover:bg-purple-100'}`}
+                >
+                  {stage}
+                </button>
+              ))}
             </div>
-          ) : displayedClients.length > 0 ? (
-            displayedClients.map((client) => (
-              <div
-                key={client.id}
-                onClick={() => setSelectedClient(client)}
-                className="bg-white/80 backdrop-blur-sm border border-slate-100 p-6 rounded-[2rem] space-y-4 active:scale-95 transition-transform"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs">
-                      {client.nombre.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-black text-slate-800 leading-tight">{client.nombre}</p>
-                      <p className="text-[10px] text-slate-400 font-bold">{client.telefono}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => handleEditClick(e, client)}
-                    className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all"
-                  >
-                    <Edit size={14} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${client.busca_venta ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
-                    {client.busca_venta ? 'VENTA' : 'ALQUILER'}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-500">
-                    {client.estado_temperatura}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600">
-                    {client.etapa_proceso}
-                  </span>
-                </div>
+          )}
+
+          {/* Mobile View (Cards) */}
+          <div className="lg:hidden p-6 space-y-4 bg-white/40">
+            {loading ? (
+              <div className="py-20 text-center">
+                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando...</p>
               </div>
-            ))
-          ) : (
-            <div className="py-20 text-center">
-              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay clientes</p>
-            </div>
-          )}
-        </div>
+            ) : displayedClients.length > 0 ? (
+              displayedClients.map((client) => (
+                <div
+                  key={client.id}
+                  onClick={() => setSelectedClient(client)}
+                  className="bg-white/80 backdrop-blur-sm border border-slate-100 p-6 rounded-[2rem] space-y-4 active:scale-95 transition-transform"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                        {client.nombre.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-800 leading-tight">{client.nombre}</p>
+                        <p className="text-[10px] text-slate-400 font-bold">{client.telefono}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => handleEditClick(e, client)}
+                      className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all"
+                    >
+                      <Edit size={14} />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${client.busca_venta ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                      {client.busca_venta ? 'VENTA' : 'ALQUILER'}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-500">
+                      {client.estado_temperatura}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600">
+                      {client.etapa_proceso}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-20 text-center">
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay clientes</p>
+              </div>
+            )}
+          </div>
 
-        {/* Desktop View (Table) */}
-        <div className="hidden lg:block flex-1 overflow-auto bg-white/40">
-          {loading ? (
-            <div className="py-20 text-center">
-              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Cartera...</p>
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-50/80 text-[10px] uppercase text-gray-500 font-bold tracking-wider border-b border-gray-100 sticky top-0 backdrop-blur-sm z-10">
-                <tr>
-                  <th className="p-5">Cliente</th>
-                  <th className="p-5">Preferencia</th>
-                  <th className="p-5">Estado</th>
-                  <th className="p-5">Etapa Venta</th>
-                  <th className="p-5">Contacto</th>
-                  <th className="p-5 text-right">Acción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {displayedClients.length > 0 ? displayedClients.map(client => (
-                  <tr
-                    key={client.id}
-                    onClick={() => setSelectedClient(client)}
-                    className="hover:bg-indigo-50/30 transition-colors cursor-pointer group"
-                  >
-                    <td className="p-5">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-white border border-indigo-50 flex items-center justify-center text-indigo-600 font-bold shadow-sm">
-                          {client.nombre.charAt(0)}
-                        </div>
-                        <div>
-                          <span className="font-bold text-gray-800 text-sm block group-hover:text-indigo-600 transition-colors">{client.nombre}</span>
-                          <span className="text-[10px] text-gray-400 uppercase tracking-wider">{client.id}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-5">
-                      <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border 
-                                ${client.busca_venta ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
-                        {client.busca_venta ? 'VENTA' : 'ALQUILER'}
-                      </span>
-                    </td>
-                    <td className="p-5">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                        {client.estado_temperatura}
-                      </span>
-                    </td>
-                    <td className="p-5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
-                        <span className="text-xs font-medium text-gray-700 capitalize">{client.etapa_proceso}</span>
-                      </div>
-                    </td>
-                    <td className="p-5 text-sm text-gray-500">
-                      <div className="flex flex-col gap-1">
-                        <span className="flex items-center gap-1"><Phone size={12} /> {client.telefono}</span>
-                        <span className="flex items-center gap-1 text-[10px] text-gray-400"><Clock size={10} /> 2d ago</span>
-                      </div>
-                    </td>
-                    <td className="p-5 text-right">
-                      <button
-                        onClick={(e) => handleEditClick(e, client)}
-                        className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                      >
-                        <Edit size={16} strokeWidth={3} />
-                      </button>
-                    </td>
-                  </tr>
-                )) : (
+          {/* Desktop View (Table) */}
+          <div className="hidden lg:block flex-1 overflow-auto bg-white/40">
+            {loading ? (
+              <div className="py-20 text-center">
+                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Cartera...</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-50/80 text-[10px] uppercase text-gray-500 font-bold tracking-wider border-b border-gray-100 sticky top-0 backdrop-blur-sm z-10">
                   <tr>
-                    <td colSpan={6} className="p-10 text-center text-gray-400 italic">
-                      No se encontraron clientes en esta sección.
-                    </td>
+                    <th className="p-5">Cliente</th>
+                    <th className="p-5">Preferencia</th>
+                    <th className="p-5">Estado</th>
+                    <th className="p-5">Etapa Venta</th>
+                    <th className="p-5">Contacto</th>
+                    <th className="p-5 text-right">Acción</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {displayedClients.length > 0 ? displayedClients.map(client => (
+                    <tr
+                      key={client.id}
+                      onClick={() => setSelectedClient(client)}
+                      className="hover:bg-indigo-50/30 transition-colors cursor-pointer group"
+                    >
+                      <td className="p-5">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-white border border-indigo-50 flex items-center justify-center text-indigo-600 font-bold shadow-sm">
+                            {client.nombre.charAt(0)}
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-800 text-sm block group-hover:text-indigo-600 transition-colors">{client.nombre}</span>
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider">{client.id}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-5">
+                        <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border 
+                                ${client.busca_venta ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                          {client.busca_venta ? 'VENTA' : 'ALQUILER'}
+                        </span>
+                      </td>
+                      <td className="p-5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                          {client.estado_temperatura}
+                        </span>
+                      </td>
+                      <td className="p-5">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
+                          <span className="text-xs font-medium text-gray-700 capitalize">{client.etapa_proceso}</span>
+                        </div>
+                      </td>
+                      <td className="p-5 text-sm text-gray-500">
+                        <div className="flex flex-col gap-1">
+                          <span className="flex items-center gap-1"><Phone size={12} /> {client.telefono}</span>
+                          <span className="flex items-center gap-1 text-[10px] text-gray-400"><Clock size={10} /> 2d ago</span>
+                        </div>
+                      </td>
+                      <td className="p-5 text-right">
+                        <button
+                          onClick={(e) => handleEditClick(e, client)}
+                          className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                        >
+                          <Edit size={16} strokeWidth={3} />
+                        </button>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-gray-400 italic">
+                        No se encontraron clientes en esta sección.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
