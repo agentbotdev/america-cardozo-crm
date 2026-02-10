@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { leadsService } from '../services/leadsService';
+import { propertiesService } from '../services/propertiesService';
 import { Client, ClientStatus, SalesStage } from '../types';
 import {
   User, Mail, Phone, ExternalLink, Plus, X, List as ListIcon,
@@ -178,6 +179,7 @@ const Clients: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
+  const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
@@ -189,10 +191,14 @@ const Clients: React.FC = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const data = await leadsService.fetchLeads();
+      const [clientsData, propsData] = await Promise.all([
+        leadsService.fetchLeads(),
+        propertiesService.fetchProperties()
+      ]);
       // Filter for clients (leads with tipo_cliente defined or by some other logic)
       // For now, in your schema, Lead and Client share the same table.
-      setClients(data as Client[]);
+      setClients(clientsData as Client[]);
+      setProperties(propsData as any[]);
     } catch (error) {
       console.error('Error loading clients:', error);
     } finally {
@@ -265,13 +271,15 @@ const Clients: React.FC = () => {
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/10 backdrop-blur-[4px] z-[110]"
+              className="fixed inset-0 bg-slate-900/10 backdrop-blur-[4px] z-[190]"
               onClick={() => setSelectedClient(null)}
             />
             <LeadDetailPanel
               lead={selectedClient}
+              properties={properties}
               onClose={() => setSelectedClient(null)}
               onEdit={(client) => {
+                setSelectedClient(null);
                 setClientToEdit(client as Client);
                 setIsModalOpen(true);
               }}
