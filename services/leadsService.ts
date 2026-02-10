@@ -1,15 +1,33 @@
 import { supabase } from './supabaseClient';
 import { Lead } from '../types';
 
+// Cache para leads
+let leadsCache: { data: Lead[]; timestamp: number } | null = null;
+const CACHE_DURATION = 30000; // 30 segundos
+
 export const leadsService = {
-    fetchLeads: async () => {
+    fetchLeads: async (forceRefresh = false) => {
+        // Usar cache si está disponible y es reciente
+        if (!forceRefresh && leadsCache && Date.now() - leadsCache.timestamp < CACHE_DURATION) {
+            console.log('✅ Using cached leads');
+            return leadsCache.data;
+        }
+
+        console.log('🔄 Fetching leads from Supabase...');
+        const startTime = performance.now();
+
         const { data, error } = await supabase
             .from('leads')
             .select('*')
-            .order('created_at', { ascending: false });
-        if (error) throw error;
+            .order('created_at', { ascending: false })
+            .limit(200); // Límite razonable
 
-        return (data || []).map(l => ({
+        if (error) {
+            console.error('❌ Leads fetch error:', error);
+            throw error;
+        }
+
+        const leads = (data || []).map(l => ({
             ...l,
             id: String(l.id),
             estado_temperatura: l.temperatura,
@@ -18,6 +36,22 @@ export const leadsService = {
             busca_alquiler: l.tipo_operacion_buscada === 'alquiler',
             propiedades_enviadas_ids: l.propiedades_recomendadas || []
         }));
+
+        const endTime = performance.now();
+        console.log(`✅ Fetched ${leads.length} leads in ${(endTime - startTime).toFixed(0)}ms`);
+
+        // Actualizar cache
+        leadsCache = {
+            data: leads,
+            timestamp: Date.now()
+        };
+
+        return leads;
+    },
+
+    invalidateCache: () => {
+        leadsCache = null;
+        console.log('🗑️ Leads cache invalidated');
     },
 
     saveLead: async (lead: Partial<Lead>) => {
@@ -32,13 +66,14 @@ export const leadsService = {
             updated_at: new Date().toISOString()
         };
 
+        let savedId;
         if (id && !id.toString().startsWith('temp-')) {
             const { error } = await supabase
                 .from('leads')
                 .update(dataToSave)
                 .eq('id', id);
             if (error) throw error;
-            return id;
+            savedId = id;
         } else {
             const { data, error } = await supabase
                 .from('leads')
@@ -46,12 +81,16 @@ export const leadsService = {
                 .select()
                 .single();
             if (error) throw error;
-            return data.id;
+            savedId = data.id;
         }
+
+        // Invalidar cache
+        leadsService.invalidateCache();
+
+        return savedId;
     },
 
     async assignPropertyToLead(leadId: string, propertyId: string) {
-        // 1. Fetch current lead
         const { data: lead, error: fetchError } = await supabase
             .from('leads')
             .select('propiedades_recomendadas')
@@ -60,7 +99,6 @@ export const leadsService = {
 
         if (fetchError) throw fetchError;
 
-        // 2. Update array
         const currentIds = lead.propiedades_recomendadas || [];
         if (!currentIds.includes(propertyId)) {
             const newIds = [...currentIds, propertyId];
@@ -70,18 +108,20 @@ export const leadsService = {
                 .eq('id', leadId);
 
             if (updateError) throw updateError;
+
+            // Invalidar cache
+            leadsService.invalidateCache();
         }
     },
 
-    // These will return empty arrays if tables don't exist yet, 
-    // preventing crashes while we transition from mocks.
     fetchLeadHistory: async (leadId: string) => {
         try {
             const { data, error } = await supabase
                 .from('leads_history')
                 .select('*')
                 .eq('lead_id', leadId)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .limit(50);
             if (error) return [];
             return data || [];
         } catch {
@@ -95,7 +135,8 @@ export const leadsService = {
                 .from('messages')
                 .select('*')
                 .eq('lead_id', leadId)
-                .order('created_at', { ascending: true });
+                .order('created_at', { ascending: true })
+                .limit(100);
             if (error) return [];
             return data || [];
         } catch {

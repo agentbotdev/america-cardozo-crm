@@ -12,6 +12,7 @@ import { developmentsService, Development } from '../services/developmentsServic
 import { storageService } from '../services/storageService';
 import { openaiService } from '../services/openaiService';
 import PropertySearch from '../components/PropertySearch';
+import { OptimizedImage } from '../components/OptimizedImage';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SHARED UI SUB-COMPONENTS ---
@@ -148,7 +149,7 @@ const PropertyCard = React.memo(({ property, onView }: any) => {
       className="bg-white rounded-[3rem] overflow-hidden group shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 border border-slate-100 flex flex-col h-full relative"
     >
       <div className="h-64 sm:h-72 w-full bg-slate-100 relative overflow-hidden cursor-pointer" onClick={() => onView(property)}>
-        <img src={property.foto_portada || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c'} alt={property.titulo} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+        <OptimizedImage src={property.foto_portada || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400'} alt={property.titulo} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent opacity-70"></div>
         <div className="absolute top-5 left-5 flex flex-col gap-2 z-10">
           <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-white shadow-xl backdrop-blur-md ring-1 ring-white/30 ${statusColors[property.estado] || 'bg-slate-500'}`}>{property.estado}</span>
@@ -210,7 +211,7 @@ const DevelopmentCard = React.memo(({ development, onView }: { development: Deve
       className="bg-white rounded-[3rem] overflow-hidden group shadow-sm hover:shadow-2xl border border-slate-100 flex flex-col h-full relative"
     >
       <div className="h-64 w-full bg-slate-100 relative cursor-pointer" onClick={() => onView(development)}>
-        <img src={development.foto_portada || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab'} alt={development.nombre} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+        <OptimizedImage src={development.foto_portada || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400'} alt={development.nombre} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent"></div>
         <div className="absolute top-5 left-5 flex flex-col gap-2 z-10">
           <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-md shadow-xl ${statusColors[development.estado_obra] || 'bg-slate-500'}`}>

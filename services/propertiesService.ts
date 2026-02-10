@@ -1,8 +1,21 @@
 import { supabase } from './supabaseClient';
 import { Property, Photo } from '../types';
 
+// Cache para propiedades
+let propertiesCache: { data: Property[]; timestamp: number } | null = null;
+const CACHE_DURATION = 30000; // 30 segundos
+
 export const propertiesService = {
-    fetchProperties: async (activeType?: 'published' | 'acquisition') => {
+    fetchProperties: async (activeType?: 'published' | 'acquisition', forceRefresh = false) => {
+        // Usar cache si está disponible y es reciente
+        if (!forceRefresh && propertiesCache && Date.now() - propertiesCache.timestamp < CACHE_DURATION) {
+            console.log('✅ Using cached properties');
+            return propertiesCache.data;
+        }
+
+        console.log('🔄 Fetching properties from Supabase...');
+        const startTime = performance.now();
+
         let query = supabase
             .from('propiedades')
             .select(`
@@ -25,22 +38,32 @@ export const propertiesService = {
             query = query.eq('estado', 'borrador');
         }
 
-        const { data, error } = await query.order('created_at', { ascending: false });
+        const { data, error } = await query.order('created_at', { ascending: false }).limit(100);
 
         if (error) {
-            console.error('Supabase fetch error:', error);
+            console.error('❌ Supabase fetch error:', error);
             throw error;
         }
 
         const props = (data || []).map(p => {
-            // Find cover photo: priority es_portada -> first image -> default
+            // Find cover photo with fallback
             const coverPhoto = p.fotos?.find((f: any) => f.es_portada) || p.fotos?.[0];
-            const foto_portada = coverPhoto?.thumbnail || coverPhoto?.url || p.foto_portada_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c';
+
+            // Priorizar thumbnail > url > foto_portada_url > default
+            let foto_portada = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400';
+
+            if (coverPhoto?.thumbnail) {
+                foto_portada = coverPhoto.thumbnail;
+            } else if (coverPhoto?.url) {
+                foto_portada = coverPhoto.url;
+            } else if (p.foto_portada_url) {
+                foto_portada = p.foto_portada_url;
+            }
 
             return {
                 ...p,
                 id: String(p.id),
-                tipo: p.tipo_propiedad || 'otro', // Map tipo_propiedad to tipo
+                tipo: p.tipo_propiedad || 'otro',
                 direccion_completa: p.direccion || p.direccion_publica || '',
                 banos_completos: p.banos || 0,
                 sup_cubierta: p.superficie_cubierta || 0,
@@ -50,14 +73,27 @@ export const propertiesService = {
             };
         });
 
-        console.log(`Fetched ${props.length} properties. First:`, props[0]);
+        const endTime = performance.now();
+        console.log(`✅ Fetched ${props.length} properties in ${(endTime - startTime).toFixed(0)}ms`);
+
+        // Actualizar cache
+        propertiesCache = {
+            data: props,
+            timestamp: Date.now()
+        };
+
         return props;
+    },
+
+    // Invalidar cache cuando se guarda una propiedad
+    invalidateCache: () => {
+        propertiesCache = null;
+        console.log('🗑️ Properties cache invalidated');
     },
 
     saveProperty: async (property: Partial<Property>) => {
         const { id, fotos, foto_portada, banos_completos, sup_cubierta, moneda, precio, ...dataToSave } = property as any;
 
-        // Prepare data matching schema
         const mappedData = {
             ...dataToSave,
             banos: banos_completos,
@@ -73,8 +109,11 @@ export const propertiesService = {
             mappedData.moneda_alquiler = moneda;
         }
 
-        // Set the cover URL in the main table for faster listing
-        const cover = (fotos as Photo[])?.find(f => f.es_portada)?.url || (fotos as Photo[])?.[0]?.url;
+        const cover = (fotos as Photo[])?.find(f => f.es_portada)?.thumbnail
+            || (fotos as Photo[])?.find(f => f.es_portada)?.url
+            || (fotos as Photo[])?.[0]?.thumbnail
+            || (fotos as Photo[])?.[0]?.url;
+
         if (cover) {
             mappedData.foto_portada_url = cover;
         }
@@ -97,9 +136,8 @@ export const propertiesService = {
             savedId = data.id;
         }
 
-        // --- Sync Photos ---
+        // Sync Photos
         if (fotos && Array.isArray(fotos)) {
-            // 1. Get current photos in DB for this property
             const { data: currentDbFotos } = await supabase
                 .from('fotos')
                 .select('id')
@@ -108,13 +146,11 @@ export const propertiesService = {
             const currentDbIds = currentDbFotos?.map(f => f.id) || [];
             const incomingIds = fotos.filter(f => f.id).map(f => f.id);
 
-            // 2. Delete photos that are no longer present
             const idsToDelete = currentDbIds.filter(id => !incomingIds.includes(id));
             if (idsToDelete.length > 0) {
                 await supabase.from('fotos').delete().in('id', idsToDelete);
             }
 
-            // 3. Update existing photos and insert new ones
             for (const [index, photo] of (fotos as Photo[]).entries()) {
                 const photoData = {
                     url: photo.url,
@@ -135,6 +171,9 @@ export const propertiesService = {
             }
         }
 
+        // Invalidar cache después de guardar
+        propertiesService.invalidateCache();
+
         return savedId;
     },
 
@@ -144,6 +183,10 @@ export const propertiesService = {
             .delete()
             .eq('id', id);
         if (error) throw error;
+
+        // Invalidar cache después de eliminar
+        propertiesService.invalidateCache();
+
         return true;
     }
 };
