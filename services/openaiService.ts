@@ -80,45 +80,84 @@ export async function searchPropertiesByChatbot(
     allProperties: Property[]
 ): Promise<{ properties: Property[]; explanation: string }> {
     try {
-        // Step 1: Extract search criteria using AI
-        const systemPrompt = `Eres un asistente de búsqueda de propiedades inmobiliarias. 
-Analiza la consulta del usuario y extrae los criterios de búsqueda en formato JSON.
-Responde SOLO con un objeto JSON válido, sin texto adicional.
+        console.log('🔍 Starting property search for:', userQuery);
 
-Formato esperado:
+        // Step 1: Extract search criteria using AI with improved prompt
+        const systemPrompt = `Eres un asistente de búsqueda de propiedades inmobiliarias en Argentina.
+Analiza la consulta del usuario y extrae SOLO los criterios de búsqueda relevantes.
+Responde ÚNICAMENTE con un objeto JSON válido, sin markdown, sin explicaciones, sin texto adicional.
+
+IMPORTANTE: 
+- Para tipo usa: "casa", "departamento", "ph", "terreno", "local", "oficina"
+- Para operacion usa: "venta", "alquiler"  
+- Los precios siempre son en USD
+- Si no mencionan algo, usa null
+
+Formato EXACTO de respuesta:
 {
-  "tipo": "casa|departamento|ph|lote|oficina|null",
-  "operacion": "venta|alquiler|null",
-  "precioMin": number|null,
-  "precioMax": number|null,
-  "dormitorios": number|null,
-  "banos": number|null,
-  "ubicacion": "string|null",
-  "amenidades": ["cochera", "pileta", "balcon", etc]
-}`;
+  "tipo": "casa" o "departamento" o "ph" o "terreno" o "local" o "oficina" o null,
+  "operacion": "venta" o "alquiler" o null,
+  "precioMin": numero o null,
+  "precioMax": numero o null,
+  "dormitorios": numero o null,
+  "banos": numero o null,
+  "ubicacion": "texto" o null,
+  "amenidades": ["cochera", "pileta", "balcon"] o []
+}
+
+Ejemplos:
+Usuario: "Busco casa con pileta hasta 500k"
+Respuesta: {"tipo":"casa","operacion":null,"precioMin":null,"precioMax":500000,"dormitorios":null,"banos":null,"ubicacion":null,"amenidades":["pileta"]}
+
+Usuario: "Departamento 2 ambientes en Palermo"
+Respuesta: {"tipo":"departamento","operacion":null,"precioMin":null,"precioMax":null,"dormitorios":2,"banos":null,"ubicacion":"Palermo","amenidades":[]}`;
 
         const criteriaResponse = await callOpenAI([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userQuery }
-        ], 0.3);
+        ], 0.2);
 
-        // Parse criteria
-        let criteria: any;
+        console.log('🤖 AI Response:', criteriaResponse);
+
+        // Parse criteria with better error handling
+        let criteria: any = {};
         try {
-            criteria = JSON.parse(criteriaResponse);
+            // Remove any markdown code blocks if present
+            let cleanResponse = criteriaResponse.trim();
+            cleanResponse = cleanResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+            cleanResponse = cleanResponse.trim();
+
+            criteria = JSON.parse(cleanResponse);
+            console.log('✅ Parsed criteria:', criteria);
         } catch (e) {
-            criteria = {};
+            console.error('❌ JSON Parse Error:', e);
+            console.log('Trying to extract JSON from response...');
+
+            // Try to extract JSON object from the response
+            const jsonMatch = criteriaResponse.match(/\{[^{}]*\}/);
+            if (jsonMatch) {
+                try {
+                    criteria = JSON.parse(jsonMatch[0]);
+                    console.log('✅ Extracted criteria:', criteria);
+                } catch (e2) {
+                    console.error('❌ Could not extract valid JSON');
+                    criteria = {};
+                }
+            }
         }
 
         // Step 2: Filter properties based on extracted criteria
         let filtered = [...allProperties];
+        let appliedFilters: string[] = [];
 
         if (criteria.tipo) {
             filtered = filtered.filter(p => p.tipo?.toLowerCase() === criteria.tipo.toLowerCase());
+            appliedFilters.push(`tipo: ${criteria.tipo}`);
         }
 
         if (criteria.operacion) {
             filtered = filtered.filter(p => p.tipo_operacion?.toLowerCase() === criteria.operacion.toLowerCase());
+            appliedFilters.push(`operación: ${criteria.operacion}`);
         }
 
         if (criteria.precioMax) {
@@ -126,6 +165,7 @@ Formato esperado:
                 const precio = p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler;
                 return precio ? precio <= criteria.precioMax : false;
             });
+            appliedFilters.push(`precio máximo: USD ${criteria.precioMax.toLocaleString()}`);
         }
 
         if (criteria.precioMin) {
@@ -133,14 +173,17 @@ Formato esperado:
                 const precio = p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler;
                 return precio ? precio >= criteria.precioMin : false;
             });
+            appliedFilters.push(`precio mínimo: USD ${criteria.precioMin.toLocaleString()}`);
         }
 
         if (criteria.dormitorios) {
-            filtered = filtered.filter(p => p.dormitorios >= criteria.dormitorios);
+            filtered = filtered.filter(p => p.dormitorios && p.dormitorios >= criteria.dormitorios);
+            appliedFilters.push(`${criteria.dormitorios}+ dormitorios`);
         }
 
         if (criteria.banos) {
             filtered = filtered.filter(p => (p.banos_completos || 0) >= criteria.banos);
+            appliedFilters.push(`${criteria.banos}+ baños`);
         }
 
         if (criteria.ubicacion) {
@@ -150,37 +193,41 @@ Formato esperado:
                 p.ciudad?.toLowerCase().includes(ubicacionLower) ||
                 p.direccion_completa?.toLowerCase().includes(ubicacionLower)
             );
+            appliedFilters.push(`ubicación: ${criteria.ubicacion}`);
         }
 
-        if (criteria.amenidades && Array.isArray(criteria.amenidades)) {
+        if (criteria.amenidades && Array.isArray(criteria.amenidades) && criteria.amenidades.length > 0) {
             filtered = filtered.filter(p => {
                 return criteria.amenidades.some((amenidad: string) => {
                     const amenidadKey = amenidad.toLowerCase().replace(/ /g, '_');
                     return (p as any)[amenidadKey] === true;
                 });
             });
+            appliedFilters.push(`amenidades: ${criteria.amenidades.join(', ')}`);
         }
 
-        // Step 3: Generate explanation
-        const explanationPrompt = `El usuario buscó: "${userQuery}"
-Se encontraron ${filtered.length} propiedades.
-Escribe una breve explicación natural de los resultados (máximo 2 líneas).`;
+        console.log('📊 Filters applied:', appliedFilters);
+        console.log('📋 Results:', filtered.length, 'properties found');
 
-        const explanation = await callOpenAI([
-            { role: 'system', content: 'Eres un asistente inmobiliario amigable. Responde de forma concisa y natural.' },
-            { role: 'user', content: explanationPrompt }
-        ], 0.7);
+        // Step 3: Generate simple explanation
+        let explanation = `Encontré ${filtered.length} ${filtered.length === 1 ? 'propiedad' : 'propiedades'}`;
+
+        if (appliedFilters.length > 0) {
+            explanation += ` con: ${appliedFilters.join(', ')}`;
+        } else {
+            explanation += '. Mostrando todas las propiedades disponibles.';
+        }
 
         return {
             properties: filtered,
-            explanation: explanation.trim()
+            explanation
         };
 
-    } catch (error) {
-        console.error('Error in chatbot search:', error);
+    } catch (error: any) {
+        console.error('❌ Error in chatbot search:', error);
         return {
             properties: allProperties,
-            explanation: 'Hubo un error al procesar tu búsqueda. Mostrando todas las propiedades disponibles.'
+            explanation: `Hubo un error al procesar tu búsqueda: ${error.message}. Mostrando todas las propiedades.`
         };
     }
 }
