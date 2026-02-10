@@ -1,13 +1,13 @@
 /**
  * OpenAI Service for AI-powered features
- * Uses GPT-4o-mini for cost-effective text generation
+ * Uses GPT-3.5 Turbo for cost-effective text generation
  */
 
 import { Property } from '../types';
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = 'gpt-4o-mini';
+const MODEL = 'gpt-3.5-turbo'; // Using GPT-3.5 Turbo - reliable and cost-effective
 
 interface OpenAIMessage {
     role: 'system' | 'user' | 'assistant';
@@ -15,6 +15,14 @@ interface OpenAIMessage {
 }
 
 async function callOpenAI(messages: OpenAIMessage[], temperature: number = 0.7): Promise<string> {
+    // Validate API key
+    if (!OPENAI_API_KEY) {
+        console.error('❌ VITE_OPENAI_API_KEY not configured');
+        throw new Error('OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your environment variables.');
+    }
+
+    console.log('🤖 Calling OpenAI API with model:', MODEL);
+
     try {
         const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
@@ -32,14 +40,34 @@ async function callOpenAI(messages: OpenAIMessage[], temperature: number = 0.7):
 
         if (!response.ok) {
             const error = await response.json();
-            console.error('OpenAI API Error:', error);
+            console.error('❌ OpenAI API Error Response:', error);
+
+            // Handle specific error cases
+            if (error.error?.code === 'model_not_found') {
+                throw new Error(`El modelo ${MODEL} no está disponible. Por favor contacta al administrador.`);
+            }
+
             throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
         }
 
         const data = await response.json();
-        return data.choices[0]?.message?.content || '';
-    } catch (error) {
-        console.error('Error calling OpenAI:', error);
+        console.log('✅ OpenAI Response received');
+
+        const content = data.choices[0]?.message?.content || '';
+
+        if (!content) {
+            throw new Error('OpenAI returned empty response');
+        }
+
+        return content;
+    } catch (error: any) {
+        console.error('❌ Error calling OpenAI:', error);
+
+        // Provide user-friendly error messages
+        if (error.message?.includes('Failed to fetch')) {
+            throw new Error('No se pudo conectar con el servidor de IA. Verifica tu conexión a internet.');
+        }
+
         throw error;
     }
 }
