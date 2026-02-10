@@ -494,8 +494,10 @@ const Leads: React.FC = () => {
         {selectedLead && (
           <>
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-[4px] z-[200]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[190]"
               onClick={() => setSelectedLead(null)}
             />
             <LeadDetailPanel
