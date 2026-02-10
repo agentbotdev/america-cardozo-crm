@@ -10,7 +10,7 @@ import {
 import { propertiesService } from '../services/propertiesService';
 import { developmentsService, Development } from '../services/developmentsService';
 import { storageService } from '../services/storageService';
-import { geminiService } from '../services/geminiService';
+import { openaiService } from '../services/openaiService';
 import PropertySearch from '../components/PropertySearch';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -378,7 +378,7 @@ const PropertyFormModal = ({ isOpen, onClose, onSave, propertyToEdit }: any) => 
                   <AIEnhanceButton
                     text={formData.titulo || ''}
                     onEnhance={async (text) => {
-                      const enhanced = await geminiService.enhancePropertyTitle(text, formData);
+                      const enhanced = await openaiService.enhancePropertyTitle(text, formData);
                       updateField('titulo', enhanced);
                     }}
                     label="Mejorar Título"
@@ -405,7 +405,7 @@ const PropertyFormModal = ({ isOpen, onClose, onSave, propertyToEdit }: any) => 
                   <AIEnhanceButton
                     text={formData.descripcion || ''}
                     onEnhance={async (text) => {
-                      const enhanced = await geminiService.enhancePropertyDescription(text, formData);
+                      const enhanced = await openaiService.enhancePropertyDescription(text, formData);
                       updateField('descripcion', enhanced);
                     }}
                     label="Mejorar Descripción"

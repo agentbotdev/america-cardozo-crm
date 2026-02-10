@@ -12,7 +12,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { Property } from '../types';
-import { geminiService } from '../services/geminiService';
+import { openaiService } from '../services/openaiService';
 
 interface PropertySearchProps {
     isOpen: boolean;
@@ -57,7 +57,7 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
         setChatHistory(prev => [...prev, { type: 'user', text: chatQuery }]);
 
         try {
-            const { properties: results, explanation } = await geminiService.searchPropertiesByChatbot(
+            const { properties: results, explanation } = await openaiService.searchPropertiesByChatbot(
                 chatQuery,
                 properties
             );
@@ -182,8 +182,8 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                     <button
                         onClick={() => setSearchMode('chatbot')}
                         className={`flex-1 p-4 md:p-6 rounded-2xl font-black text-sm md:text-base uppercase tracking-widest transition-all flex items-center justify-center gap-3 ${searchMode === 'chatbot'
-                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl'
-                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl'
+                            : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                             }`}
                     >
                         <Bot size={20} />
@@ -193,8 +193,8 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                     <button
                         onClick={() => setSearchMode('filters')}
                         className={`flex-1 p-4 md:p-6 rounded-2xl font-black text-sm md:text-base uppercase tracking-widest transition-all flex items-center justify-center gap-3 ${searchMode === 'filters'
-                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl'
-                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl'
+                            : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                             }`}
                     >
                         <Sliders size={20} />
@@ -224,8 +224,8 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                                             >
                                                 <div
                                                     className={`max-w-[80%] p-4 rounded-2xl ${msg.type === 'user'
-                                                            ? 'bg-indigo-600 text-white rounded-tr-none'
-                                                            : 'bg-slate-100 text-slate-900 rounded-tl-none'
+                                                        ? 'bg-indigo-600 text-white rounded-tr-none'
+                                                        : 'bg-slate-100 text-slate-900 rounded-tl-none'
                                                         }`}
                                                 >
                                                     <p className="text-sm font-medium whitespace-pre-line">{msg.text}</p>
@@ -322,8 +322,8 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                                                 key={tipo}
                                                 onClick={() => toggleTipo(tipo)}
                                                 className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${filters.tipo.includes(tipo)
-                                                        ? 'bg-indigo-600 text-white shadow-lg'
-                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                    ? 'bg-indigo-600 text-white shadow-lg'
+                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                                     }`}
                                             >
                                                 {tipo}
@@ -462,8 +462,8 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                                                 key={key}
                                                 onClick={() => setFilters(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))}
                                                 className={`p-4 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${filters[key as keyof typeof filters]
-                                                        ? 'bg-indigo-600 text-white shadow-lg'
-                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                    ? 'bg-indigo-600 text-white shadow-lg'
+                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                                     }`}
                                             >
                                                 {Icon && <Icon size={16} />}
