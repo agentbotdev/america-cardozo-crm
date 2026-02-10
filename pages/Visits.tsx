@@ -64,7 +64,7 @@ const VisitFormModal: React.FC<{
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl relative animate-fade-in p-10 border border-slate-100">
+            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl relative animate-fade-in p-6 md:p-10 border border-slate-100">
                 <div className="flex justify-between items-center mb-8">
                     <h2 className="text-2xl font-black text-slate-900 tracking-tight">{visitToEdit ? 'Editar Visita' : 'Agendar Visita'}</h2>
                     <button onClick={onClose} className="p-3 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-2xl transition-all" aria-label="Cerrar"><X size={20} /></button>
@@ -210,7 +210,7 @@ const VisitDetailPanel: React.FC<{
     onStatusChange: (v: Visit, s: VisitStatus) => void;
 }> = ({ visit, onClose, onEdit, onStatusChange }) => {
     return (
-        <div className="fixed inset-y-0 right-0 w-full md:w-[550px] bg-white/95 backdrop-blur-2xl shadow-2xl z-50 transform transition-transform duration-500 animate-slide-in-right p-10 border-l border-slate-100 flex flex-col">
+        <div className="fixed inset-y-0 right-0 w-full md:w-[550px] bg-white/95 backdrop-blur-2xl shadow-2xl z-200 transform transition-transform duration-500 animate-slide-in-right p-6 md:p-10 border-l border-slate-100 flex flex-col">
             <div className="flex justify-between items-start mb-10">
                 <div>
                     <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Detalle Visita</h2>
@@ -366,14 +366,14 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
     ];
 
     return (
-        <div className="bg-white/40 backdrop-blur-xl rounded-[3rem] p-4 lg:p-10 shadow-2xl shadow-slate-200/50 border border-white/60 h-full flex flex-col overflow-hidden">
+        <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3rem] p-4 lg:p-10 shadow-2xl shadow-slate-200/50 border border-white/60 h-full flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-10 px-4">
                 <div className="flex items-center gap-4">
                     <button onClick={() => changeMonth(-1)} className="p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition-all">
                         <ChevronLeft size={20} strokeWidth={3} />
                     </button>
                     <div className="text-center min-w-[180px]">
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tighter">{monthNames[month]}</h2>
+                        <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter">{monthNames[month]}</h2>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{year}</p>
                     </div>
                     <button onClick={() => changeMonth(1)} className="p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition-all">
@@ -389,7 +389,7 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
             </div>
 
             <div className="overflow-x-auto no-scrollbar scroll-smooth flex-1">
-                <div className="min-w-[800px] h-full flex flex-col">
+                <div className="min-w-[700px] md:min-w-[800px] h-full flex flex-col">
                     <div className="grid grid-cols-7 mb-6 px-4">
                         {['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'].map(day => (
                             <div key={day} className="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">{day}</div>
@@ -401,7 +401,7 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
                             const isToday = dayObj.date.toDateString() === new Date().toDateString();
 
                             return (
-                                <div key={idx} className={`min-h-[120px] border border-slate-50/50 rounded-[2rem] p-4 transition-all relative flex flex-col gap-2 
+                                <div key={idx} className={`min-h-[100px] md:min-h-[120px] border border-slate-50/50 rounded-[1.5rem] md:rounded-[2.5rem] p-2 md:p-4 transition-all relative flex flex-col gap-2 
                                     ${dayObj.currentMonth ? 'bg-white shadow-sm' : 'bg-slate-50/30 opacity-40'} 
                                     ${isToday ? 'ring-2 ring-indigo-500/20 bg-indigo-50/10' : 'hover:shadow-lg hover:-translate-y-1'}`}>
 
@@ -568,8 +568,8 @@ const Visits: React.FC = () => {
         <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu">
             <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-8 px-4 md:px-0">
                 <div>
-                    <h1 className="text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-3">Agenda Visitas</h1>
-                    <p className="text-slate-400 font-bold text-base uppercase tracking-[0.2em]">Gestión de citas y recorridos presenciales.</p>
+                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-3">Agenda Visitas</h1>
+                    <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión de citas y recorridos presenciales.</p>
                 </div>
 
                 <div className="flex items-center gap-5 w-full md:w-auto">
@@ -595,7 +595,7 @@ const Visits: React.FC = () => {
                         }}
                         className="flex-1 md:flex-none bg-slate-900 text-white px-12 py-5 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-indigo-100 active:scale-95"
                     >
-                        <Plus size={20} strokeWidth={3} /> {isSyncing ? 'Guardando...' : 'NUEVA VISITA'}
+                        <Plus size={20} strokeWidth={3} /> <span className="hidden sm:inline">{isSyncing ? 'Guardando...' : 'NUEVA VISITA'}</span><span className="sm:hidden">NUEVA</span>
                     </button>
                 </div>
             </div>
@@ -630,7 +630,7 @@ const Visits: React.FC = () => {
             ) : (
                 <div className="flex gap-8 overflow-x-auto pb-8 h-[calc(100vh-350px)] no-scrollbar px-4 md:px-0">
                     {pipelineStages.map(stage => (
-                        <div key={stage.id} className="min-w-[400px] bg-slate-50/50 border border-slate-100 rounded-[3rem] p-8 flex flex-col shadow-inner">
+                        <div key={stage.id} className="min-w-[300px] md:min-w-[400px] bg-slate-50/50 border border-slate-100 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-8 flex flex-col shadow-inner">
                             <div className="flex justify-between items-center mb-8 px-4">
                                 <h3 className="font-black text-slate-400 text-[11px] uppercase tracking-[0.2em]">{stage.label}</h3>
                                 <span className="bg-white px-4 py-1 rounded-full text-[10px] font-black text-slate-900 shadow-sm border border-slate-100">

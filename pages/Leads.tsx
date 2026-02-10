@@ -109,7 +109,7 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
     <motion.div
       initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed top-0 right-0 w-full sm:w-[550px] lg:w-[650px] h-full bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] z-[100] flex flex-col border-l border-slate-100"
+      className="fixed top-0 right-0 w-full sm:w-[500px] lg:w-[600px] h-full bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] z-200 flex flex-col border-l border-slate-100"
     >
       <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
         <div className="flex items-center gap-5">
@@ -152,8 +152,8 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
       <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50/30">
         <AnimatePresence mode="wait">
           {activeTab === 'info' && (
-            <motion.div key="info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-10 space-y-10">
-              <div className="grid grid-cols-2 gap-8">
+            <motion.div key="info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-6 md:p-10 space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <Section title="Contacto">
                   <DetailItem icon={Phone} label="Teléfono" value={lead.telefono} />
                   <DetailItem icon={Mail} label="Email" value={lead.email || '-'} />
@@ -362,16 +362,17 @@ const LeadFormModal = ({ isOpen, onClose, onSave, leadToEdit }: any) => {
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose}></div>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-[210] overflow-hidden flex flex-col"
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-white w-full max-w-xl rounded-[2.5rem] md:rounded-[3rem] shadow-2xl relative z-[210] overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{leadToEdit ? 'Editar Lead' : 'Nuevo Lead'}</h2>
+        <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center">
+          <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{leadToEdit ? 'Editar Lead' : 'Nuevo Lead'}</h2>
           <button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-2xl transition-all"><X size={24} /></button>
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-6 md:p-8 space-y-6 overflow-y-auto no-scrollbar flex-1">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Completo</label>
             <input
@@ -513,8 +514,8 @@ const Leads: React.FC = () => {
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-8">
         <div>
-          <h1 className="text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-3">Lead Pipeline</h1>
-          <p className="text-slate-400 font-bold text-base uppercase tracking-[0.2em]">Gestión inteligente y calificación con AgentBot IA.</p>
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-3">Lead Pipeline</h1>
+          <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión inteligente y calificación con AgentBot IA.</p>
         </div>
         <button
           onClick={() => { setEditingLead(null); setIsModalOpen(true); }}
@@ -543,9 +544,9 @@ const Leads: React.FC = () => {
 
       <div className="bg-white rounded-[3rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col">
         {/* Toolbar */}
-        <div className="p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-8 bg-white sticky top-0 z-20">
-          <div className="flex flex-wrap gap-5 items-center">
-            <div className="bg-slate-50 p-2 rounded-[2.5rem] flex gap-2 shadow-inner overflow-x-auto no-scrollbar max-w-full border border-slate-100">
+        <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 md:gap-8 bg-white sticky top-0 z-20">
+          <div className="flex flex-wrap gap-3 md:gap-5 items-center">
+            <div className="bg-slate-50 p-1.5 md:p-2 rounded-[2rem] md:rounded-[2.5rem] flex gap-2 shadow-inner overflow-x-auto no-scrollbar max-w-full border border-slate-100">
               {(['todos', 'caliente', 'tibio', 'frio'] as const).map(filter => (
                 <button
                   key={filter}
@@ -586,8 +587,59 @@ const Leads: React.FC = () => {
           </div>
         </div>
 
-        {/* Table View */}
-        <div className="overflow-x-auto no-scrollbar">
+        {/* Mobile View (Cards) */}
+        <div className="lg:hidden p-6 space-y-4">
+          {loading ? (
+            <div className="py-20 text-center">
+              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Leads...</p>
+            </div>
+          ) : filteredLeads.length > 0 ? (
+            filteredLeads.map((lead) => (
+              <div
+                key={lead.id}
+                onClick={() => setSelectedLead(lead)}
+                className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] space-y-4 active:scale-95 transition-transform"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                      {lead.nombre.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-800 leading-tight">{lead.nombre}</p>
+                      <p className="text-[10px] text-slate-400 font-bold">{lead.telefono}</p>
+                    </div>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg border border-slate-100">
+                    <ArrowRight size={14} className="text-slate-300" />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${statusColors[lead.temperatura] || 'bg-slate-100 text-slate-600'}`}>
+                    {lead.temperatura}
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${stageColors[lead.etapa] || 'bg-slate-100 text-slate-600'}`}>
+                    {lead.etapa}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 pt-2">
+                  <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500" style={{ width: `${lead.score}%` }} />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-900">{lead.score}%</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-20 text-center">
+              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay leads</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View (Table) */}
+        <div className="hidden lg:block overflow-x-auto no-scrollbar">
           {loading ? (
             <div className="py-48 text-center bg-slate-50/20">
               <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>

@@ -293,8 +293,8 @@ const Clients: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-8">
         <div>
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-3">Cartera Clientes</h1>
-          <p className="text-slate-400 font-bold text-xs sm:text-base uppercase tracking-[0.2em]">Gestión avanzada de relaciones con Flor IA.</p>
+          <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-3">Cartera Clientes</h1>
+          <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión avanzada de relaciones con Flor IA.</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-5 w-full md:w-auto">
           <div className="bg-slate-100/50 p-1.5 rounded-[1.8rem] flex shadow-inner border border-slate-100 w-full sm:w-auto justify-center">
@@ -377,8 +377,59 @@ const Clients: React.FC = () => {
           </div>
         )}
 
-        {/* 3. TABLE CONTENT */}
-        <div className="flex-1 overflow-auto bg-white/40">
+        {/* Mobile View (Cards) */}
+        <div className="lg:hidden p-6 space-y-4 bg-white/40">
+          {loading ? (
+            <div className="py-20 text-center">
+              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando...</p>
+            </div>
+          ) : displayedClients.length > 0 ? (
+            displayedClients.map((client) => (
+              <div
+                key={client.id}
+                onClick={() => setSelectedClient(client)}
+                className="bg-white/80 backdrop-blur-sm border border-slate-100 p-6 rounded-[2rem] space-y-4 active:scale-95 transition-transform"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                      {client.nombre.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-800 leading-tight">{client.nombre}</p>
+                      <p className="text-[10px] text-slate-400 font-bold">{client.telefono}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => handleEditClick(e, client)}
+                    className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all"
+                  >
+                    <Edit size={14} />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${client.busca_venta ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                    {client.busca_venta ? 'VENTA' : 'ALQUILER'}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-500">
+                    {client.estado_temperatura}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600">
+                    {client.etapa_proceso}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-20 text-center">
+              <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay clientes</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View (Table) */}
+        <div className="hidden lg:block flex-1 overflow-auto bg-white/40">
           {loading ? (
             <div className="py-20 text-center">
               <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>

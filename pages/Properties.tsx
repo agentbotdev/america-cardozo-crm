@@ -267,12 +267,12 @@ const PropertyDetailView = ({ property, onClose, onEdit }: any) => {
 
       <div className="flex-1 overflow-y-auto no-scrollbar pt-32 px-6 pb-20">
         <div className="max-w-7xl mx-auto space-y-12">
-          <div className="relative h-[55vh] rounded-[4rem] overflow-hidden shadow-2xl group cursor-pointer" onClick={() => setShowGallery(true)}>
+          <div className="relative h-[40vh] md:h-[55vh] rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-2xl group cursor-pointer" onClick={() => setShowGallery(true)}>
             <img src={images[currentImageIndex]} className="w-full h-full object-cover" alt="" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-            <div className="absolute bottom-10 left-10 text-white">
-              <h1 className="text-5xl font-black mb-4 tracking-tighter">{property.titulo}</h1>
-              <p className="flex items-center gap-2 font-bold opacity-80 uppercase tracking-widest text-xs"><MapPin size={18} /> {property.barrio}</p>
+            <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 text-white">
+              <h1 className="text-2xl md:text-5xl font-black mb-2 md:mb-4 tracking-tighter">{property.titulo}</h1>
+              <p className="flex items-center gap-2 font-bold opacity-80 uppercase tracking-widest text-[10px] md:text-xs"><MapPin size={14} /> {property.barrio}</p>
             </div>
           </div>
 
@@ -284,23 +284,23 @@ const PropertyDetailView = ({ property, onClose, onEdit }: any) => {
                 <InfoCard icon={Ruler} label="Superficie" value={`${property.sup_cubierta}m²`} />
                 <InfoCard icon={Layers} label="Ambientes" value={property.ambientes || '-'} />
               </div>
-              <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-4">
+              <div className="bg-white p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-sm">
+                <h3 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-6 md:mb-8 flex items-center gap-4">
                   <Info size={18} className="text-indigo-500" /> Descripción
                 </h3>
-                <p className="text-lg text-slate-600 font-medium leading-relaxed">{property.descripcion || "Sin descripción disponible."}</p>
+                <p className="text-base md:text-lg text-slate-600 font-medium leading-relaxed">{property.descripcion || "Sin descripción disponible."}</p>
               </div>
             </div>
             <div className="space-y-8">
-              <div className="bg-slate-900 text-white p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Inversión Recurrente</p>
-                <h2 className="text-5xl font-black tracking-tighter mb-10 flex items-baseline gap-2">
-                  <span className="text-xl text-slate-400">{property.moneda}</span>
+              <div className="bg-slate-900 text-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl relative overflow-hidden">
+                <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Inversión Recurrente</p>
+                <h2 className="text-3xl md:text-5xl font-black tracking-tighter mb-8 md:mb-10 flex items-baseline gap-2">
+                  <span className="text-lg md:text-xl text-slate-400">{property.moneda}</span>
                   {precio?.toLocaleString()}
                 </h2>
                 <button
                   onClick={() => navigate(`/visitas?propertyId=${property.id}`)}
-                  className="w-full py-6 bg-white text-slate-900 rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Programar Visita</button>
+                  className="w-full py-5 md:py-6 bg-white text-slate-900 rounded-[1.5rem] md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Programar Visita</button>
               </div>
             </div>
           </div>
@@ -600,9 +600,9 @@ const Properties = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-10">
         <div className="relative">
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-500/10 blur-3xl rounded-full"></div>
-          <h1 className="text-4xl sm:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-4 relative">Portafolio Inmobiliario</h1>
-          <p className="text-slate-400 font-bold text-base uppercase tracking-widest flex items-center gap-3 relative">
-            <Layers size={20} className="text-indigo-400" /> {activeTab === 'emprendimientos' ? `${developments.length} Emprendimientos` : `${properties.length} Propiedades`}
+          <h1 className="text-3xl sm:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-4 relative">Portafolio Inmobiliario</h1>
+          <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-widest flex items-center gap-3 relative">
+            <Layers size={18} className="text-indigo-400" /> {activeTab === 'emprendimientos' ? `${developments.length} Emprendimientos` : `${properties.length} Propiedades`}
           </p>
         </div>
         <button
@@ -622,7 +622,7 @@ const Properties = () => {
         </div>
         <div className="flex-1 relative group">
           <Search size={22} className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-          <input type="text" placeholder="Buscar por zona, nombre o código..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white/50 backdrop-blur-xl border border-white rounded-[2.5rem] pl-20 pr-8 py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
+          <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white/50 backdrop-blur-xl border border-white rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
         </div>
       </div>
 
