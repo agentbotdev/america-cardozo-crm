@@ -5,11 +5,13 @@ import {
   Plus, MapPin, Search, X, Heart,
   BedDouble, Bath, Ruler, ChevronLeft, ChevronRight, Home, Info, Layers,
   Building2, Image as ImageIcon, Edit, Upload, Trash2, CheckCircle2,
-  Trash, Save, Map as MapIcon, ArrowLeft, Clock
+  Trash, Save, Map as MapIcon, ArrowLeft, Clock, Sparkles, Loader2, Bot
 } from 'lucide-react';
 import { propertiesService } from '../services/propertiesService';
 import { developmentsService, Development } from '../services/developmentsService';
 import { storageService } from '../services/storageService';
+import { geminiService } from '../services/geminiService';
+import PropertySearch from '../components/PropertySearch';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SHARED UI SUB-COMPONENTS ---
@@ -369,14 +371,54 @@ const PropertyFormModal = ({ isOpen, onClose, onSave, propertyToEdit }: any) => 
         <div className="p-10 overflow-y-auto no-scrollbar flex-1">
           {activeTab === 'info' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
-              <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Título de la Propiedad</label> <input type="text" value={formData.titulo || ''} onChange={e => updateField('titulo', e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold focus:ring-4 focus:ring-indigo-50 outline-none" placeholder="Ej: Espectacular Departamento frente al Mar" /></div>
+              {/* Título con mejora IA */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Título de la Propiedad</label>
+                  <AIEnhanceButton
+                    text={formData.titulo || ''}
+                    onEnhance={async (text) => {
+                      const enhanced = await geminiService.enhancePropertyTitle(text, formData);
+                      updateField('titulo', enhanced);
+                    }}
+                    label="Mejorar Título"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={formData.titulo || ''}
+                  onChange={e => updateField('titulo', e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold focus:ring-4 focus:ring-indigo-50 outline-none"
+                  placeholder="Ej: Espectacular Departamento frente al Mar"
+                />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modalidad</label> <select value={formData.tipo_operacion} onChange={e => updateField('tipo_operacion', e.target.value as any)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none"><option value="venta">Venta</option><option value="alquiler">Alquiler</option><option value="temporario">Temporario</option></select></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio y Moneda</label> <div className="flex gap-2"><input type="number" value={formData.precio_venta || formData.precio_alquiler || ''} onChange={e => updateField(formData.tipo_operacion === 'venta' ? 'precio_venta' : 'precio_alquiler', Number(e.target.value))} className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none" /><select value={formData.moneda} onChange={e => updateField('moneda', e.target.value as any)} className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-4 text-sm font-bold outline-none"><option value="USD">USD</option><option value="ARS">ARS</option></select></div></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado</label> <select value={formData.estado} onChange={e => updateField('estado', e.target.value as any)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none"><option value="publicada">Publicada</option><option value="reservada">Reservada</option><option value="borrador">Captación / Borrador</option></select></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Propiedad</label> <select value={formData.tipo} onChange={e => updateField('tipo', e.target.value as any)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none"><option value="casa">Casa</option><option value="departamento">Departamento</option><option value="ph">PH</option><option value="lote">Terreno / Lote</option><option value="oficina">Oficina</option></select></div>
               </div>
-              <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción Detallada</label> <textarea rows={4} value={formData.descripcion || ''} onChange={e => updateField('descripcion', e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-50" placeholder="Describe los puntos fuertes de la propiedad..." /></div>
+              {/* Descripción con mejora IA */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción Detallada</label>
+                  <AIEnhanceButton
+                    text={formData.descripcion || ''}
+                    onEnhance={async (text) => {
+                      const enhanced = await geminiService.enhancePropertyDescription(text, formData);
+                      updateField('descripcion', enhanced);
+                    }}
+                    label="Mejorar Descripción"
+                  />
+                </div>
+                <textarea
+                  rows={6}
+                  value={formData.descripcion || ''}
+                  onChange={e => updateField('descripcion', e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-50"
+                  placeholder="Describe los puntos fuertes de la propiedad..."
+                />
+              </div>
             </div>
           )}
 
@@ -512,6 +554,51 @@ const DevelopmentFormModal = ({ isOpen, onClose, onSave, devToEdit }: any) => {
   );
 };
 
+// --- AI ENHANCE BUTTON COMPONENT ---
+const AIEnhanceButton: React.FC<{
+  text: string;
+  onEnhance: (text: string) => Promise<void>;
+  label: string;
+}> = ({ text, onEnhance, label }) => {
+  const [isEnhancing, setIsEnhancing] = useState(false);
+
+  const handleEnhance = async () => {
+    if (!text.trim()) {
+      alert('Por favor ingresa un texto primero');
+      return;
+    }
+    setIsEnhancing(true);
+    try {
+      await onEnhance(text);
+    } catch (error) {
+      console.error('Error enhancing text:', error);
+      alert('Error al mejorar el texto');
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleEnhance}
+      disabled={isEnhancing}
+      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {isEnhancing ? (
+        <>
+          <Loader2 size={12} className="animate-spin" />
+          Mejorando...
+        </>
+      ) : (
+        <>
+          <Sparkles size={12} />
+          {label}
+        </>
+      )}
+    </button>
+  );
+};
+
 // --- MAIN PAGE COMPONENT ---
 const Properties = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -524,6 +611,9 @@ const Properties = () => {
   const [editingDev, setEditingDev] = useState<Development | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<Property[] | null>(null);
+  const [searchExplanation, setSearchExplanation] = useState<string>('');
 
   useEffect(() => { loadData(); }, []);
 
@@ -620,9 +710,20 @@ const Properties = () => {
           <TabButton active={activeTab === 'emprendimientos'} onClick={() => setActiveTab('emprendimientos')} icon={Building2} label="Emprendimientos" />
           <TabButton active={activeTab === 'acquisition'} onClick={() => setActiveTab('acquisition')} icon={Clock} label="Captaciones" />
         </div>
-        <div className="flex-1 relative group">
-          <Search size={22} className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-          <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white/50 backdrop-blur-xl border border-white rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
+        <div className="flex gap-4 flex-1">
+          <div className="flex-1 relative group">
+            <Search size={22} className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+            <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white/50 backdrop-blur-xl border border-white rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
+          </div>
+          {activeTab === 'propiedades' && (
+            <button
+              onClick={() => setIsSearchModalOpen(true)}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
+            >
+              <Bot size={20} />
+              <span className="hidden md:inline">Buscador IA</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -657,6 +758,29 @@ const Properties = () => {
 
       <PropertyFormModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingProp(null); }} onSave={handleSaveProp} propertyToEdit={editingProp} />
       <DevelopmentFormModal isOpen={isDevModalOpen} onClose={() => { setIsDevModalOpen(false); setEditingDev(null); }} onSave={handleSaveDev} devToEdit={editingDev} />
+
+      {/* Buscador Inteligente */}
+      <PropertySearch
+        isOpen={isSearchModalOpen}
+        onClose={() => {
+          setIsSearchModalOpen(false);
+          if (searchResults === null) {
+            setSearchTerm('');
+          }
+        }}
+        properties={properties}
+        onResults={(results, explanation) => {
+          setSearchResults(results);
+          setSearchExplanation(explanation || '');
+          setIsSearchModalOpen(false);
+          // Mostrar notificación de resultados
+          if (results.length > 0) {
+            alert(`✓ ${explanation}\n\nMostrando ${results.length} propiedades encontradas.`);
+          } else {
+            alert('No se encontraron propiedades con esos criterios.');
+          }
+        }}
+      />
     </div>
   );
 };

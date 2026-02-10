@@ -64,12 +64,12 @@ const VisitFormModal: React.FC<{
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl relative animate-fade-in p-6 md:p-10 border border-slate-100">
-                <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{visitToEdit ? 'Editar Visita' : 'Agendar Visita'}</h2>
-                    <button onClick={onClose} className="p-3 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-2xl transition-all" aria-label="Cerrar"><X size={20} /></button>
+            <div className="bg-white w-full max-w-lg rounded-[2rem] md:rounded-[2.5rem] shadow-2xl relative animate-fade-in p-4 md:p-10 border border-slate-100 max-h-[95vh] md:max-h-none flex flex-col">
+                <div className="flex justify-between items-center mb-6 md:mb-8">
+                    <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{visitToEdit ? 'Editar Visita' : 'Agendar Visita'}</h2>
+                    <button onClick={onClose} className="p-2 md:p-3 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-xl md:rounded-2xl transition-all" aria-label="Cerrar"><X size={20} /></button>
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto no-scrollbar pr-2">
+                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 overflow-y-auto no-scrollbar pr-2 flex-1">
                     <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-4">
                         <button
                             type="button"
@@ -162,14 +162,14 @@ const VisitFormModal: React.FC<{
                             ))}
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fecha</label>
                             <input
                                 type="date"
                                 value={formData.fecha}
                                 onChange={e => setFormData({ ...formData, fecha: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
+                                className="w-full bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl px-4 md:px-5 py-3 md:py-4 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
                             />
                         </div>
                         <div>
@@ -178,7 +178,7 @@ const VisitFormModal: React.FC<{
                                 type="time"
                                 value={formData.hora}
                                 onChange={e => setFormData({ ...formData, hora: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
+                                className="w-full bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl px-4 md:px-5 py-3 md:py-4 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
                             />
                         </div>
                     </div>
@@ -194,7 +194,7 @@ const VisitFormModal: React.FC<{
                             <Globe size={14} className="text-indigo-400" /> Sincronizar con Google Calendar
                         </label>
                     </div>
-                    <button type="submit" className="w-full py-5 rounded-2xl text-[12px] font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-indigo-600 shadow-xl transition-all active:scale-95 mt-4">
+                    <button type="submit" className="w-full py-4 md:py-5 rounded-xl md:rounded-2xl text-[11px] md:text-[12px] font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-indigo-600 shadow-xl transition-all active:scale-95 mt-4">
                         {visitToEdit ? 'Guardar Cambios' : 'Agendar Visita'}
                     </button>
                 </form>
@@ -210,20 +210,20 @@ const VisitDetailPanel: React.FC<{
     onStatusChange: (v: Visit, s: VisitStatus) => void;
 }> = ({ visit, onClose, onEdit, onStatusChange }) => {
     return (
-        <div className="fixed inset-y-0 right-0 w-full md:w-[550px] bg-white/95 backdrop-blur-2xl shadow-2xl z-200 transform transition-transform duration-500 animate-slide-in-right p-6 md:p-10 border-l border-slate-100 flex flex-col">
-            <div className="flex justify-between items-start mb-10">
+        <div className="fixed inset-y-0 right-0 w-full sm:w-[90%] md:w-[550px] bg-white/95 backdrop-blur-2xl shadow-2xl z-200 transform transition-transform duration-500 animate-slide-in-right p-4 md:p-10 border-l border-slate-100 flex flex-col overflow-y-auto">
+            <div className="flex justify-between items-start mb-6 md:mb-10">
                 <div>
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Detalle Visita</h2>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">ID Ref: {visit.id}</p>
+                    <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Detalle Visita</h2>
+                    <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">ID Ref: {visit.id}</p>
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={() => onEdit(visit)}
-                        className="p-3 bg-slate-50 hover:bg-indigo-600 hover:text-white text-slate-400 rounded-2xl transition-all"
+                        className="p-2 md:p-3 bg-slate-50 hover:bg-indigo-600 hover:text-white text-slate-400 rounded-xl md:rounded-2xl transition-all"
                     >
-                        <Edit size={20} />
+                        <Edit size={18} className="md:w-5 md:h-5" />
                     </button>
-                    <button onClick={onClose} className="p-3 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-2xl transition-all"><X size={20} /></button>
+                    <button onClick={onClose} className="p-2 md:p-3 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-xl md:rounded-2xl transition-all"><X size={18} className="md:w-5 md:h-5" /></button>
                 </div>
             </div>
 
@@ -246,18 +246,18 @@ const VisitDetailPanel: React.FC<{
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white p-4 rounded-2xl border border-slate-50 flex items-center gap-3">
-                            <CalendarDays size={18} className="text-indigo-400" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="bg-white p-3 md:p-4 rounded-xl md:rounded-2xl border border-slate-50 flex items-center gap-2 md:gap-3">
+                            <CalendarDays size={16} className="text-indigo-400 md:w-[18px] md:h-[18px]" />
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</p>
+                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</p>
                                 <p className="text-xs font-black text-slate-800">{visit.fecha}</p>
                             </div>
                         </div>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-50 flex items-center gap-3">
-                            <Clock size={18} className="text-indigo-400" />
+                        <div className="bg-white p-3 md:p-4 rounded-xl md:rounded-2xl border border-slate-50 flex items-center gap-2 md:gap-3">
+                            <Clock size={16} className="text-indigo-400 md:w-[18px] md:h-[18px]" />
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hora</p>
+                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Hora</p>
                                 <p className="text-xs font-black text-slate-800">{visit.hora} hs</p>
                             </div>
                         </div>
@@ -366,62 +366,62 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
     ];
 
     return (
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3rem] p-4 lg:p-10 shadow-2xl shadow-slate-200/50 border border-white/60 h-full flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between mb-10 px-4">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => changeMonth(-1)} className="p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition-all">
-                        <ChevronLeft size={20} strokeWidth={3} />
+        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] md:rounded-[3rem] p-3 md:p-4 lg:p-10 shadow-2xl shadow-slate-200/50 border border-white/60 h-full flex flex-col overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 md:mb-10 px-2 md:px-4 gap-4">
+                <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto justify-center">
+                    <button onClick={() => changeMonth(-1)} className="p-2 md:p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition-all">
+                        <ChevronLeft size={18} className="md:w-5 md:h-5" strokeWidth={3} />
                     </button>
-                    <div className="text-center min-w-[180px]">
-                        <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter">{monthNames[month]}</h2>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{year}</p>
+                    <div className="text-center min-w-[140px] md:min-w-[180px]">
+                        <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tighter">{monthNames[month]}</h2>
+                        <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">{year}</p>
                     </div>
-                    <button onClick={() => changeMonth(1)} className="p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition-all">
-                        <ChevronRight size={20} strokeWidth={3} />
+                    <button onClick={() => changeMonth(1)} className="p-2 md:p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition-all">
+                        <ChevronRight size={18} className="md:w-5 md:h-5" strokeWidth={3} />
                     </button>
                 </div>
                 <button
                     onClick={() => setCurrentDate(new Date())}
-                    className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 shadow-lg transition-all active:scale-95"
+                    className="px-4 md:px-6 py-2 md:py-3 bg-slate-900 text-white rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 shadow-lg transition-all active:scale-95"
                 >
                     Hoy
                 </button>
             </div>
 
             <div className="overflow-x-auto no-scrollbar scroll-smooth flex-1">
-                <div className="min-w-[700px] md:min-w-[800px] h-full flex flex-col">
-                    <div className="grid grid-cols-7 mb-6 px-4">
+                <div className="min-w-[600px] sm:min-w-[700px] md:min-w-[800px] h-full flex flex-col">
+                    <div className="grid grid-cols-7 mb-4 md:mb-6 px-2 md:px-4">
                         {['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'].map(day => (
-                            <div key={day} className="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">{day}</div>
+                            <div key={day} className="text-center text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] md:tracking-[0.3em]">{day}</div>
                         ))}
                     </div>
-                    <div className="grid grid-cols-7 gap-3 flex-1 pb-4">
+                    <div className="grid grid-cols-7 gap-1.5 md:gap-3 flex-1 pb-2 md:pb-4">
                         {calendarDays.map((dayObj, idx) => {
                             const dayVisits = getVisitsForDay(dayObj.date);
                             const isToday = dayObj.date.toDateString() === new Date().toDateString();
 
                             return (
-                                <div key={idx} className={`min-h-[100px] md:min-h-[120px] border border-slate-50/50 rounded-[1.5rem] md:rounded-[2.5rem] p-2 md:p-4 transition-all relative flex flex-col gap-2 
+                                <div key={idx} className={`min-h-[80px] sm:min-h-[100px] md:min-h-[120px] border border-slate-50/50 rounded-lg md:rounded-[2.5rem] p-1.5 md:p-4 transition-all relative flex flex-col gap-1 md:gap-2 
                                     ${dayObj.currentMonth ? 'bg-white shadow-sm' : 'bg-slate-50/30 opacity-40'} 
                                     ${isToday ? 'ring-2 ring-indigo-500/20 bg-indigo-50/10' : 'hover:shadow-lg hover:-translate-y-1'}`}>
 
-                                    <span className={`text-[11px] font-black w-7 h-7 flex items-center justify-center rounded-xl mb-1
+                                    <span className={`text-[10px] md:text-[11px] font-black w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-lg md:rounded-xl mb-1
                                         ${isToday ? 'bg-slate-900 text-white shadow-indigo-200' : 'text-slate-400'}`}>
                                         {dayObj.date.getDate()}
                                     </span>
 
-                                    <div className="flex flex-col gap-1.5 overflow-y-auto no-scrollbar max-h-[80px]">
+                                    <div className="flex flex-col gap-1 md:gap-1.5 overflow-y-auto no-scrollbar max-h-[60px] md:max-h-[80px]">
                                         {dayVisits.map(v => (
                                             <div
                                                 key={v.id}
                                                 onClick={() => onVisitClick(v)}
-                                                className={`text-[9px] p-2.5 rounded-xl cursor-pointer font-black uppercase tracking-tight transition-all hover:scale-[1.03] border-l-[3px] shadow-sm
+                                                className={`text-[8px] md:text-[9px] p-1.5 md:p-2.5 rounded-lg md:rounded-xl cursor-pointer font-black uppercase tracking-tight transition-all hover:scale-[1.03] border-l-[2px] md:border-l-[3px] shadow-sm
                                                     ${v.estado === 'confirmada' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' :
                                                         v.estado === 'cancelada' ? 'bg-rose-50 text-rose-700 border-rose-500 opacity-60' :
                                                             v.estado === 'realizada' ? 'bg-slate-50 text-slate-500 border-slate-300' :
                                                                 'bg-indigo-50 text-indigo-700 border-indigo-500'}`}
                                             >
-                                                <div className="flex items-center gap-1 opacity-60 mb-0.5 text-[8px]">
+                                                <div className="hidden md:flex items-center gap-1 opacity-60 mb-0.5 text-[8px]">
                                                     <Clock size={8} /> {v.hora}
                                                 </div>
                                                 <div className="truncate">{v.lead_nombre}</div>
@@ -566,25 +566,25 @@ const Visits: React.FC = () => {
 
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu">
-            <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-8 px-4 md:px-0">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 md:mb-16 gap-6 md:gap-8 px-4 md:px-0">
                 <div>
-                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-3">Agenda Visitas</h1>
-                    <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión de citas y recorridos presenciales.</p>
+                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-2 md:mb-3">Agenda Visitas</h1>
+                    <p className="text-slate-400 font-bold text-[10px] md:text-xs lg:text-base uppercase tracking-[0.15em] md:tracking-[0.2em]">Gestión de citas y recorridos presenciales.</p>
                 </div>
 
-                <div className="flex items-center gap-5 w-full md:w-auto">
-                    <div className="bg-slate-100/50 p-1.5 rounded-[1.8rem] flex shadow-inner border border-slate-100">
+                <div className="flex items-center gap-3 md:gap-5 w-full md:w-auto">
+                    <div className="bg-slate-100/50 p-1 md:p-1.5 rounded-[1.5rem] md:rounded-[1.8rem] flex shadow-inner border border-slate-100">
                         <button
                             onClick={() => setView('calendar')}
-                            className={`p-4 rounded-2xl transition-all ${view === 'calendar' ? 'bg-white shadow-xl text-slate-900' : 'text-slate-300 hover:text-slate-400'}`}
+                            className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition-all ${view === 'calendar' ? 'bg-white shadow-xl text-slate-900' : 'text-slate-300 hover:text-slate-400'}`}
                         >
-                            <CalendarDays size={20} />
+                            <CalendarDays size={18} className="md:w-5 md:h-5" />
                         </button>
                         <button
                             onClick={() => setView('pipeline')}
-                            className={`p-4 rounded-2xl transition-all ${view === 'pipeline' ? 'bg-white shadow-xl text-slate-900' : 'text-slate-300 hover:text-slate-400'}`}
+                            className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition-all ${view === 'pipeline' ? 'bg-white shadow-xl text-slate-900' : 'text-slate-300 hover:text-slate-400'}`}
                         >
-                            <LayoutList size={20} />
+                            <LayoutList size={18} className="md:w-5 md:h-5" />
                         </button>
                     </div>
 
@@ -593,9 +593,9 @@ const Visits: React.FC = () => {
                             setVisitToEdit(null);
                             setIsModalOpen(true);
                         }}
-                        className="flex-1 md:flex-none bg-slate-900 text-white px-12 py-5 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-indigo-100 active:scale-95"
+                        className="flex-1 md:flex-none bg-slate-900 text-white px-6 md:px-12 py-4 md:py-5 rounded-[2rem] md:rounded-[2.5rem] font-black text-[10px] md:text-[12px] uppercase tracking-[0.2em] md:tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-2 md:gap-3 shadow-2xl shadow-indigo-100 active:scale-95"
                     >
-                        <Plus size={20} strokeWidth={3} /> <span className="hidden sm:inline">{isSyncing ? 'Guardando...' : 'NUEVA VISITA'}</span><span className="sm:hidden">NUEVA</span>
+                        <Plus size={18} className="md:w-5 md:h-5" strokeWidth={3} /> <span className="hidden sm:inline">{isSyncing ? 'Guardando...' : 'NUEVA VISITA'}</span><span className="sm:hidden">NUEVA</span>
                     </button>
                 </div>
             </div>
