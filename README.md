@@ -1,20 +1,62 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# America Cardozo CRM
 
-# Run and deploy your AI Studio app
+CRM profesional para gestión de leads, propiedades, clientes y visitas en bienes raíces.
 
-This contains everything you need to run your app locally.
+## 🚀 Deployment en Vercel
 
-View your app in AI Studio: https://ai.studio/apps/drive/154Cifj-cVhUYS3PkJEZDqZ4U0CRbYNPj
+### Opción 1: Deploy Automático (Recomendado)
 
-## Run Locally
+1. Ve a [vercel.com](https://vercel.com)
+2. Inicia sesión con tu cuenta de GitHub
+3. Haz clic en "Add New Project"
+4. Importa el repositorio: `agentbotdev/america-cardozo-crm`
+5. Configura las **variables de entorno**:
+   - `VITE_SUPABASE_URL`: Tu URL de Supabase
+   - `VITE_SUPABASE_ANON_KEY`: Tu Anon Key de Supabase
+   - `VITE_TOKKO_API_KEY`: Tu API Key de Tokko
+6. Haz clic en "Deploy"
 
-**Prerequisites:**  Node.js
+### Opción 2: Deploy desde la CLI
 
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+# Hacer deploy
+vercel
+
+# Para producción
+vercel --prod
+```
+
+## 🔧 Variables de Entorno
+
+Crea un archivo `.env` con las siguientes variables:
+
+```env
+VITE_SUPABASE_URL=tu_supabase_url
+VITE_SUPABASE_ANON_KEY=tu_supabase_anon_key
+VITE_TOKKO_API_KEY=tu_tokko_api_key
+```
+
+## 📦 Instalación Local
+
+```bash
+npm install
+npm run dev
+```
+
+## 🏗️ Build para Producción
+
+```bash
+npm run build
+npm run preview
+```
+
+## 🌐 URL del Repositorio
+
+https://github.com/agentbotdev/america-cardozo-crm
+
+---
+
+**Desarrollado con React + Vite + TypeScript + Supabase**
