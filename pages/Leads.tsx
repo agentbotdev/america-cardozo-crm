@@ -111,7 +111,7 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed top-0 right-0 w-full sm:w-[500px] lg:w-[600px] h-full bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] z-200 flex flex-col border-l border-slate-100"
     >
-      <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+      <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
         <div className="flex items-center gap-5">
           <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-200 text-xl font-black">{lead.nombre[0]}</div>
           <div>
@@ -360,7 +360,7 @@ const LeadFormModal = ({ isOpen, onClose, onSave, leadToEdit }: any) => {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-slate-900/40" onClick={onClose}></div>
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -497,7 +497,7 @@ const Leads: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[190]"
+              className="fixed inset-0 bg-slate-900/40 z-[190]"
               onClick={() => setSelectedLead(null)}
             />
             <LeadDetailPanel
@@ -514,7 +514,7 @@ const Leads: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu px-4 md:px-0">
+      <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 px-4 md:px-0">
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-8">
           <div>
@@ -731,8 +731,9 @@ const Leads: React.FC = () => {
             )}
           </div>
         </div>
-      </>
-      );
+      </div>
+    </>
+  );
 };
 
-      export default Leads;
+export default Leads;

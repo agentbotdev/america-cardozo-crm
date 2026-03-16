@@ -505,7 +505,7 @@ const DevelopmentFormModal = ({ isOpen, onClose, onSave, devToEdit }: any) => {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-slate-900/60" onClick={onClose}></div>
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-full max-w-3xl rounded-[3rem] shadow-2xl relative z-[210] overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
           <div className="flex items-center gap-6">
@@ -706,7 +706,7 @@ const Properties = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 mb-16">
-        <div className="bg-white/50 backdrop-blur-xl p-2 rounded-[2.5rem] border border-white shadow-xl flex gap-1 overflow-x-auto no-scrollbar">
+        <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl flex gap-1 overflow-x-auto no-scrollbar">
           <TabButton active={activeTab === 'propiedades'} onClick={() => setActiveTab('propiedades')} icon={Home} label="Propiedades" />
           <TabButton active={activeTab === 'emprendimientos'} onClick={() => setActiveTab('emprendimientos')} icon={Building2} label="Emprendimientos" />
           <TabButton active={activeTab === 'acquisition'} onClick={() => setActiveTab('acquisition')} icon={Clock} label="Captaciones" />
@@ -714,7 +714,7 @@ const Properties = () => {
         <div className="flex gap-4 flex-1">
           <div className="flex-1 relative group">
             <Search size={22} className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-            <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white/50 backdrop-blur-xl border border-white rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
+            <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-100 rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
           </div>
           {activeTab === 'propiedades' && (
             <button

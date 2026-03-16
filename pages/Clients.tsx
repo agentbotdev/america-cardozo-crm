@@ -272,7 +272,7 @@ const Clients: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[190]"
+              className="fixed inset-0 bg-slate-900/40 z-[190]"
               onClick={() => setSelectedClient(null)}
             />
             <LeadDetailPanel
@@ -289,7 +289,7 @@ const Clients: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu">
+      <div className="max-w-[1600px] mx-auto animate-fade-in pb-16">
 
         <ClientFormModal
           isOpen={isModalOpen}
@@ -327,7 +327,7 @@ const Clients: React.FC = () => {
         {viewMode === 'metrics' && <ClientMetrics clients={clients} />}
 
         {/* Main Content Card */}
-        <div className="bg-white/40 backdrop-blur-xl rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-white/60 flex flex-col min-h-[700px]">
+        <div className="bg-white rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100 flex flex-col min-h-[700px]">
 
           {/* 1. TOP BAR: MAIN SECTIONS */}
           <div className="p-6 border-b border-slate-100 flex flex-wrap gap-3 bg-white/60 items-center sticky top-0 z-20">

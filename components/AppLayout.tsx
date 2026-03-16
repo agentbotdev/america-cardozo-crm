@@ -116,9 +116,8 @@ const AppLayout: React.FC = () => {
     { to: '/clientes', icon: UserCircle, label: 'Clientes' },
     { to: '/visitas', icon: CalendarDays, label: 'Visitas' },
     { to: '/reportes', icon: BarChart3, label: 'Reportes' },
-    { to: '/metrics', icon: Zap, label: 'Métricas' }, // Added item
+    { to: '/control-center', icon: Zap, label: 'Control Center' },
     { to: '/live-chat', icon: MessageSquare, label: 'Live Chat' },
-    { to: '/performance-ia', icon: Bot, label: 'Performance IA' },
     { to: '/soporte', icon: LifeBuoy, label: 'Soporte' },
     { to: '/configuracion', icon: Settings, label: 'Configuración' },
   ];

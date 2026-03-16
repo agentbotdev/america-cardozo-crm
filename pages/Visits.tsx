@@ -1,11 +1,137 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Visit, VisitStatus, Lead, Property } from '../types';
-import { Calendar as CalendarIcon, Clock, MapPin, CheckCircle, Plus, LayoutList, CalendarDays, X, Check, Map, User, ChevronLeft, ChevronRight, Edit, ArrowRight, Share2, Globe, Mail, Trash2, Building, Building2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, CheckCircle, Plus, LayoutList, CalendarDays, X, Check, Map, User, ChevronLeft, ChevronRight, Edit, ArrowRight, Share2, Globe, Mail, Trash2, Building, Building2, ChevronUp, ChevronDown, Search, Flame, Users } from 'lucide-react';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { visitsService } from '../services/visitsService';
 import { leadsService } from '../services/leadsService';
 import { propertiesService } from '../services/propertiesService';
+
+// ── LeadSearchInput: selector de lead con búsqueda ────────────────────────────
+const LeadSearchInput: React.FC<{
+    leads: Lead[];
+    selectedId: string;
+    onSelect: (lead: Lead) => void;
+}> = ({ leads, selectedId, onSelect }) => {
+    const [query, setQuery]   = useState('');
+    const [open, setOpen]     = useState(false);
+    const ref                  = useRef<HTMLDivElement>(null);
+    const selected             = leads.find(l => l.id === selectedId);
+
+    const filtered = useMemo(() =>
+        query.trim() === ''
+            ? leads
+            : leads.filter(l =>
+                l.nombre.toLowerCase().includes(query.toLowerCase()) ||
+                (l.email  || '').toLowerCase().includes(query.toLowerCase()) ||
+                (l.telefono || '').includes(query)
+            ),
+    [leads, query]);
+
+    // Cierra al clickear fuera
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const scoreColor = (score?: number) => {
+        if (!score) return 'bg-slate-100 text-slate-500';
+        if (score >= 80) return 'bg-rose-100 text-rose-600';
+        if (score >= 60) return 'bg-amber-100 text-amber-600';
+        return 'bg-emerald-100 text-emerald-600';
+    };
+
+    return (
+        <div ref={ref} className="relative">
+            {/* Trigger: muestra lead seleccionado o un input */}
+            <div
+                onClick={() => setOpen(o => !o)}
+                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 flex items-center gap-3 cursor-pointer hover:border-indigo-200 focus-within:ring-4 focus-within:ring-indigo-50 transition-all"
+            >
+                {selected ? (
+                    <>
+                        <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-black text-sm flex-shrink-0">
+                            {selected.nombre.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-black text-slate-800 truncate">{selected.nombre}</p>
+                            <p className="text-[10px] text-slate-400 truncate">{selected.telefono || selected.email || 'Sin contacto'}</p>
+                        </div>
+                        {(selected as any).score > 0 && (
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1 flex-shrink-0 ${scoreColor((selected as any).score)}`}>
+                                {(selected as any).score >= 70 && <Flame size={10} />}
+                                {(selected as any).score}/100
+                            </span>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <User size={16} className="text-slate-400" />
+                        <span className="text-sm text-slate-400 font-semibold">Seleccionar lead...</span>
+                    </>
+                )}
+                <ChevronDown size={14} className={`text-slate-400 ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+            </div>
+
+            {/* Dropdown */}
+            {open && (
+                <div className="absolute z-50 top-full mt-2 left-0 right-0 bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/60 overflow-hidden">
+                    {/* Campo de búsqueda */}
+                    <div className="p-3 border-b border-slate-50">
+                        <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
+                            <Search size={14} className="text-slate-400" />
+                            <input
+                                autoFocus
+                                value={query}
+                                onChange={e => setQuery(e.target.value)}
+                                placeholder="Buscar por nombre, email o tel..."
+                                className="flex-1 bg-transparent text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none"
+                            />
+                            {query && (
+                                <button onClick={() => setQuery('')}><X size={12} className="text-slate-400" /></button>
+                            )}
+                        </div>
+                    </div>
+                    {/* Lista de resultados */}
+                    <div className="max-h-52 overflow-y-auto">
+                        {filtered.length === 0 ? (
+                            <div className="py-8 text-center text-xs text-slate-400 font-semibold">
+                                <Users size={24} className="mx-auto mb-2 opacity-40" />
+                                Sin resultados para "{query}"
+                            </div>
+                        ) : filtered.map(lead => (
+                            <div
+                                key={lead.id}
+                                onClick={() => { onSelect(lead); setOpen(false); setQuery(''); }}
+                                className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-0 ${
+                                    lead.id === selectedId ? 'bg-indigo-50' : ''
+                                }`}
+                            >
+                                <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-black text-sm flex-shrink-0">
+                                    {lead.nombre.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-black text-slate-800 truncate">{lead.nombre}</p>
+                                    <p className="text-[10px] text-slate-400 truncate">{lead.telefono || lead.email || 'Sin contacto'}</p>
+                                </div>
+                                {(lead as any).score > 0 && (
+                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-lg flex items-center gap-0.5 ${scoreColor((lead as any).score)}`}>
+                                        {(lead as any).score >= 70 && <Flame size={9} />}
+                                        {(lead as any).score}
+                                    </span>
+                                )}
+                                {lead.id === selectedId && <Check size={14} className="text-indigo-500 flex-shrink-0" />}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const VisitFormModal: React.FC<{
     isOpen: boolean;
@@ -63,7 +189,7 @@ const VisitFormModal: React.FC<{
 
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-slate-900/60" onClick={onClose}></div>
             <div className="bg-white w-full max-w-lg rounded-[2rem] md:rounded-[2.5rem] shadow-2xl relative animate-fade-in p-4 md:p-10 border border-slate-100 max-h-[95vh] md:max-h-none flex flex-col">
                 <div className="flex justify-between items-center mb-6 md:mb-8">
                     <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{visitToEdit ? 'Editar Visita' : 'Agendar Visita'}</h2>
@@ -89,17 +215,11 @@ const VisitFormModal: React.FC<{
 
                     <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Lead / Cliente</label>
-                        <select
-                            value={formData.lead_id}
-                            onChange={e => {
-                                const lead = leads.find(l => l.id === e.target.value);
-                                setFormData({ ...formData, lead_id: e.target.value, lead_nombre: lead?.nombre || '' });
-                            }}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none"
-                        >
-                            <option value="">Seleccionar Lead...</option>
-                            {leads.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
-                        </select>
+                        <LeadSearchInput
+                            leads={leads}
+                            selectedId={formData.lead_id || ''}
+                            onSelect={lead => setFormData({ ...formData, lead_id: lead.id, lead_nombre: lead.nombre })}
+                        />
                     </div>
                     {formData.tipo_reunion === 'propiedad' && (
                         <div>
@@ -210,7 +330,7 @@ const VisitDetailPanel: React.FC<{
     onStatusChange: (v: Visit, s: VisitStatus) => void;
 }> = ({ visit, onClose, onEdit, onStatusChange }) => {
     return (
-        <div className="fixed inset-y-0 right-0 w-full sm:w-[90%] md:w-[550px] bg-white/95 backdrop-blur-2xl shadow-2xl z-200 transform transition-transform duration-500 animate-slide-in-right p-4 md:p-10 border-l border-slate-100 flex flex-col overflow-y-auto">
+        <div className="fixed inset-y-0 right-0 w-full sm:w-[90%] md:w-[550px] bg-white shadow-2xl z-200 transform transition-transform duration-500 animate-slide-in-right p-4 md:p-10 border-l border-slate-100 flex flex-col overflow-y-auto">
             <div className="flex justify-between items-start mb-6 md:mb-10">
                 <div>
                     <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Detalle Visita</h2>
@@ -366,7 +486,7 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
     ];
 
     return (
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] md:rounded-[3rem] p-3 md:p-4 lg:p-10 shadow-2xl shadow-slate-200/50 border border-white/60 h-full flex flex-col overflow-hidden">
+        <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-3 md:p-4 lg:p-10 shadow-2xl shadow-slate-200/50 border border-slate-100 h-full flex flex-col overflow-hidden">
             <div className="flex flex-col sm:flex-row items-center justify-between mb-6 md:mb-10 px-2 md:px-4 gap-4">
                 <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto justify-center">
                     <button onClick={() => changeMonth(-1)} className="p-2 md:p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition-all">
@@ -565,7 +685,7 @@ const Visits: React.FC = () => {
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 transform-gpu">
+        <div className="max-w-[1600px] mx-auto animate-fade-in pb-16">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 md:mb-16 gap-6 md:gap-8 px-4 md:px-0">
                 <div>
                     <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-2 md:mb-3">Agenda Visitas</h1>

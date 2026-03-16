@@ -7,8 +7,7 @@ import Leads from './pages/Leads';
 import Clients from './pages/Clients';
 import Visits from './pages/Visits';
 import Reports from './pages/Reports';
-import PerformanceIA from './pages/PerformanceIA';
-import Metrics from './pages/Metrics'; // Added import
+import ControlCenter from './pages/ControlCenter';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 
@@ -25,8 +24,7 @@ const App: React.FC = () => {
           <Route path="clientes" element={<Clients />} />
           <Route path="visitas" element={<Visits />} />
           <Route path="reportes" element={<Reports />} />
-          <Route path="performance-ia" element={<PerformanceIA />} />
-          <Route path="metrics" element={<Metrics />} /> {/* Added route */}
+          <Route path="control-center" element={<ControlCenter />} />
           <Route path="soporte" element={<Support />} />
           <Route path="live-chat" element={<LiveChat />} />
           <Route path="configuracion" element={<Settings />} />

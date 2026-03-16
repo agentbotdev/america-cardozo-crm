@@ -1,17 +1,17 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, DollarSign, Home, Key, Zap, Target,
-  Activity, Filter, Download, ChevronRight,
+  Activity, Filter, Download, ChevronRight, ChevronLeft,
   ArrowUpRight, ArrowDownRight, Sparkles, Clock, CheckCircle2,
   Building2, Briefcase, Layers, RotateCcw, Star, MoreHorizontal,
-  Eye
+  Eye, SlidersHorizontal, X as XIcon
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart as ReBarChart, Bar as ReBar, LineChart, Line,
-  CartesianGrid
+  CartesianGrid, PieChart, Pie, Cell
 } from 'recharts';
 import {
   BarChart,
@@ -417,6 +417,14 @@ const CaptacionDashboard = () => (
 const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'leads' | 'sales' | 'alquiler' | 'stock' | 'captacion'>('leads');
   const [isExporting, setIsExporting] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({ desde: '', hasta: '', vendedor: '', tipo: 'todos' });
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const tabOrder = ['leads', 'sales', 'alquiler', 'stock', 'captacion'] as const;
+  const currentIdx = tabOrder.indexOf(activeTab);
+  const goPrev = () => currentIdx > 0 && setActiveTab(tabOrder[currentIdx - 1]);
+  const goNext = () => currentIdx < tabOrder.length - 1 && setActiveTab(tabOrder[currentIdx + 1]);
 
   const categories = [
     { id: 'leads', label: 'LEADS', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -426,13 +434,37 @@ const Reports: React.FC = () => {
     { id: 'captacion', label: 'CAPTACIÓN', icon: Target, color: 'text-rose-600', bg: 'bg-rose-50' },
   ];
 
-  const handleExport = () => {
+  // Export CSV real
+  const handleExportCSV = () => {
+    const csvRows = [
+      ['Sección', 'Métrica', 'Valor', 'Tendencia'],
+      ['Leads', 'Total', '1,248', '+12%'],
+      ['Leads', 'Hot Leads', '87', '+5%'],
+      ['Ventas', 'Operaciones', '156', '+8%'],
+      ['Alquiler', 'Contratos Activos', '482', '+14%'],
+      ['Stock', 'Unidades', '842', '+32'],
+      ['Captación', 'Exclusivas', '38', '+19%'],
+    ];
+    const csvContent = csvRows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = `reporte_${activeTab}_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export PDF via print
+  const handleExportPDF = () => {
     setIsExporting(true);
     setTimeout(() => {
+      window.print();
       setIsExporting(false);
-      alert('Reporte de BI generado y procesado exitosamente.');
-    }, 2000);
+    }, 300);
   };
+
+  const handleExport = handleExportCSV;
 
   return (
     <div className="max-w-[1600px] mx-auto pb-24 animate-fade-in px-4 md:px-0 transform-gpu bg-[#F8FAFC]">
@@ -459,31 +491,110 @@ const Reports: React.FC = () => {
             {isExporting ? <RotateCcw size={16} className="animate-spin" /> : <Download size={16} />}
             {isExporting ? 'GENERANDO...' : 'EXPORT BI REPORT'}
           </button>
-          <button className="p-6 text-slate-500 hover:text-slate-900 transition-colors bg-slate-50 rounded-full border border-slate-100 shadow-inner">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-6 transition-colors rounded-full border shadow-inner ${showFilters ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'text-slate-500 hover:text-slate-900 bg-slate-50 border-slate-100'}`}
+          >
             <Filter size={24} />
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-3 mb-16 overflow-x-auto no-scrollbar pb-4 transform-gpu">
+      {/* Panel filtros avanzados (slide-down) */}
+      {showFilters && (
+        <div className="mb-8 p-5 bg-white border border-slate-100 rounded-3xl shadow-lg animate-fade-in">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+              <SlidersHorizontal size={15} className="text-indigo-500" /> Filtros Avanzados
+            </h3>
+            <button onClick={() => setShowFilters(false)} className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
+              <XIcon size={13} className="text-slate-500" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Desde</label>
+              <input type="date" value={filters.desde} onChange={e => setFilters({...filters, desde: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hasta</label>
+              <input type="date" value={filters.hasta} onChange={e => setFilters({...filters, hasta: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Vendedor</label>
+              <select value={filters.vendedor} onChange={e => setFilters({...filters, vendedor: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100 appearance-none">
+                <option value="">Todos</option>
+                <option value="carolina">Carolina</option>
+                <option value="andres">Andrés</option>
+                <option value="sofia">Sofía</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tipo</label>
+              <select value={filters.tipo} onChange={e => setFilters({...filters, tipo: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100 appearance-none">
+                <option value="todos">Venta + Alquiler</option>
+                <option value="venta">Solo Ventas</option>
+                <option value="alquiler">Solo Alquiler</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button onClick={() => setFilters({ desde: '', hasta: '', vendedor: '', tipo: 'todos' })}
+              className="px-4 py-2 text-xs font-black text-slate-500 hover:text-slate-800 transition-colors">
+              Limpiar filtros
+            </button>
+            <button onClick={() => setShowFilters(false)}
+              className="px-5 py-2 bg-slate-900 text-white text-xs font-black rounded-xl hover:bg-indigo-600 transition-colors active:scale-95">
+              Aplicar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs centrados + flechas navegación */}
+      <div className="flex items-center gap-2 mb-16 overflow-x-auto no-scrollbar pb-2">
+        {/* Flecha izquierda */}
+        <button
+          onClick={goPrev}
+          disabled={currentIdx === 0}
+          className="w-9 h-9 flex-shrink-0 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:border-slate-300 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        {/* Tabs */}
+        <div className="flex gap-2 flex-1 justify-center overflow-x-auto no-scrollbar">
         {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveTab(cat.id as any)}
-            className={`flex items-center gap-4 px-8 py-4 rounded-full font-black text-[10px] uppercase tracking-widest transition-all duration-300 border relative group shrink-0
+            className={`flex items-center gap-3 px-6 py-3.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all duration-300 border relative group shrink-0
               ${activeTab === cat.id
                 ? `${cat.bg} ${cat.color} border-transparent shadow-xl scale-105 z-10`
                 : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50 hover:text-slate-600'
               }`}
           >
-            <cat.icon size={18} className="shrink-0 transition-transform group-hover:scale-110" />
+            <cat.icon size={15} className="shrink-0 transition-transform group-hover:scale-110" />
             <span className="whitespace-nowrap">{cat.label}</span>
             {activeTab === cat.id && (
               <motion.div layoutId="bi-tab-marker" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-current rounded-full" />
             )}
           </button>
         ))}
+        </div>
+
+        {/* Flecha derecha */}
+        <button
+          onClick={goNext}
+          disabled={currentIdx === tabOrder.length - 1}
+          className="w-9 h-9 flex-shrink-0 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:border-slate-300 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+        >
+          <ChevronRight size={16} />
+        </button>
       </div>
 
       {/* Analytics Content */}

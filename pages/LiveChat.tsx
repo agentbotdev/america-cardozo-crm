@@ -25,9 +25,9 @@ const LiveChat: React.FC = () => {
     const [message, setMessage] = useState('');
 
     return (
-        <div className="h-[calc(100vh-160px)] flex bg-white/40 backdrop-blur-xl rounded-[4rem] border border-white/60 shadow-2xl overflow-hidden animate-fade-in transform-gpu">
+        <div className="h-[calc(100vh-160px)] flex bg-white rounded-[4rem] border border-slate-100 shadow-2xl overflow-hidden animate-fade-in">
             {/* Sidebar - Contacts */}
-            <div className="w-full md:w-[400px] border-r border-slate-100 flex flex-col bg-white/60 backdrop-blur-md">
+            <div className="w-full md:w-[400px] border-r border-slate-100 flex flex-col bg-slate-50/50">
                 <div className="p-10 border-b border-slate-50">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Mensajes</h2>
@@ -78,7 +78,7 @@ const LiveChat: React.FC = () => {
             {/* Chat Window */}
             <div className="hidden md:flex flex-1 flex-col relative bg-slate-50/20">
                 {/* Chat Header */}
-                <div className="h-28 flex items-center justify-between px-10 border-b border-slate-100 bg-white/60 backdrop-blur-md shrink-0">
+                <div className="h-28 flex items-center justify-between px-10 border-b border-slate-100 bg-white shrink-0">
                     <div className="flex items-center gap-5">
                         <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xl shadow-inner">
                             {selectedChat.name.charAt(0)}
@@ -103,7 +103,7 @@ const LiveChat: React.FC = () => {
                     {MOCK_MESSAGES.map(msg => (
                         <div key={msg.id} className={`flex ${msg.sent ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[70%] group ${msg.sent ? 'items-end' : 'items-start'}`}>
-                                <div className={`p-6 rounded-[2rem] text-sm font-bold leading-relaxed shadow-xl transform-gpu transition-all hover:scale-[1.02]
+                                <div className={`p-6 rounded-[2rem] text-sm font-bold leading-relaxed shadow-xl transition-all hover:scale-[1.02]
                                     ${msg.sent
                                         ? 'bg-slate-900 text-white rounded-tr-none shadow-slate-200'
                                         : 'bg-white text-slate-800 rounded-tl-none border border-slate-50 shadow-slate-200/50'
@@ -132,7 +132,7 @@ const LiveChat: React.FC = () => {
                 </div>
 
                 {/* Chat Input */}
-                <div className="p-10 bg-white/60 backdrop-blur-md border-t border-slate-100 shrink-0">
+                <div className="p-10 bg-white border-t border-slate-100 shrink-0">
                     <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-[2.5rem] p-3 pl-6 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-50 transition-all">
                         <button className="text-slate-300 hover:text-indigo-600 transition-colors"><Paperclip size={20} /></button>
                         <input
@@ -155,7 +155,7 @@ const LiveChat: React.FC = () => {
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="bg-slate-900/90 backdrop-blur-xl p-6 rounded-[2.5rem] shadow-2xl border border-white/10 pointer-events-auto"
+                            className="bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl border border-slate-700 pointer-events-auto"
                         >
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl">
