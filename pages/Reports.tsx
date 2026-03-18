@@ -418,7 +418,7 @@ const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'leads' | 'sales' | 'alquiler' | 'stock' | 'captacion'>('leads');
   const [isExporting, setIsExporting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ desde: '', hasta: '', vendedor: '', tipo: 'todos' });
+  const [filters, setFilters] = useState({ desde: '', hasta: '', tipo: 'todos' });
   const contentRef = useRef<HTMLDivElement>(null);
 
   const tabOrder = ['leads', 'sales', 'alquiler', 'stock', 'captacion'] as const;
@@ -523,16 +523,6 @@ const Reports: React.FC = () => {
                 className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100" />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Vendedor</label>
-              <select value={filters.vendedor} onChange={e => setFilters({...filters, vendedor: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100 appearance-none">
-                <option value="">Todos</option>
-                <option value="carolina">Carolina</option>
-                <option value="andres">Andrés</option>
-                <option value="sofia">Sofía</option>
-              </select>
-            </div>
-            <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tipo</label>
               <select value={filters.tipo} onChange={e => setFilters({...filters, tipo: e.target.value})}
                 className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100 appearance-none">
@@ -543,7 +533,7 @@ const Reports: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <button onClick={() => setFilters({ desde: '', hasta: '', vendedor: '', tipo: 'todos' })}
+            <button onClick={() => setFilters({ desde: '', hasta: '', tipo: 'todos' })}
               className="px-4 py-2 text-xs font-black text-slate-500 hover:text-slate-800 transition-colors">
               Limpiar filtros
             </button>

@@ -1,7 +1,7 @@
 {
-  "name": "agentbot-crm-v1",
+  "name": "agentbot-crm-v2",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,10 +14,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.474.0",
-    "node-fetch": "^3.3.2",
-    "playwright": "^1.58.2",
     "react": "^19.2.0",
-    "react-countup": "^6.5.3",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.1.5",
     "reaviz": "^16.0.0",
@@ -27,6 +24,9 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

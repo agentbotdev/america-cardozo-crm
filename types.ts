@@ -143,9 +143,11 @@ export interface Property {
   tareas_pendientes?: string[];
   prioridad_tareas?: string;
   captador_id?: string;
+  agente_asignado_id?: string;
   fecha_captacion?: string;
   propietario_nombre?: string;
   propietario_telefono?: string;
+  es_favorita?: boolean;
 
   // Analítica
   cantidad_consultas: number;
@@ -186,6 +188,7 @@ export interface Lead {
 
   estado_temperatura: ClientStatus;
   etapa_proceso: SalesStage;
+  estado_seguimiento?: string;
   score: number;
   probabilidad_cierre?: number;
   prioridad?: string;
@@ -289,4 +292,19 @@ export interface DashboardStats {
   negotiationAmount: number;
   trend?: string;
   delay?: number;
+}
+
+// Tareas
+export type TaskStatus = 'pendiente' | 'en_proceso' | 'completada';
+
+export interface CRMTask {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  estado: TaskStatus;
+  fecha_vencimiento?: string;
+  asignados: string[]; // IDs o nombres de múltiples asignados
+  lead_id?: string;
+  propiedad_id?: string;
+  created_at?: string;
 }

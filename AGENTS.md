@@ -58,12 +58,12 @@ ORQUESTADOR RAÍZ (este archivo)
 
 ### Bugs Críticos Abiertos
 ```
-BUG-001: API Key Gemini hardcodeada en geminiService.ts:9 → PELIGRO DE SEGURIDAD
-BUG-002: Google Client Secret en frontend (googleCalendarService.ts:5)
 BUG-003: Sin sistema de autenticación → CRM público
-BUG-004: Búsqueda global usa MOCK_DATA, no Supabase real
-BUG-005: typeof Property falta imagen_principal (AppLayout.tsx:248)
-BUG-006: geminiService.ts duplica openaiService.ts → dead code
+✅ BUG-001: API Key Gemini hardcodeada en geminiService.ts:9 (Fixed: Moved to Edge Function openai-chat)
+✅ BUG-002: Google Client Secret en frontend (Fixed: Moved to Edge Function google-calendar-auth)
+✅ BUG-004: Búsqueda global usa MOCK_DATA (Fixed: Uses Supabase)
+✅ BUG-005: typeof Property falta imagen_principal (Fixed: Uses foto_portada)
+✅ BUG-006: geminiService.ts duplica openaiService.ts (Fixed: Deleted)
 ```
 
 ---

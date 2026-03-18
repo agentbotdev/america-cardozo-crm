@@ -13,6 +13,7 @@ import { storageService } from '../services/storageService';
 import { openaiService } from '../services/openaiService';
 import PropertySearch from '../components/PropertySearch';
 import { OptimizedImage } from '../components/OptimizedImage';
+import { PropertyFilters, PropertyFiltersState } from '../components/properties/PropertyFilters';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SHARED UI SUB-COMPONENTS ---
@@ -129,8 +130,7 @@ const ImageUpload = ({ images, setImages, folder, uploading, setUploading }: {
 };
 
 // --- 1. REFINED PROPERTY CARD ---
-const PropertyCard = React.memo(({ property, onView }: any) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+const PropertyCard = React.memo(({ property, onView, onToggleFavorite }: any) => {
   const statusColors: Record<string, string> = {
     publicada: 'bg-emerald-500',
     pausada: 'bg-amber-500',
@@ -155,8 +155,8 @@ const PropertyCard = React.memo(({ property, onView }: any) => {
           <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-white shadow-xl backdrop-blur-md ring-1 ring-white/30 ${statusColors[property.estado] || 'bg-slate-500'}`}>{property.estado}</span>
           <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] bg-white/95 text-slate-900 shadow-xl backdrop-blur-md w-fit ring-1 ring-black/5">{property.tipo_operacion}</span>
         </div>
-        <button className={`absolute top-5 right-5 p-3 rounded-full backdrop-blur-md transition-all duration-500 z-10 ${isFavorite ? 'bg-rose-500 text-white' : 'bg-white/20 text-white hover:bg-white hover:text-rose-500'}`} onClick={(e) => { e.stopPropagation(); setIsFavorite(!isFavorite); }}>
-          <Heart size={20} fill={isFavorite ? "currentColor" : "none"} strokeWidth={3} />
+        <button className={`absolute top-5 right-5 p-3 rounded-full backdrop-blur-md transition-all duration-500 z-10 ${property.es_favorita ? 'bg-rose-500 text-white' : 'bg-white/20 text-white hover:bg-white hover:text-rose-500'}`} onClick={(e) => { e.stopPropagation(); onToggleFavorite(property); }}>
+          <Heart size={20} fill={property.es_favorita ? "currentColor" : "none"} strokeWidth={3} />
         </button>
         <div className="absolute bottom-6 left-8 right-8 text-white z-10">
           <div className="flex items-baseline gap-1.5 mb-1">
@@ -615,6 +615,19 @@ const Properties = () => {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Property[] | null>(null);
   const [searchExplanation, setSearchExplanation] = useState<string>('');
+  
+  // Paginación y Filtros
+  const [visibleCount, setVisibleCount] = useState(50);
+  const [filters, setFilters] = useState<PropertyFiltersState>({
+    searchTerm: '',
+    operationType: 'todas',
+    propertyTypes: [],
+    rooms: null,
+    bathrooms: null,
+    priceMin: null,
+    priceMax: null,
+    features: [],
+  });
 
   useEffect(() => { loadData(); }, []);
 
@@ -641,29 +654,75 @@ const Properties = () => {
 
   const displayedProps = useMemo(() => {
     if (activeTab === 'emprendimientos') return [];
+    
+    if (searchResults) return searchResults;
+
     let props = properties.filter(p => activeTab === 'propiedades' ? p.estado !== 'borrador' : p.estado === 'borrador');
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    
+    if (filters.searchTerm) {
+      const term = filters.searchTerm.toLowerCase();
       props = props.filter(p =>
         p.titulo?.toLowerCase().includes(term) ||
-        p.barrio?.toLowerCase().includes(term)
+        p.barrio?.toLowerCase().includes(term) ||
+        p.direccion?.toLowerCase().includes(term)
       );
     }
+    
+    if (filters.operationType !== 'todas') {
+      props = props.filter(p => p.tipo_operacion === filters.operationType);
+    }
+    
+    if (filters.propertyTypes.length > 0) {
+      props = props.filter(p => filters.propertyTypes.includes(p.tipo as any));
+    }
+    
+    if (filters.rooms !== null) {
+      props = props.filter(p => 
+        filters.rooms === 4 ? (p.dormitorios || 0) >= 4 : (p.dormitorios || 0) === filters.rooms
+      );
+    }
+    
+    if (filters.bathrooms !== null) {
+      props = props.filter(p => 
+        filters.bathrooms === 4 ? (p.banos_completos || 0) >= 4 : (p.banos_completos || 0) === filters.bathrooms
+      );
+    }
+    
+    if (filters.priceMin !== null) {
+      props = props.filter(p => {
+        const precio = p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler;
+        return (precio || 0) >= filters.priceMin!;
+      });
+    }
+    
+    if (filters.priceMax !== null) {
+      props = props.filter(p => {
+        const precio = p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler;
+        return (precio || 0) <= filters.priceMax!;
+      });
+    }
+    
+    if (filters.features.length > 0) {
+      props = props.filter(p => {
+        return filters.features.every(feature => (p as any)[feature] === true);
+      });
+    }
+
     return props;
-  }, [properties, activeTab, searchTerm]);
+  }, [properties, activeTab, filters, searchResults]);
 
   const displayedDevs = useMemo(() => {
     if (activeTab !== 'emprendimientos') return [];
     let devs = developments;
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    if (filters.searchTerm) {
+      const term = filters.searchTerm.toLowerCase();
       devs = devs.filter(d =>
         d.nombre?.toLowerCase().includes(term) ||
         d.ciudad?.toLowerCase().includes(term)
       );
     }
     return devs;
-  }, [developments, activeTab, searchTerm]);
+  }, [developments, activeTab, filters.searchTerm]);
 
   const handleSaveDev = async (dev: Partial<Development>) => {
     try {
@@ -682,6 +741,33 @@ const Properties = () => {
       setIsModalOpen(false);
       setEditingProp(null);
     } catch (e) { alert("Error al guardar"); }
+  };
+
+  const handleToggleFavorite = async (property: Property) => {
+    try {
+      const newStatus = !property.es_favorita;
+      // Actualización optimista
+      setProperties(prev => prev.map(p => p.id === property.id ? { ...p, es_favorita: newStatus } : p));
+      await propertiesService.saveProperty({ id: property.id, es_favorita: newStatus });
+    } catch (e) {
+      console.error("Error toggling favorite", e);
+      // Revertir
+      setProperties(prev => prev.map(p => p.id === property.id ? { ...p, es_favorita: property.es_favorita } : p));
+    }
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      searchTerm: '',
+      operationType: 'todas',
+      propertyTypes: [],
+      rooms: null,
+      bathrooms: null,
+      priceMin: null,
+      priceMax: null,
+      features: [],
+    });
+    setSearchResults(null);
   };
 
   return (
@@ -722,7 +808,21 @@ const Properties = () => {
         <div className="flex gap-4 flex-1">
           <div className="flex-1 relative group">
             <Search size={22} className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-            <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-100 rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
+            <input 
+              type="text" 
+              placeholder="Buscar por título, barrio o dirección..." 
+              value={filters.searchTerm} 
+              onChange={e => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))} 
+              className="w-full bg-white border border-slate-100 rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" 
+            />
+            {filters.searchTerm && (
+              <button 
+                onClick={() => setFilters(prev => ({ ...prev, searchTerm: '' }))}
+                className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
           {activeTab === 'propiedades' && (
             <button
@@ -742,26 +842,70 @@ const Properties = () => {
           <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Sincronizando Inventario Real Estate...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-12">
-          {activeTab === 'emprendimientos' ? (
-            developments.length > 0 ? (
-              displayedDevs.map(dev => <DevelopmentCard key={dev.id} development={dev} onView={(d) => { setEditingDev(d); setIsDevModalOpen(true); }} />)
-            ) : (
-              <div className="col-span-full py-40 text-center bg-white/20 rounded-[4rem] border-2 border-dashed border-slate-200">
-                <Building2 size={60} className="mx-auto text-slate-200 mb-6" />
-                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No hay emprendimientos registrados</p>
-              </div>
-            )
-          ) : (
-            properties.length > 0 ? (
-              displayedProps.map(prop => <PropertyCard key={prop.id} property={prop} onView={(p: any, edit = false) => { if (edit) { setEditingProp(p); setIsModalOpen(true); } else setViewingProp(p); }} />)
-            ) : (
-              <div className="col-span-full py-40 text-center bg-white/20 rounded-[4rem] border-2 border-dashed border-slate-200">
-                <Home size={60} className="mx-auto text-slate-200 mb-6" />
-                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No se encontraron unidades</p>
-              </div>
-            )
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Sidebar Filtrado (solo propiedades) */}
+          {activeTab !== 'emprendimientos' && (
+            <div className="w-full lg:w-[320px] flex-shrink-0">
+              <PropertyFilters 
+                filters={filters} 
+                setFilters={setFilters} 
+                onClear={handleClearFilters}
+                resultsCount={displayedProps.length}
+              />
+            </div>
           )}
+
+          {/* Grilla Principal */}
+          <div className="flex-1 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
+              {activeTab === 'emprendimientos' ? (
+                developments.length > 0 ? (
+                  displayedDevs.map(dev => <DevelopmentCard key={dev.id} development={dev} onView={(d) => { setEditingDev(d); setIsDevModalOpen(true); }} />)
+                ) : (
+                  <div className="col-span-full py-40 text-center bg-white/20 rounded-[4rem] border-2 border-dashed border-slate-200">
+                    <Building2 size={60} className="mx-auto text-slate-200 mb-6" />
+                    <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No hay emprendimientos registrados</p>
+                  </div>
+                )
+              ) : (
+                properties.length > 0 ? (
+                  <>
+                    {displayedProps.slice(0, visibleCount).map(prop => (
+                      <PropertyCard 
+                        key={prop.id} 
+                        property={prop} 
+                        onView={(p: any, edit = false) => { if (edit) { setEditingProp(p); setIsModalOpen(true); } else setViewingProp(p); }} 
+                        onToggleFavorite={handleToggleFavorite}
+                      />
+                    ))}
+                    {displayedProps.length === 0 && (
+                      <div className="col-span-full py-40 text-center bg-white/20 rounded-[4rem] border-2 border-dashed border-slate-200">
+                        <Home size={60} className="mx-auto text-slate-200 mb-6" />
+                        <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No se encontraron unidades con esos filtros</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="col-span-full py-40 text-center bg-white/20 rounded-[4rem] border-2 border-dashed border-slate-200">
+                    <Home size={60} className="mx-auto text-slate-200 mb-6" />
+                    <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Aún no hay propiedades</p>
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Paginación "Cargar más" */}
+            {activeTab !== 'emprendimientos' && displayedProps.length > visibleCount && (
+              <div className="mt-12 flex justify-center pb-20">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 50)}
+                  className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full font-black text-xs uppercase tracking-widest transition-all shadow-sm"
+                >
+                  Cargar más propiedades
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -773,9 +917,6 @@ const Properties = () => {
         isOpen={isSearchModalOpen}
         onClose={() => {
           setIsSearchModalOpen(false);
-          if (searchResults === null) {
-            setSearchTerm('');
-          }
         }}
         properties={properties}
         onResults={(results, explanation) => {

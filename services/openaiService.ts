@@ -4,10 +4,9 @@
  */
 
 import { Property } from '../types';
+import { supabase } from './supabaseClient';
 
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = 'gpt-3.5-turbo'; // Using GPT-3.5 Turbo - reliable and cost-effective
+const MODEL = 'gpt-3.5-turbo';
 
 interface OpenAIMessage {
     role: 'system' | 'user' | 'assistant';
@@ -15,45 +14,21 @@ interface OpenAIMessage {
 }
 
 async function callOpenAI(messages: OpenAIMessage[], temperature: number = 0.7): Promise<string> {
-    // Validate API key
-    if (!OPENAI_API_KEY) {
-        console.error('❌ VITE_OPENAI_API_KEY not configured');
-        throw new Error('OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your environment variables.');
-    }
-
-    console.log('🤖 Calling OpenAI API with model:', MODEL);
+    console.log('🤖 Calling OpenAI API via Edge Function with model:', MODEL);
 
     try {
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: MODEL,
-                messages,
-                temperature,
-                max_tokens: 1000
-            })
+        const { data, error } = await supabase.functions.invoke('openai-chat', {
+            body: { messages, temperature }
         });
 
-        if (!response.ok) {
-            const error = await response.json();
-            console.error('❌ OpenAI API Error Response:', error);
-
-            // Handle specific error cases
-            if (error.error?.code === 'model_not_found') {
-                throw new Error(`El modelo ${MODEL} no está disponible. Por favor contacta al administrador.`);
-            }
-
-            throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+        if (error) {
+            console.error('❌ OpenAI Edge Function Error:', error);
+            throw new Error(`OpenAI API error: ${error.message || 'Unknown error'}`);
         }
 
-        const data = await response.json();
         console.log('✅ OpenAI Response received');
 
-        const content = data.choices[0]?.message?.content || '';
+        const content = data.choices && data.choices[0]?.message?.content || '';
 
         if (!content) {
             throw new Error('OpenAI returned empty response');
@@ -62,8 +37,7 @@ async function callOpenAI(messages: OpenAIMessage[], temperature: number = 0.7):
         return content;
     } catch (error: any) {
         console.error('❌ Error calling OpenAI:', error);
-
-        // Provide user-friendly error messages
+        
         if (error.message?.includes('Failed to fetch')) {
             throw new Error('No se pudo conectar con el servidor de IA. Verifica tu conexión a internet.');
         }
@@ -249,15 +223,17 @@ Requisitos:
 - NO uses emojis
 - Responde SOLO con el título mejorado, sin comillas ni texto adicional`;
 
+        // Generate prompt with context
         const userPrompt = `Título actual: "${currentTitle}"
+Características:
+- Tipo: ${property.tipo}
+- Operación: ${property.tipo_operacion}
+- Ambientes: ${property.ambientes}
+- Superficie: ${property.sup_cubierta || property.sup_total_lote} m2
+- Barrio: ${property.barrio}
+- Precio: ${property.moneda} ${property.tipo_operacion === 'venta' ? property.precio_venta : property.precio_alquiler}
 
-Detalles de la propiedad:
-- Tipo: ${property.tipo || 'N/A'}
-- Operación: ${property.tipo_operacion || 'N/A'}
-- Dormitorios: ${property.dormitorios || 'N/A'}
-- Baños: ${property.banos_completos || 'N/A'}
-- Ubicación: ${property.barrio || property.ciudad || 'N/A'}
-- Superficie: ${property.sup_cubierta || 'N/A'}m²`;
+Mejora el título ahora:`;
 
         const enhanced = await callOpenAI([
             { role: 'system', content: systemPrompt },
@@ -307,7 +283,7 @@ Detalles de la propiedad:
 - Baños: ${property.banos_completos || 'N/A'}
 - Ubicación: ${property.barrio || property.ciudad || 'N/A'}
 - Superficie cubierta: ${property.sup_cubierta || 'N/A'}m²
-- Superficie total: ${property.sup_total || 'N/A'}m²
+- Superficie total lote/terreno: ${property.sup_total_lote || 'N/A'}m²
 - Amenidades: ${amenidades.length > 0 ? amenidades.join(', ') : 'N/A'}`;
 
         const enhanced = await callOpenAI([
