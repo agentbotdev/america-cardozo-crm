@@ -18,19 +18,7 @@ export const propertiesService = {
 
         let query = supabase
             .from('propiedades')
-            .select(`
-                *,
-                fotos (
-                    id,
-                    url,
-                    url_original,
-                    thumbnail,
-                    es_portada,
-                    es_plano,
-                    orden,
-                    descripcion
-                )
-            `);
+            .select('*');
 
         if (activeType === 'published') {
             query = query.neq('estado', 'borrador');
@@ -38,38 +26,66 @@ export const propertiesService = {
             query = query.eq('estado', 'borrador');
         }
 
-        const { data, error } = await query.order('created_at', { ascending: false }).limit(100);
+        // 1. Fetch properties sin ordenar por 'created_at' en DB para evitar error 42703 si la tabla fue modificada
+        const { data, error } = await query.limit(100);
 
         if (error) {
             console.error('❌ Supabase fetch error:', error);
             throw error;
         }
 
-        const props = (data || []).map(p => {
-            // Find cover photo with fallback
-            const coverPhoto = p.fotos?.find((f: any) => f.es_portada) || p.fotos?.[0];
-
-            // Priorizar thumbnail > url > foto_portada_url > default
-            let foto_portada = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400';
-
-            if (coverPhoto?.thumbnail) {
-                foto_portada = coverPhoto.thumbnail;
-            } else if (coverPhoto?.url) {
-                foto_portada = coverPhoto.url;
-            } else if (p.foto_portada_url) {
-                foto_portada = p.foto_portada_url;
+        // Fetch photos separately to avoid PostgREST relationship errors
+        let allFotos: any[] = [];
+        if (data && data.length > 0) {
+            const propertyIds = data.map(p => p.id || p.tokko_id || '').filter(id => id !== '');
+            if (propertyIds.length > 0) {
+                const { data: fotosData } = await supabase
+                    .from('fotos')
+                    .select('*')
+                    .in('propiedad_id', propertyIds);
+                
+                if (fotosData) {
+                    allFotos = fotosData;
+                }
             }
+        }
+
+        const props = (data || []).map(p => {
+            const propertyIdString = String(p.tokko_id || p.id || '');
+            const propFotos = allFotos
+                .filter(f => f.propiedad_id === propertyIdString)
+                .sort((a: any, b: any) => (a.orden || 0) - (b.orden || 0));
+
+            // Cover photo: DB column > photos table > default
+            const coverPhoto = propFotos.find((f: any) => f.es_portada) || propFotos[0];
+            const foto_portada = p.foto_portada_url
+                || coverPhoto?.thumbnail
+                || coverPhoto?.url
+                || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400';
+
+            // Price: use separated columns (already in DB from Tokko sync)
+            const precio = p.tipo_operacion === 'venta'
+                ? (p.precio_venta || p.precio)
+                : (p.precio_alquiler || p.precio);
+            const moneda = p.tipo_operacion === 'venta'
+                ? (p.moneda_venta || p.moneda || 'USD')
+                : (p.moneda_alquiler || p.moneda || 'ARS');
 
             return {
                 ...p,
-                id: String(p.id),
+                id: propertyIdString,
+                fotos: propFotos,
+                titulo: p.titulo || p.direccion || `Propiedad en ${p.barrio || p.ciudad || 'Venta/Alquiler'}`,
                 tipo: p.tipo_propiedad || 'otro',
                 direccion_completa: p.direccion || p.direccion_publica || '',
+                ambientes: p.ambientes || 0,
+                dormitorios: p.dormitorios || 0,
                 banos_completos: p.banos || 0,
-                sup_cubierta: p.superficie_cubierta || 0,
+                sup_cubierta: p.superficie_cubierta || p.metros_cubiertos || 0,
+                sup_total: p.superficie_total || 0,
                 foto_portada,
-                moneda: p.tipo_operacion === 'venta' ? (p.moneda_venta || 'USD') : (p.moneda_alquiler || 'ARS'),
-                precio: p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler,
+                moneda,
+                precio,
             };
         });
 

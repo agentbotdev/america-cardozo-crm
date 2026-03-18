@@ -619,16 +619,24 @@ const Properties = () => {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      const [pData, dData] = await Promise.all([
-        propertiesService.fetchProperties(),
-        developmentsService.fetchDevelopments()
-      ]);
+      const pData = await propertiesService.fetchProperties();
+      console.log('Fetched properties inside component:', pData?.length);
       setProperties(pData as any);
+    } catch (error) { 
+      console.error('Error fetching properties', error); 
+    }
+
+    try {
+      const dData = await developmentsService.fetchDevelopments();
       setDevelopments(dData as any);
-    } catch (error) { console.error(error); }
-    finally { setLoading(false); }
+    } catch (error) { 
+      console.error('Error fetching developments', error); 
+    }
+
+    setLoading(false);
   };
 
   const displayedProps = useMemo(() => {
