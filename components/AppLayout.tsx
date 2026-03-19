@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../services/supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/authService';
 
 interface LayoutContextType {
   sidebarOpen: boolean;
@@ -78,6 +80,16 @@ const AppLayout: React.FC = () => {
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, profile, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+        await authService.signOut();
+        navigate('/login');
+    } catch (err) {
+        console.error('Logout error:', err);
+    }
+  };
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('code');
@@ -164,8 +176,8 @@ const AppLayout: React.FC = () => {
     { to: '/clients', icon: UserCircle, label: 'Clientes' },
     { to: '/visits', icon: CalendarDays, label: 'Visitas' },
     { to: '/tasks', icon: CheckSquare, label: 'Tareas' },
-    { to: '/reports', icon: BarChart3, label: 'Reportes' },
     { to: '/control', icon: Zap, label: 'Centro Control' },
+    { to: '/reports', icon: BarChart3, label: 'Reportes' },
     { to: '/settings', icon: Settings, label: 'Configuración' },
     { to: '/support', icon: LifeBuoy, label: 'Soporte' },
   ];
@@ -249,7 +261,14 @@ const AppLayout: React.FC = () => {
                   {isCollapsed ? <ChevronRight size={18} /> : <div className="flex items-center gap-2 px-2"><ChevronLeft size={18} /><span className="text-xs font-bold">Contraer Menú</span></div>}
                 </button>
               )}
-              <SidebarItem to="/logout" icon={LogOut} label="Cerrar Sesión" isCollapsed={isCollapsed} />
+              <button 
+                onClick={handleLogout}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold transition-all duration-300 ease-out mb-1 relative overflow-hidden group active:scale-95 text-rose-500 hover:bg-rose-50 ${isCollapsed ? 'justify-center px-0 w-12 mx-auto' : ''}`}
+                title={isCollapsed ? "Cerrar Sesión" : ""}
+              >
+                <LogOut size={18} className="shrink-0 transition-transform duration-300 group-hover:scale-110" />
+                {!isCollapsed && <span className="truncate whitespace-nowrap">Cerrar Sesión</span>}
+              </button>
             </div>
           </div>
         </motion.aside>
@@ -376,13 +395,17 @@ const AppLayout: React.FC = () => {
                   )}
                 </AnimatePresence>
               </div>
-              <div className="flex items-center gap-3 p-1.5 pr-4 bg-slate-50 hover:bg-white rounded-2xl border border-slate-100 transition-all cursor-pointer group shrink-0">
-                <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center shadow-md border border-white">
-                  <img src="/LOGOCORTOAGENT.jpg" alt="Logo" className="w-full h-full object-cover" />
+              <div className="flex items-center gap-3 p-1.5 pr-4 bg-slate-50 hover:bg-white rounded-2xl border border-slate-100 transition-all cursor-pointer group shrink-0" onClick={() => navigate('/settings')}>
+                <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center shadow-md border border-white bg-indigo-100 text-indigo-600 font-black text-[10px]">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}</span>
+                  )}
                 </div>
                 <div className="hidden md:block">
-                  <p className="text-[11px] font-black text-slate-900 leading-none">Admin Bot</p>
-                  <p className="text-[8px] font-black text-slate-400 uppercase mt-1 leading-none tracking-widest">Soporte</p>
+                  <p className="text-[11px] font-black text-slate-900 leading-none">{profile?.full_name || 'Usuario'}</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase mt-1 leading-none tracking-widest">{profile?.role || 'Cargando...'}</p>
                 </div>
               </div>
             </div>

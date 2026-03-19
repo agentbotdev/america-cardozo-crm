@@ -30,12 +30,16 @@ export const leadsService = {
         const leads = (data || []).map(l => ({
             ...l,
             id: String(l.id),
-            estado_temperatura: l.temperatura,
-            etapa_proceso: l.etapa,
+            nombre: l.nombre || 'Sin Nombre',
+            telefono: l.telefono || '',
+            email: l.email || '',
+            fuente_consulta: l.fuente_consulta || l.origen || 'WhatsApp',
+            estado_temperatura: l.estado_temperatura || l.temperatura || 'Frio',
+            etapa_proceso: l.etapa_proceso || l.etapa || 'Inicio',
             estado_seguimiento: l.estado_seguimiento || 'Nuevo',
-            busca_venta: l.tipo_operacion_buscada === 'venta',
-            busca_alquiler: l.tipo_operacion_buscada === 'alquiler',
-            propiedades_enviadas_ids: l.propiedades_recomendadas || []
+            busca_venta: l.busca_venta || l.tipo_operacion_buscada === 'venta',
+            busca_alquiler: l.busca_alquiler || l.tipo_operacion_buscada === 'alquiler',
+            propiedades_enviadas_ids: l.propiedades_enviadas_ids || l.propiedades_recomendadas || []
         }));
 
         const endTime = performance.now();
@@ -104,6 +108,33 @@ export const leadsService = {
         }
         
         leadsService.invalidateCache();
+    },
+
+    updateLeadStage: async (leadId: string, newStage: string) => {
+        const { error } = await supabase
+            .from('leads')
+            .update({ 
+                etapa_proceso: newStage, 
+                etapa: newStage, // fallback
+                updated_at: new Date().toISOString() 
+            })
+            .eq('id', leadId);
+        
+        if (error) {
+            console.error('❌ Error updating lead stage:', error);
+            throw error;
+        }
+        
+        leadsService.invalidateCache();
+        return { error: null };
+    },
+
+    createLead: async (leadData: any) => {
+        return leadsService.saveLead(leadData);
+    },
+
+    updateLead: async (id: string, leadData: any) => {
+        return leadsService.saveLead({ ...leadData, id });
     },
 
     async assignPropertyToLead(leadId: string, propertyId: string) {

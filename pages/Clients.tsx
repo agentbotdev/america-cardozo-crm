@@ -75,6 +75,12 @@ export const Clients: React.FC = () => {
     setLoading(false);
   };
 
+  const handleEditClick = (e: React.MouseEvent, client: Client) => {
+    e.stopPropagation();
+    setClientToEdit(client);
+    setIsModalOpen(true);
+  };
+
   const filteredClients = clients.filter(c => {
     const s = searchTerm.toLowerCase();
     const matchSearch = c.nombre?.toLowerCase().includes(s) || c.email?.toLowerCase().includes(s);

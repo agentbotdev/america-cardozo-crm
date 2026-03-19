@@ -5,7 +5,7 @@ import {
   Plus, MapPin, Search, X, Heart,
   BedDouble, Bath, Ruler, ChevronLeft, ChevronRight, Home, Info, Layers,
   Building2, Image as ImageIcon, Edit, Upload, Trash2, CheckCircle2,
-  Trash, Save, Map as MapIcon, ArrowLeft, Clock, Sparkles, Loader2, Bot
+  Trash, Save, Map as MapIcon, ArrowLeft, Clock, Sparkles, Loader2, Bot, SlidersHorizontal
 } from 'lucide-react';
 import { propertiesService } from '../services/propertiesService';
 import { developmentsService, Development } from '../services/developmentsService';
@@ -353,6 +353,8 @@ const PropertyFormModal = ({ isOpen, onClose, onSave, propertyToEdit }: any) => 
 
   if (!isOpen) return null;
 
+  const featureKeys: (keyof Property)[] = ['cochera', 'balcon', 'terraza', 'patio', 'pileta', 'parrilla', 'seguridad_24hs', 'apto_profesional', 'acepta_mascotas'];
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose}></div>
@@ -442,9 +444,9 @@ const PropertyFormModal = ({ isOpen, onClose, onSave, propertyToEdit }: any) => 
                 <div className="space-y-2"><label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1"><Ruler size={14} /> Sup. Cub.</label> <input type="number" value={formData.sup_cubierta || ''} onChange={e => updateField('sup_cubierta', Number(e.target.value))} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none" /></div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                {['cochera', 'balcon', 'terraza', 'patio', 'pileta', 'parrilla', 'seguridad_24hs', 'apto_profesional', 'apto_mascotas'].map((feature) => (
+                {featureKeys.map((feature) => (
                   <label key={feature} className="flex items-center gap-4 p-5 bg-slate-50 rounded-[1.5rem] border border-slate-100 cursor-pointer hover:bg-white transition-all">
-                    <input type="checkbox" checked={(formData as any)[feature] || false} onChange={e => updateField(feature as any, e.target.checked)} className="w-6 h-6 rounded-lg accent-indigo-500" />
+                    <input type="checkbox" checked={(formData as any)[feature] || false} onChange={e => updateField(feature, e.target.checked)} className="w-6 h-6 rounded-lg accent-indigo-500" />
                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{feature.replace('_', ' ')}</span>
                   </label>
                 ))}
@@ -615,7 +617,10 @@ const Properties = () => {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Property[] | null>(null);
   const [searchExplanation, setSearchExplanation] = useState<string>('');
-  
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false); // New state for filter drawer
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null); // For PropertyDetailsModal
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // For PropertyDetailsModal
+
   // Paginación y Filtros
   const [visibleCount, setVisibleCount] = useState(50);
   const [filters, setFilters] = useState<PropertyFiltersState>({
@@ -627,6 +632,31 @@ const Properties = () => {
     priceMin: null,
     priceMax: null,
     features: [],
+    moneda: 'todas',
+    barrio: '',
+    superficieMin: null,
+    superficieMax: null,
+    antiguedadRange: null,
+    estadoPublicacion: [],
+    sortBy: '',
+  });
+
+  const clearFilters = () => setFilters({
+    searchTerm: '',
+    operationType: 'todas',
+    propertyTypes: [],
+    rooms: null,
+    bathrooms: null,
+    priceMin: null,
+    priceMax: null,
+    features: [],
+    moneda: 'todas',
+    barrio: '',
+    superficieMin: null,
+    superficieMax: null,
+    antiguedadRange: null,
+    estadoPublicacion: [],
+    sortBy: '',
   });
 
   useEffect(() => { loadData(); }, []);
@@ -652,6 +682,12 @@ const Properties = () => {
     setLoading(false);
   };
 
+  // Extract unique barrios for filter autocomplete
+  const availableBarrios = useMemo(() => {
+    const barrios = new Set(properties.map(p => p.barrio).filter(Boolean));
+    return Array.from(barrios).sort();
+  }, [properties]);
+
   const displayedProps = useMemo(() => {
     if (activeTab === 'emprendimientos') return [];
     
@@ -659,52 +695,123 @@ const Properties = () => {
 
     let props = properties.filter(p => activeTab === 'propiedades' ? p.estado !== 'borrador' : p.estado === 'borrador');
     
+    // Text search
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase();
       props = props.filter(p =>
         p.titulo?.toLowerCase().includes(term) ||
         p.barrio?.toLowerCase().includes(term) ||
-        p.direccion?.toLowerCase().includes(term)
+        (p as any).direccion?.toLowerCase().includes(term) ||
+        p.direccion_completa?.toLowerCase().includes(term)
       );
     }
     
+    // Operation type
     if (filters.operationType !== 'todas') {
       props = props.filter(p => p.tipo_operacion === filters.operationType);
     }
     
+    // Property types
     if (filters.propertyTypes.length > 0) {
       props = props.filter(p => filters.propertyTypes.includes(p.tipo as any));
     }
+
+    // Barrio / location
+    if (filters.barrio) {
+      const term = filters.barrio.toLowerCase();
+      props = props.filter(p =>
+        p.barrio?.toLowerCase().includes(term) ||
+        p.zona?.toLowerCase().includes(term) ||
+        p.ciudad?.toLowerCase().includes(term)
+      );
+    }
+
+    // Moneda filter
+    if (filters.moneda !== 'todas') {
+      props = props.filter(p => p.moneda === filters.moneda);
+    }
     
+    // Rooms
     if (filters.rooms !== null) {
       props = props.filter(p => 
         filters.rooms === 4 ? (p.dormitorios || 0) >= 4 : (p.dormitorios || 0) === filters.rooms
       );
     }
     
+    // Bathrooms
     if (filters.bathrooms !== null) {
       props = props.filter(p => 
         filters.bathrooms === 4 ? (p.banos_completos || 0) >= 4 : (p.banos_completos || 0) === filters.bathrooms
       );
     }
     
+    // Price range
     if (filters.priceMin !== null) {
       props = props.filter(p => {
         const precio = p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler;
         return (precio || 0) >= filters.priceMin!;
       });
     }
-    
     if (filters.priceMax !== null) {
       props = props.filter(p => {
         const precio = p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler;
         return (precio || 0) <= filters.priceMax!;
       });
     }
+
+    // Superficie
+    if (filters.superficieMin !== null) {
+      props = props.filter(p => (p.sup_cubierta || 0) >= filters.superficieMin!);
+    }
+    if (filters.superficieMax !== null) {
+      props = props.filter(p => (p.sup_cubierta || 0) <= filters.superficieMax!);
+    }
+
+    // Antigüedad
+    if (filters.antiguedadRange) {
+      props = props.filter(p => {
+        const ant = (p as any).antiguedad || 0;
+        switch (filters.antiguedadRange) {
+          case '0-5': return ant <= 5;
+          case '6-15': return ant >= 6 && ant <= 15;
+          case '16-30': return ant >= 16 && ant <= 30;
+          case '30+': return ant > 30;
+          default: return true;
+        }
+      });
+    }
     
+    // Features
     if (filters.features.length > 0) {
       props = props.filter(p => {
         return filters.features.every(feature => (p as any)[feature] === true);
+      });
+    }
+
+    // Estado publicación
+    if (filters.estadoPublicacion.length > 0) {
+      props = props.filter(p => filters.estadoPublicacion.includes(p.estado as any));
+    }
+
+    // Sorting
+    if (filters.sortBy) {
+      props = [...props].sort((a, b) => {
+        switch (filters.sortBy) {
+          case 'recent': return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+          case 'oldest': return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          case 'price-asc': {
+            const pa = a.tipo_operacion === 'venta' ? (a.precio_venta || 0) : (a.precio_alquiler || 0);
+            const pb = b.tipo_operacion === 'venta' ? (b.precio_venta || 0) : (b.precio_alquiler || 0);
+            return pa - pb;
+          }
+          case 'price-desc': {
+            const pa = a.tipo_operacion === 'venta' ? (a.precio_venta || 0) : (a.precio_alquiler || 0);
+            const pb = b.tipo_operacion === 'venta' ? (b.precio_venta || 0) : (b.precio_alquiler || 0);
+            return pb - pa;
+          }
+          case 'surface-desc': return (b.sup_cubierta || 0) - (a.sup_cubierta || 0);
+          default: return 0;
+        }
       });
     }
 
@@ -757,16 +864,7 @@ const Properties = () => {
   };
 
   const handleClearFilters = () => {
-    setFilters({
-      searchTerm: '',
-      operationType: 'todas',
-      propertyTypes: [],
-      rooms: null,
-      bathrooms: null,
-      priceMin: null,
-      priceMax: null,
-      features: [],
-    });
+    clearFilters();
     setSearchResults(null);
   };
 
@@ -825,13 +923,31 @@ const Properties = () => {
             )}
           </div>
           {activeTab === 'propiedades' && (
-            <button
-              onClick={() => setIsSearchModalOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
-            >
-              <Bot size={20} />
-              <span className="hidden md:inline">Buscador IA</span>
-            </button>
+            <>
+              <button
+                onClick={() => setIsFiltersOpen(true)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-[2.5rem] border transition-all font-black text-xs uppercase tracking-widest ${
+                  filters.operationType !== 'todas' || filters.propertyTypes.length > 0 || filters.rooms || filters.bathrooms || filters.priceMin || filters.priceMax || filters.features.length > 0 || filters.barrio || filters.moneda !== 'todas' || filters.superficieMin || filters.superficieMax || filters.antiguedadRange || filters.estadoPublicacion.length > 0 || filters.sortBy
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                    : 'bg-white border-slate-100 text-slate-400 hover:text-slate-900 shadow-xl'
+                }`}
+              >
+                <SlidersHorizontal size={18} />
+                <span>Filtros</span>
+                {(filters.propertyTypes.length > 0 || filters.features.length > 0 || filters.rooms || filters.bathrooms) && (
+                  <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px]">
+                    {filters.propertyTypes.length + filters.features.length + (filters.rooms ? 1 : 0) + (filters.bathrooms ? 1 : 0)}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setIsSearchModalOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
+              >
+                <Bot size={20} />
+                <span className="hidden md:inline">Buscador IA</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -843,18 +959,6 @@ const Properties = () => {
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/* Sidebar Filtrado (solo propiedades) */}
-          {activeTab !== 'emprendimientos' && (
-            <div className="w-full lg:w-[320px] flex-shrink-0">
-              <PropertyFilters 
-                filters={filters} 
-                setFilters={setFilters} 
-                onClear={handleClearFilters}
-                resultsCount={displayedProps.length}
-              />
-            </div>
-          )}
-
           {/* Grilla Principal */}
           <div className="flex-1 w-full">
             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
@@ -931,6 +1035,61 @@ const Properties = () => {
           }
         }}
       />
+
+      {/* Filters Drawer */}
+      <AnimatePresence>
+        {isFiltersOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsFiltersOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999]"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-[1000] overflow-y-auto"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Filtros Avanzados</h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{displayedProps.length} resultados encontrados</p>
+                </div>
+                <button
+                  onClick={() => setIsFiltersOpen(false)}
+                  className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="p-6">
+                <PropertyFilters 
+                  filters={filters} 
+                  setFilters={setFilters} 
+                  resultsCount={displayedProps.length}
+                  onClear={clearFilters}
+                  availableBarrios={availableBarrios}
+                />
+              </div>
+
+              <div className="p-6 border-t border-slate-100 sticky bottom-0 bg-white">
+                <button
+                  onClick={() => setIsFiltersOpen(false)}
+                  className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
+                >
+                  Ver {displayedProps.length} propiedades
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

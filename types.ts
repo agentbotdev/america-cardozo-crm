@@ -4,10 +4,10 @@ export type UserRole = 'admin' | 'vendedor' | 'readonly';
 
 export interface Profile {
   id: string;
-  nombre: string;
+  full_name: string;
   email: string;
-  rol: UserRole;
-  telefono?: string;
+  role: UserRole;
+  phone?: string;
   avatar_url?: string;
   created_at: string;
   updated_at: string;

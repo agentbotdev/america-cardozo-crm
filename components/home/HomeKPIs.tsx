@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   Users, Building2, Calendar, Flame, 
-  Target, Activity, Home, Clock, TrendingUp 
+  Target, Activity, Home, Clock, TrendingUp, CheckCircle2
 } from 'lucide-react';
 
 // ── Hook: contador animado ─────────────────────────────────────────────────────

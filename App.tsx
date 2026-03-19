@@ -2,18 +2,21 @@ import React, { lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
 import { ToastProvider } from './contexts/ToastContext';
+import { AuthProvider } from './contexts/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import Login from './pages/Login';
 
 // Lazy-loaded pages for code splitting
-const Home = lazy(() => import('./pages/Home'));
-const Properties = lazy(() => import('./pages/Properties'));
-const Oportunidades = lazy(() => import('./pages/Oportunidades'));
-const Clients = lazy(() => import('./pages/Clients'));
-const Visits = lazy(() => import('./pages/Visits'));
-const Reports = lazy(() => import('./pages/Reports'));
-const ControlCenter = lazy(() => import('./pages/ControlCenter'));
-const Settings = lazy(() => import('./pages/Settings'));
-const Support = lazy(() => import('./pages/Support'));
-const Tasks = lazy(() => import('./pages/Tasks'));
+import Home from './pages/Home';
+import Properties from './pages/Properties';
+import Oportunidades from './pages/Oportunidades';
+import Clients from './pages/Clients';
+import Visits from './pages/Visits';
+import ControlCenter from './pages/ControlCenter';
+import Settings from './pages/Settings';
+import Support from './pages/Support';
+import Tasks from './pages/Tasks';
+import Reports from './pages/Reports';
 
 const FullPageLoader: React.FC = () => (
   <div className="flex items-center justify-center h-full min-h-[60vh]">
@@ -26,26 +29,29 @@ const FullPageLoader: React.FC = () => (
 
 const App: React.FC = () => {
   return (
-    <ToastProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<Navigate to="/home" replace />} />
-            <Route path="home" element={<Suspense fallback={<FullPageLoader />}><Home /></Suspense>} />
-            <Route path="properties" element={<Suspense fallback={<FullPageLoader />}><Properties /></Suspense>} />
-            <Route path="leads" element={<Suspense fallback={<FullPageLoader />}><Oportunidades /></Suspense>} />
-            <Route path="clients" element={<Suspense fallback={<FullPageLoader />}><Clients /></Suspense>} />
-            <Route path="visits" element={<Suspense fallback={<FullPageLoader />}><Visits /></Suspense>} />
-            <Route path="tasks" element={<Suspense fallback={<FullPageLoader />}><Tasks /></Suspense>} />
-            <Route path="reports" element={<Suspense fallback={<FullPageLoader />}><Reports /></Suspense>} />
-            <Route path="control" element={<Suspense fallback={<FullPageLoader />}><ControlCenter /></Suspense>} />
-            <Route path="settings" element={<Suspense fallback={<FullPageLoader />}><Settings /></Suspense>} />
-            <Route path="support" element={<Suspense fallback={<FullPageLoader />}><Support /></Suspense>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </HashRouter>
-    </ToastProvider>
+    <AuthProvider>
+      <ToastProvider>
+        <HashRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
+              <Route index element={<Navigate to="/home" replace />} />
+              <Route path="home" element={<Home />} />
+              <Route path="properties" element={<Properties />} />
+              <Route path="leads" element={<Oportunidades />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="visits" element={<Visits />} />
+              <Route path="tasks" element={<Tasks />} />
+              <Route path="control" element={<ControlCenter />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="support" element={<Support />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </HashRouter>
+      </ToastProvider>
+    </AuthProvider>
   );
 };
 

@@ -21,12 +21,12 @@ export const dashboardService = {
       supabase.from('leads').select('*', { count: 'exact', head: true }),
       supabase.from('propiedades').select('*', { count: 'exact', head: true }),
       supabase.from('visitas').select('*', { count: 'exact', head: true }),
-      supabase.from('leads').select('*').eq('temperatura', 'caliente').order('created_at', { ascending: false }).limit(5),
+      supabase.from('leads').select('*').or('temperatura.eq.caliente,estado_temperatura.eq.Caliente').order('created_at', { ascending: false }).limit(5),
       supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo),
-      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('estado', '1_nuevo'),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).or('estado.eq.1_nuevo,etapa_proceso.eq.Inicio'),
       supabase.from('propiedades').select('*', { count: 'exact', head: true }).eq('estado', 'reservada'),
-      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('estado', '7_cerrado_exito'),
-      supabase.from('visitas').select('*', { count: 'exact', head: true }).gte('fecha', todayStr) // simplified as >= today
+      supabase.from('leads').select('*', { count: 'exact', head: true }).or('estado.eq.7_cerrado_exito,etapa_proceso.eq.Cierre'),
+      supabase.from('visitas').select('*', { count: 'exact', head: true }).gte('fecha', todayStr)
     ]);
 
     // Calcular tasa de conversion real si hay leads, sino fallback a 0
@@ -53,14 +53,21 @@ export const dashboardService = {
 
   getChartData: async () => {
     // Data para charts
-    const { data: leads } = await supabase.from('leads').select('temperatura, fuente, created_at, operacion');
-    const { data: visits } = await supabase.from('visitas').select('fecha');
+    const { data: leads, error: leadsError } = await supabase.from('leads').select('temperatura, estado_temperatura, fuente_consulta, origen, created_at, workflow_type');
+    const { data: visits, error: visitsError } = await supabase.from('visitas').select('fecha');
 
-    if (!leads) return null;
+    if (leadsError || visitsError) {
+      console.error('Dashboard chart fetch error:', leadsError || visitsError);
+      return { leadStatusData: [], leadsBySourceData: [], chartPorOperacion: [], visitasSemanales: [] };
+    }
+
+    if (!leads || leads.length === 0) {
+      return { leadStatusData: [], leadsBySourceData: [], chartPorOperacion: [], visitasSemanales: [] };
+    }
 
     // 1. Status Data (Pipeline Temp)
     const statusCounts = leads.reduce((acc: any, lead) => {
-      const status = lead.temperatura || 'nuevo';
+      const status = (lead.estado_temperatura || lead.temperatura || 'Frio').toLowerCase();
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {});
@@ -74,19 +81,19 @@ export const dashboardService = {
 
     // 2. Source Data
     const sourceCounts = leads.reduce((acc: any, lead) => {
-      const source = lead.fuente || 'Otro';
+      const source = lead.fuente_consulta || lead.origen || 'Otro';
       acc[source] = (acc[source] || 0) + 1;
       return acc;
     }, {});
 
     const leadsBySourceData = Object.entries(sourceCounts).map(([name, value]) => ({
       name,
-      value
+      value: Number(value)
     })).sort((a: any, b: any) => b.value - a.value).slice(0, 5);
 
     // 3. Actividad por operación (Para reemplazar "por vendedor")
     const operacionCounts = leads.reduce((acc: any, lead) => {
-      const op = lead.operacion || 'Sin definir';
+      const op = lead.workflow_type || 'Sin definir';
       acc[op] = (acc[op] || 0) + 1;
       return acc;
     }, {});
