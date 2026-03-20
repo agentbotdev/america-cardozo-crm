@@ -142,5 +142,31 @@ export const leadsService = {
         } catch {
             return [];
         }
+    },
+
+    saveMessage: async (message: { lead_id: string; text: string; sender: 'user' | 'agent' | 'bot' }) => {
+        try {
+            const { data, error } = await supabase
+                .from('messages')
+                .insert([{
+                    lead_id: message.lead_id,
+                    text: message.text,
+                    sender: message.sender,
+                    timestamp: new Date().toISOString()
+                }])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('❌ Error saving message:', error);
+                throw error;
+            }
+
+            console.log('✅ Message saved successfully');
+            return data;
+        } catch (error) {
+            console.error('❌ Failed to save message:', error);
+            throw error;
+        }
     }
 };

@@ -10,6 +10,7 @@ import { Lead, ChatMessage, LeadHistory } from '../types';
 import { leadsService } from '../services/leadsService';
 import { propertiesService } from '../services/propertiesService';
 import { supabase } from '../services/supabaseClient';
+import { LeadFiltersPanel, LeadFilters } from '../components/leads/LeadFiltersPanel';
 
 const statusColors: Record<string, string> = {
   frio: 'bg-blue-100 text-blue-600',
@@ -76,8 +77,32 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
-    // In a full implementation, we'd save to DB here
-    setMessage('');
+
+    try {
+      const newMessage = await leadsService.saveMessage({
+        lead_id: lead.id,
+        text: message,
+        sender: 'user'
+      });
+
+      // Add to local state for immediate UI update
+      setChatMessages([...chatMessages, {
+        id: newMessage.id,
+        sender: 'user',
+        text: message,
+        timestamp: newMessage.timestamp
+      }]);
+
+      setMessage('');
+
+      // Scroll to bottom
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Error al enviar el mensaje. Por favor, intenta nuevamente.');
+    }
   };
 
   const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -109,7 +134,7 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
     <motion.div
       initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed top-0 right-0 w-full sm:w-[500px] lg:w-[600px] h-full bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] z-200 flex flex-col border-l border-slate-100"
+      className="fixed top-0 right-0 w-full sm:w-[500px] lg:w-[600px] h-full bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] z-50 flex flex-col border-l border-slate-100"
     >
       <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
         <div className="flex items-center gap-5">
@@ -207,6 +232,12 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
                   type="text"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                   placeholder="Escribe un mensaje..."
                   className="flex-1 bg-slate-50 border border-slate-100 rounded-[1.8rem] px-8 py-5 text-sm font-bold shadow-inner outline-none focus:ring-4 focus:ring-indigo-50"
                 />
@@ -452,6 +483,19 @@ const Leads: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'todos' | 'caliente' | 'tibio' | 'frio'>('todos');
   const [sortBy, setSortBy] = useState<'date' | 'price_asc' | 'price_desc'>('date');
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<LeadFilters>({
+    searchText: '',
+    temperaturas: [],
+    etapas: [],
+    operaciones: [],
+    tiposInmueble: [],
+    zonas: [],
+    estadosSeguimiento: [],
+    vendedores: [],
+    fuentes: [],
+    conVisitaProxima: false
+  });
 
   useEffect(() => {
     loadData();
@@ -475,9 +519,44 @@ const Leads: React.FC = () => {
 
   const filteredLeads = useMemo(() => {
     let result = leads.filter(lead => {
+      // Basic search
       const matchesSearch = (lead.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-      const matchesFilter = activeFilter === 'todos' || lead.estado_temperatura === activeFilter;
-      return matchesSearch && matchesFilter;
+      const matchesFilter = activeFilter === 'todos' || lead.temperatura === activeFilter;
+
+      // Advanced filters
+      const matchesAdvancedSearch = !advancedFilters.searchText ||
+        (lead.nombre?.toLowerCase() || '').includes(advancedFilters.searchText.toLowerCase()) ||
+        (lead.email?.toLowerCase() || '').includes(advancedFilters.searchText.toLowerCase()) ||
+        (lead.telefono?.toLowerCase() || '').includes(advancedFilters.searchText.toLowerCase());
+
+      const matchesTemperatura = advancedFilters.temperaturas.length === 0 ||
+        advancedFilters.temperaturas.includes(lead.temperatura);
+
+      const matchesEtapa = advancedFilters.etapas.length === 0 ||
+        advancedFilters.etapas.includes(lead.etapa_proceso || '');
+
+      const matchesOperacion = advancedFilters.operaciones.length === 0 ||
+        advancedFilters.operaciones.includes(lead.tipo_operacion_buscada || '');
+
+      const matchesTipoInmueble = advancedFilters.tiposInmueble.length === 0 ||
+        (lead.tipo_inmueble_buscado || []).some(tipo => advancedFilters.tiposInmueble.includes(tipo));
+
+      const matchesEstadoSeguimiento = advancedFilters.estadosSeguimiento.length === 0 ||
+        advancedFilters.estadosSeguimiento.includes(lead.estado_seguimiento || '');
+
+      const matchesVendedor = advancedFilters.vendedores.length === 0 ||
+        advancedFilters.vendedores.includes(lead.vendedor_asignado || '');
+
+      const matchesFuente = advancedFilters.fuentes.length === 0 ||
+        advancedFilters.fuentes.includes(lead.fuente_consulta);
+
+      const matchesPresupuesto =
+        (!advancedFilters.presupuestoMin || (lead.presupuesto_max || 0) >= advancedFilters.presupuestoMin) &&
+        (!advancedFilters.presupuestoMax || (lead.presupuesto_max || 0) <= advancedFilters.presupuestoMax);
+
+      return matchesSearch && matchesFilter && matchesAdvancedSearch && matchesTemperatura &&
+        matchesEtapa && matchesOperacion && matchesTipoInmueble && matchesEstadoSeguimiento &&
+        matchesVendedor && matchesFuente && matchesPresupuesto;
     });
 
     if (sortBy === 'price_asc') {
@@ -486,7 +565,7 @@ const Leads: React.FC = () => {
       result.sort((a, b) => (b.presupuesto_max || 0) - (a.presupuesto_max || 0));
     }
     return result;
-  }, [searchTerm, activeFilter, sortBy, leads]);
+  }, [searchTerm, activeFilter, sortBy, leads, advancedFilters]);
 
   return (
     <>
@@ -497,7 +576,7 @@ const Leads: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/40 z-[190]"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
               onClick={() => setSelectedLead(null)}
             />
             <LeadDetailPanel
@@ -511,6 +590,18 @@ const Leads: React.FC = () => {
               }}
             />
           </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isFiltersOpen && (
+          <LeadFiltersPanel
+            isOpen={isFiltersOpen}
+            onClose={() => setIsFiltersOpen(false)}
+            filters={advancedFilters}
+            onFiltersChange={setAdvancedFilters}
+            resultCount={filteredLeads.length}
+          />
         )}
       </AnimatePresence>
 
@@ -550,6 +641,12 @@ const Leads: React.FC = () => {
           {/* Toolbar */}
           <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 md:gap-8 bg-white sticky top-0 z-20">
             <div className="flex flex-wrap gap-3 md:gap-5 items-center">
+              <button
+                onClick={() => setIsFiltersOpen(true)}
+                className="p-3 bg-indigo-600 text-white rounded-2xl hover:bg-slate-900 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-5 shadow-lg"
+              >
+                <Filter size={16} /> Filtros
+              </button>
               <div className="bg-slate-50 p-1.5 md:p-2 rounded-[2rem] md:rounded-[2.5rem] flex gap-2 shadow-inner overflow-x-auto no-scrollbar max-w-full border border-slate-100">
                 {(['todos', 'caliente', 'tibio', 'frio'] as const).map(filter => (
                   <button

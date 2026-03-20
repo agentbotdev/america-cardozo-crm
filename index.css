@@ -7,3 +7,13 @@ body {
     box-sizing: border-box;
     font-family: 'Inter', sans-serif;
 }
+
+/* Hide scrollbars while maintaining scrollability */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
+}

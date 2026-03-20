@@ -44,27 +44,29 @@ ORQUESTADOR RAÍZ (este archivo)
 ### Semáforo de Módulos
 | Módulo | Estado DB | Estado UI | Prioridad Fix |
 |:---|:---|:---|:---|
-| Dashboard | ⚠️ Parcial | ✅ OK | Media |
+| Dashboard | ✅ OK | ✅ OK | Baja |
 | Properties | ✅ OK | ⚠️ Monolito 49KB | Alta |
 | Leads | ✅ OK | ⚠️ Sin estado global | Alta |
 | Visits | ✅ OK | ✅ OK | Baja |
-| Clients | ⚠️ Sin tabla propia | ⚠️ Usa datos leads | Alta |
+| Clients | ✅ OK (New) | ⚠️ Usa datos leads | Alta |
 | Reports | ⚠️ Sin queries reales | ⚠️ UI-only | Media |
 | Live Chat | ❌ Sin backend | ⚠️ UI-only | Media |
 | PerformanceIA | ❌ Sin datos reales | ⚠️ UI-only | Media |
-| Settings | ⚠️ Google OAuth con bug | ✅ UI OK | 🔴 CRÍTICO |
+| Settings | ⚠️ Google OAuth partial | ✅ UI OK | 🔴 CRÍTICO |
 | Support | ❌ Sin tabla | ⚠️ UI-only | Baja |
 | Metrics | ⚠️ Datos mock | ⚠️ UI-only | Media |
 
 ### Bugs Críticos Abiertos
 ```
-BUG-001: API Key Gemini hardcodeada en geminiService.ts:9 → PELIGRO DE SEGURIDAD
-BUG-002: Google Client Secret en frontend (googleCalendarService.ts:5)
-BUG-003: Sin sistema de autenticación → CRM público
-BUG-004: Búsqueda global usa MOCK_DATA, no Supabase real
+BUG-004: Búsqueda global usa MOCK_DATA, no Supabase real (TRABAJANDO)
 BUG-005: typeof Property falta imagen_principal (AppLayout.tsx:248)
 BUG-006: geminiService.ts duplica openaiService.ts → dead code
 ```
+
+### Bugs Corregidos (Sprint 1)
+- BUG-001: API Key Gemini hardcodeada → Resuelto (Usa .env)
+- BUG-002: Google Client Secret en frontend → Resuelto (.env)
+- BUG-003: Sin sistema de autenticación → Resuelto (Supabase Auth + ProtectedRoute)
 
 ---
 

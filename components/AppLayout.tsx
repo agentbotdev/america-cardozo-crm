@@ -1,13 +1,14 @@
 
-import React, { useState, useContext, createContext, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useContext, createContext, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  LayoutDashboard, Building2, Users, UserCircle, CalendarDays,
-  BarChart3, LifeBuoy, MessageSquare, Settings, Menu, Bell, Search, LogOut, ChevronLeft, ChevronRight, X,
+  Home, Building2, Users, UserCircle, CalendarDays, CheckSquare,
+  BarChart3, LifeBuoy, Settings, Menu, Bell, Search, LogOut, ChevronLeft, ChevronRight, X,
   Bot, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MOCK_LEADS, MOCK_PROPERTIES, MOCK_CLIENTS } from '../constants';
+import { authService } from '../services/authService';
+import { supabase } from '../services/supabaseClient';
 
 interface LayoutContextType {
   sidebarOpen: boolean;
@@ -99,27 +100,62 @@ const AppLayout: React.FC = () => {
     };
   }, []);
 
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return { leads: [], properties: [], clients: [] };
-    const query = searchQuery.toLowerCase();
-    return {
-      leads: MOCK_LEADS.filter(l => l.nombre.toLowerCase().includes(query)).slice(0, 3),
-      properties: MOCK_PROPERTIES.filter(p => p.titulo.toLowerCase().includes(query) || p.barrio.toLowerCase().includes(query)).slice(0, 3),
-      clients: MOCK_CLIENTS.filter(c => c.nombre.toLowerCase().includes(query)).slice(0, 3)
-    };
+  const [searchResults, setSearchResults] = useState<{
+    leads: any[];
+    properties: any[];
+    clients: any[];
+  }>({ leads: [], properties: [], clients: [] });
+
+  // Real-time search with Supabase (with debouncing)
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults({ leads: [], properties: [], clients: [] });
+      return;
+    }
+
+    const searchTimeout = setTimeout(async () => {
+      try {
+        const query = searchQuery.trim();
+
+        const [leadsData, propsData] = await Promise.all([
+          supabase
+            .from('leads')
+            .select('id, nombre, email, telefono, estado_temperatura')
+            .or(`nombre.ilike.%${query}%,email.ilike.%${query}%,telefono.ilike.%${query}%`)
+            .limit(3),
+
+          supabase
+            .from('propiedades')
+            .select('id, titulo, direccion_completa, barrio, precio_venta, precio_alquiler')
+            .or(`titulo.ilike.%${query}%,direccion_completa.ilike.%${query}%,barrio.ilike.%${query}%`)
+            .limit(3)
+        ]);
+
+        setSearchResults({
+          leads: leadsData.data || [],
+          properties: propsData.data || [],
+          clients: [] // Clients are leads with es_cliente = true, can add later if needed
+        });
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults({ leads: [], properties: [], clients: [] });
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(searchTimeout);
   }, [searchQuery]);
 
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/', icon: Home, label: 'Home' },
     { to: '/propiedades', icon: Building2, label: 'Propiedades' },
-    { to: '/leads', icon: Users, label: 'Leads' },
+    { to: '/leads', icon: Users, label: 'Oportunidades' },
     { to: '/clientes', icon: UserCircle, label: 'Clientes' },
     { to: '/visitas', icon: CalendarDays, label: 'Visitas' },
+    { to: '/tareas', icon: CheckSquare, label: 'Tareas' },
     { to: '/reportes', icon: BarChart3, label: 'Reportes' },
-    { to: '/control-center', icon: Zap, label: 'Control Center' },
-    { to: '/live-chat', icon: MessageSquare, label: 'Live Chat' },
-    { to: '/soporte', icon: LifeBuoy, label: 'Soporte' },
+    { to: '/control-center', icon: Zap, label: 'Centro de Control' },
     { to: '/configuracion', icon: Settings, label: 'Configuración' },
+    { to: '/soporte', icon: LifeBuoy, label: 'Soporte' },
   ];
 
   const handleResultClick = (path: string) => {
@@ -199,7 +235,13 @@ const AppLayout: React.FC = () => {
                   {isCollapsed ? <ChevronRight size={18} /> : <div className="flex items-center gap-2 px-2"><ChevronLeft size={18} /><span className="text-xs font-bold">Contraer Menú</span></div>}
                 </button>
               )}
-              <SidebarItem to="/logout" icon={LogOut} label="Cerrar Sesión" isCollapsed={isCollapsed} />
+              <button 
+                onClick={() => authService.logout().then(() => navigate('/login'))}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold transition-all duration-300 text-rose-600 hover:bg-rose-50/50 ${isCollapsed ? 'justify-center px-0 w-12 mx-auto' : ''}`}
+              >
+                <LogOut size={18} />
+                {!isCollapsed && <span>Cerrar Sesión</span>}
+              </button>
             </div>
           </div>
         </motion.aside>
@@ -244,7 +286,7 @@ const AppLayout: React.FC = () => {
                           <h3 className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-3 px-2">Propiedades</h3>
                           {searchResults.properties.map(p => (
                             <button key={p.id} onClick={() => handleResultClick('/propiedades')} className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-all text-left">
-                              <div className="w-9 h-9 rounded-lg bg-slate-100 overflow-hidden shrink-0"><img src={p.imagen_principal} alt="" className="w-full h-full object-cover" /></div>
+                              <div className="w-9 h-9 rounded-lg bg-slate-100 overflow-hidden shrink-0"><img src={p.foto_portada} alt="" className="w-full h-full object-cover" /></div>
                               <p className="text-xs font-bold text-slate-700 truncate">{p.titulo}</p>
                             </button>
                           ))}

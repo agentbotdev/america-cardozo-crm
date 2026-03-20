@@ -4,13 +4,23 @@ export type UserRole = 'admin' | 'vendedor' | 'readonly';
 
 export interface Profile {
   id: string;
-  nombre: string;
+  full_name: string;
   email: string;
-  rol: UserRole;
-  telefono?: string;
+  role: UserRole;
+  phone?: string;
   avatar_url?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  read: boolean;
+  type: 'info' | 'success' | 'warning' | 'error';
+  created_at: string;
 }
 
 export interface Photo {
@@ -42,6 +52,9 @@ export interface Property {
   fecha_publicacion?: string;
   dias_en_market?: number;
   descripcion?: string;
+
+  // Favoritos
+  es_favorita?: boolean;
 
   // Ubicación
   direccion_completa: string;
@@ -190,6 +203,22 @@ export interface Lead {
   probabilidad_cierre?: number;
   prioridad?: string;
 
+  // Gestión de Leads (nuevos campos)
+  vendedor_asignado?: string;
+  estado_seguimiento?: string;
+  operacion_buscada?: 'venta' | 'alquiler' | 'tasacion';
+  tipo_inmueble_buscado?: string[];
+  zonas_buscadas?: string[];
+  presupuesto_min?: number;
+  presupuesto_max?: number;
+  ultima_interaccion?: string;
+
+  // Campos de Cliente (cuando es_cliente = true)
+  es_cliente?: boolean;
+  fecha_conversion?: string;
+  propiedades_adquiridas?: string[];
+  lifetime_value?: number;
+
   // IA Insight
   intenciones_detectadas?: string[];
   sentimiento_general?: string;
@@ -247,6 +276,12 @@ export interface Visit {
   invitados?: string[];
   google_event_id?: string;
   timeline?: VisitTimeline[];
+
+  // Gestión de Visitas (nuevos campos)
+  vendedor_asignado?: string;
+  nota_resultado?: string;
+  calificacion_lead?: 'muy_interesado' | 'interesado' | 'dudoso' | 'no_interesado';
+
   created_at: string;
   updated_at: string;
 }
@@ -262,6 +297,7 @@ export interface ChatMessage {
 
 export interface LeadHistory {
   id: string;
+  lead_id: string;
   type: 'stage_change' | 'note' | 'communication' | 'visit' | 'derivation' | 'ticket';
   stage?: string;
   date: string;

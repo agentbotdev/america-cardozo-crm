@@ -1,6 +1,7 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { reportsService } from '../services/reportsService';
 import {
   Users, DollarSign, Home, Key, Zap, Target,
   Activity, Filter, Download, ChevronRight, ChevronLeft,
@@ -228,14 +229,14 @@ const commonMetrics = [
   { label: 'Escalado de Incidencias', value: '10%', icon: <Target size={14} />, trend: 'down' }
 ];
 
-const LeadsDashboard = () => (
+const LeadsDashboard = ({ data }: { data: any }) => (
   <div className="space-y-10 animate-fade-in">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Total Leads" value="1,245" trend="+12%" icon={Users} color="blue" />
-      <KPICard title="Tasa Respuesta" value="98.2%" trend="+4%" icon={Zap} color="emerald" />
-      <KPICard title="Lead Score Avg" value="7.4" trend="+0.5" icon={Target} color="indigo" />
-      <KPICard title="Leads Hot" value="42" trend="+8" icon={Sparkles} color="rose" />
-      <KPICard title="Conversión" value="28%" trend="+2%" icon={CheckCircle2} color="amber" />
+      <KPICard title="Total Leads" value={data?.totalLeads?.toLocaleString() || '0'} trend="+12%" icon={Users} color="blue" />
+      <KPICard title="Tasa Respuesta" value={data?.responseRate || '0%'} trend="+4%" icon={Zap} color="emerald" />
+      <KPICard title="Lead Score Avg" value={data?.avgScore || '0'} trend="+0.5" icon={Target} color="indigo" />
+      <KPICard title="Leads Hot" value={data?.hotLeads || '0'} trend="+8" icon={Sparkles} color="rose" />
+      <KPICard title="Conversión" value={data?.conversionRate || '0%'} trend="+2%" icon={CheckCircle2} color="amber" />
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
@@ -265,13 +266,13 @@ const LeadsDashboard = () => (
   </div>
 );
 
-const SalesDashboard = () => (
+const SalesDashboard = ({ data }: { data: any }) => (
   <div className="space-y-10 animate-fade-in">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="GMV USD" value="$12.5M" trend="+18%" icon={DollarSign} color="emerald" />
-      <KPICard title="Pipeline" value="156" trend="+12" icon={Layers} color="indigo" />
-      <KPICard title="Cierre Medio" value="42d" trend="-4d" icon={Clock} color="blue" />
-      <KPICard title="Comisiones" value="$375k" trend="+14%" icon={Zap} color="amber" />
+      <KPICard title="GMV USD" value={data?.gmv || '$0M'} trend="+18%" icon={DollarSign} color="emerald" />
+      <KPICard title="Pipeline" value={data?.pipelineCount || '0'} trend="+12" icon={Layers} color="indigo" />
+      <KPICard title="Cierre Medio" value={data?.avgClosingDays || '0d'} trend="-4d" icon={Clock} color="blue" />
+      <KPICard title="Comisiones" value={data?.commission || '$0k'} trend="+14%" icon={Zap} color="amber" />
       <KPICard title="Alcance Metas" value="92%" trend="+5%" icon={Target} color="rose" />
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -308,14 +309,14 @@ const SalesDashboard = () => (
   </div>
 );
 
-const AlquilerDashboard = () => (
+const AlquilerDashboard = ({ data }: { data: any }) => (
   <div className="space-y-10 animate-fade-in">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Contratos Activos" value="482" trend="+14" icon={Key} color="purple" />
-      <KPICard title="Recaudación" value="$2.4M" trend="+5%" icon={DollarSign} color="emerald" />
-      <KPICard title="Vacancia" value="2.4%" trend="-1.1%" icon={Building2} color="blue" />
-      <KPICard title="Renovaciones" value="85%" trend="+2%" icon={RotateCcw} color="amber" />
-      <KPICard title="Yield Avg" value="5.8%" trend="+0.2%" icon={Activity} color="rose" />
+      <KPICard title="Contratos Activos" value={data?.activeContracts || '0'} trend="+14" icon={Key} color="purple" />
+      <KPICard title="Recaudación" value={data?.totalRentalValue || '$0M'} trend="+5%" icon={DollarSign} color="emerald" />
+      <KPICard title="Vacancia" value={data?.vacancyRate || '0%'} trend="-1.1%" icon={Building2} color="blue" />
+      <KPICard title="Renovaciones" value={data?.renewalRate || '0%'} trend="+2%" icon={RotateCcw} color="amber" />
+      <KPICard title="Yield Avg" value={data?.avgYield || '0%'} trend="+0.2%" icon={Activity} color="rose" />
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
@@ -343,14 +344,14 @@ const AlquilerDashboard = () => (
   </div>
 );
 
-const StockDashboard = () => (
+const StockDashboard = ({ data }: { data: any }) => (
   <div className="space-y-10 animate-fade-in">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Unidades Stock" value="842" trend="+32" icon={Home} color="indigo" />
-      <KPICard title="Valor Inventario" value="$182M" trend="+4%" icon={DollarSign} color="emerald" />
-      <KPICard title="Aging Medio" value="84d" trend="-12d" icon={Clock} color="blue" />
-      <KPICard title="Vistas Totales" value="25.4k" trend="+18%" icon={Eye} color="rose" />
-      <KPICard title="Eficiencia Pub" value="92%" trend="+5%" icon={CheckCircle2} color="amber" />
+      <KPICard title="Unidades Stock" value={data?.totalProperties || '0'} trend="+32" icon={Home} color="indigo" />
+      <KPICard title="Valor Inventario" value={data?.totalValue || '$0M'} trend="+4%" icon={DollarSign} color="emerald" />
+      <KPICard title="Aging Medio" value={data?.avgAging || '0d'} trend="-12d" icon={Clock} color="blue" />
+      <KPICard title="Vistas Totales" value={data?.totalViews || '0'} trend="+18%" icon={Eye} color="rose" />
+      <KPICard title="Eficiencia Pub" value={data?.publicationEfficiency ? `${data.publicationEfficiency}%` : '0%'} trend="+5%" icon={CheckCircle2} color="amber" />
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
@@ -378,14 +379,14 @@ const StockDashboard = () => (
   </div>
 );
 
-const CaptacionDashboard = () => (
+const CaptacionDashboard = ({ data }: { data: any }) => (
   <div className="space-y-10 animate-fade-in">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Nuevas Captac." value="24" trend="+4" icon={Briefcase} color="rose" />
-      <KPICard title="Exclusividades" value="85%" trend="+5%" icon={Star} color="amber" />
-      <KPICard title="Valor Entrante" value="$8.2M" trend="+1.2M" icon={DollarSign} color="emerald" />
-      <KPICard title="Tasa Conversión" value="68%" trend="+5%" icon={RotateCcw} color="blue" />
-      <KPICard title="Tasaciones" value="152" trend="+22" icon={Layers} color="indigo" />
+      <KPICard title="Nuevas Captac." value={data?.newCaptaciones || '0'} trend="+4" icon={Briefcase} color="rose" />
+      <KPICard title="Exclusividades" value={data?.exclusivityRate || '0%'} trend="+5%" icon={Star} color="amber" />
+      <KPICard title="Valor Entrante" value={data?.incomingValue || '$0M'} trend="+1.2M" icon={DollarSign} color="emerald" />
+      <KPICard title="Tasa Conversión" value={data?.conversionRate || '0%'} trend="+5%" icon={RotateCcw} color="blue" />
+      <KPICard title="Tasaciones" value={data?.tasaciones || '0'} trend="+22" icon={Layers} color="indigo" />
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
@@ -420,11 +421,50 @@ const Reports: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ desde: '', hasta: '', vendedor: '', tipo: 'todos' });
   const contentRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState<any>(null);
 
   const tabOrder = ['leads', 'sales', 'alquiler', 'stock', 'captacion'] as const;
   const currentIdx = tabOrder.indexOf(activeTab);
   const goPrev = () => currentIdx > 0 && setActiveTab(tabOrder[currentIdx - 1]);
   const goNext = () => currentIdx < tabOrder.length - 1 && setActiveTab(tabOrder[currentIdx + 1]);
+
+  // Fetch data when tab or filters change
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const dateRange = { desde: filters.desde, hasta: filters.hasta };
+        let data = null;
+
+        switch (activeTab) {
+          case 'leads':
+            data = await reportsService.fetchLeadsData(dateRange);
+            break;
+          case 'sales':
+            data = await reportsService.fetchSalesData(dateRange);
+            break;
+          case 'alquiler':
+            data = await reportsService.fetchRentalsData(dateRange);
+            break;
+          case 'stock':
+            data = await reportsService.fetchPropertiesData(dateRange);
+            break;
+          case 'captacion':
+            data = await reportsService.fetchCaptacionData(dateRange);
+            break;
+        }
+
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [activeTab, filters.desde, filters.hasta]);
 
   const categories = [
     { id: 'leads', label: 'LEADS', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -436,21 +476,69 @@ const Reports: React.FC = () => {
 
   // Export CSV real
   const handleExportCSV = () => {
-    const csvRows = [
-      ['Sección', 'Métrica', 'Valor', 'Tendencia'],
-      ['Leads', 'Total', '1,248', '+12%'],
-      ['Leads', 'Hot Leads', '87', '+5%'],
-      ['Ventas', 'Operaciones', '156', '+8%'],
-      ['Alquiler', 'Contratos Activos', '482', '+14%'],
-      ['Stock', 'Unidades', '842', '+32'],
-      ['Captación', 'Exclusivas', '38', '+19%'],
+    if (!dashboardData) {
+      alert('No hay datos para exportar. Por favor, espera a que carguen los datos.');
+      return;
+    }
+
+    const csvRows: string[][] = [
+      ['Métrica', 'Valor']
     ];
+
+    // Add data based on active tab
+    switch (activeTab) {
+      case 'leads':
+        csvRows.push(['Total Leads', String(dashboardData.totalLeads || 0)]);
+        csvRows.push(['Leads Hot', String(dashboardData.hotLeads || 0)]);
+        csvRows.push(['Tasa de Respuesta', dashboardData.responseRate || '0%']);
+        csvRows.push(['Score Promedio', String(dashboardData.avgScore || 0)]);
+        csvRows.push(['Tasa de Conversión', dashboardData.conversionRate || '0%']);
+        break;
+      case 'sales':
+        csvRows.push(['GMV Total', dashboardData.gmv || '$0M']);
+        csvRows.push(['Pipeline', String(dashboardData.pipelineCount || 0)]);
+        csvRows.push(['Cierre Medio', dashboardData.avgClosingDays || '0d']);
+        csvRows.push(['Comisiones', dashboardData.commission || '$0k']);
+        break;
+      case 'alquiler':
+        csvRows.push(['Contratos Activos', String(dashboardData.activeContracts || 0)]);
+        csvRows.push(['Valor Total Rentas', dashboardData.totalRentalValue || '$0M']);
+        csvRows.push(['Tasa de Vacancia', dashboardData.vacancyRate || '0%']);
+        csvRows.push(['Tasa de Renovación', dashboardData.renewalRate || '0%']);
+        csvRows.push(['Yield Promedio', dashboardData.avgYield || '0%']);
+        break;
+      case 'stock':
+        csvRows.push(['Unidades en Stock', String(dashboardData.totalProperties || 0)]);
+        csvRows.push(['Valor de Inventario', dashboardData.totalValue || '$0M']);
+        csvRows.push(['Aging Promedio', dashboardData.avgAging || '0d']);
+        csvRows.push(['Vistas Totales', dashboardData.totalViews || '0']);
+        csvRows.push(['Eficiencia de Publicación', `${dashboardData.publicationEfficiency || 0}%`]);
+        csvRows.push(['Propiedades sin Foto', String(dashboardData.propsWithoutPhoto || 0)]);
+        csvRows.push(['Propiedades > 90 días', String(dashboardData.staleProperties || 0)]);
+        break;
+      case 'captacion':
+        csvRows.push(['Nuevas Captaciones', String(dashboardData.newCaptaciones || 0)]);
+        csvRows.push(['Tasa de Exclusividad', dashboardData.exclusivityRate || '0%']);
+        csvRows.push(['Valor Entrante', dashboardData.incomingValue || '$0M']);
+        csvRows.push(['Tasa de Conversión', dashboardData.conversionRate || '0%']);
+        csvRows.push(['Tasaciones', String(dashboardData.tasaciones || 0)]);
+        break;
+    }
+
+    // Add filters info
+    csvRows.push([]);
+    csvRows.push(['Filtros Aplicados', '']);
+    if (filters.desde) csvRows.push(['Fecha Desde', filters.desde]);
+    if (filters.hasta) csvRows.push(['Fecha Hasta', filters.hasta]);
+    if (filters.vendedor) csvRows.push(['Vendedor', filters.vendedor]);
+    if (filters.tipo !== 'todos') csvRows.push(['Tipo', filters.tipo]);
+
     const csvContent = csvRows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href     = url;
-    link.download = `reporte_${activeTab}_${new Date().toISOString().slice(0,10)}.csv`;
+    link.href = url;
+    link.download = `reporte_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -556,7 +644,7 @@ const Reports: React.FC = () => {
       )}
 
       {/* Tabs centrados + flechas navegación */}
-      <div className="flex items-center gap-2 mb-16 overflow-x-auto no-scrollbar pb-2">
+      <div className="flex items-center gap-2 mb-16 overflow-x-auto scrollbar-hide pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Flecha izquierda */}
         <button
           onClick={goPrev}
@@ -567,7 +655,7 @@ const Reports: React.FC = () => {
         </button>
 
         {/* Tabs */}
-        <div className="flex gap-2 flex-1 justify-center overflow-x-auto no-scrollbar">
+        <div className="flex gap-2 flex-1 justify-center overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
         {categories.map((cat) => (
           <button
             key={cat.id}
@@ -607,11 +695,11 @@ const Reports: React.FC = () => {
             exit={{ opacity: 0, y: -40, scale: 1.02 }}
             transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
           >
-            {activeTab === 'leads' && <LeadsDashboard />}
-            {activeTab === 'sales' && <SalesDashboard />}
-            {activeTab === 'alquiler' && <AlquilerDashboard />}
-            {activeTab === 'stock' && <StockDashboard />}
-            {activeTab === 'captacion' && <CaptacionDashboard />}
+            {activeTab === 'leads' && <LeadsDashboard data={dashboardData} />}
+            {activeTab === 'sales' && <SalesDashboard data={dashboardData} />}
+            {activeTab === 'alquiler' && <AlquilerDashboard data={dashboardData} />}
+            {activeTab === 'stock' && <StockDashboard data={dashboardData} />}
+            {activeTab === 'captacion' && <CaptacionDashboard data={dashboardData} />}
           </motion.div>
         </AnimatePresence>
       </div>

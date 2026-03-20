@@ -6,8 +6,12 @@
 
 import { Property } from '../types';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyDiSZ_h8h7hCtOqM_mLHLEKhLyxySE5Xrk';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+if (!GEMINI_API_KEY) {
+    console.warn('VITE_GEMINI_API_KEY is not defined in environment variables');
+}
 
 interface GeminiResponse {
     candidates: Array<{

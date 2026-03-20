@@ -17,6 +17,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SHARED UI SUB-COMPONENTS ---
 
+const SkeletonCard = () => (
+  <div className="bg-white rounded-[3rem] overflow-hidden border border-slate-100 flex flex-col animate-pulse">
+    <div className="aspect-video w-full bg-slate-200 relative">
+      <div className="absolute top-4 left-4 flex flex-col gap-2">
+        <div className="w-20 h-6 bg-slate-300 rounded-full"></div>
+        <div className="w-16 h-6 bg-slate-300 rounded-full"></div>
+      </div>
+      <div className="absolute top-4 right-4">
+        <div className="w-10 h-10 bg-slate-300 rounded-full"></div>
+      </div>
+      <div className="absolute bottom-4 left-6 right-6">
+        <div className="w-32 h-8 bg-slate-300 rounded mb-2"></div>
+        <div className="w-24 h-4 bg-slate-300 rounded"></div>
+      </div>
+    </div>
+    <div className="p-5 flex flex-col">
+      <div className="w-3/4 h-5 bg-slate-200 rounded mb-4"></div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="h-16 bg-slate-100 rounded-xl"></div>
+        <div className="h-16 bg-slate-100 rounded-xl"></div>
+        <div className="h-16 bg-slate-100 rounded-xl"></div>
+      </div>
+    </div>
+  </div>
+);
+
 const TabButton = ({ active, onClick, icon: Icon, label }: any) => (
   <button
     onClick={onClick}
@@ -129,8 +155,7 @@ const ImageUpload = ({ images, setImages, folder, uploading, setUploading }: {
 };
 
 // --- 1. REFINED PROPERTY CARD ---
-const PropertyCard = React.memo(({ property, onView }: any) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+const PropertyCard = React.memo(({ property, onView, onToggleFavorite }: any) => {
   const statusColors: Record<string, string> = {
     publicada: 'bg-emerald-500',
     pausada: 'bg-amber-500',
@@ -140,52 +165,58 @@ const PropertyCard = React.memo(({ property, onView }: any) => {
     borrador: 'bg-slate-300'
   };
   const precio = property.tipo_operacion === 'venta' ? property.precio_venta : property.precio_alquiler;
+  const isFavorite = property.es_favorita || false;
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleFavorite) {
+      await onToggleFavorite(property);
+    }
+  };
 
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-[3rem] overflow-hidden group shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 border border-slate-100 flex flex-col h-full relative"
+      className="bg-white rounded-[3rem] overflow-hidden group shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 border border-slate-100 flex flex-col cursor-pointer transition-all hover:ring-2 hover:ring-indigo-500"
+      onClick={() => onView(property)}
     >
-      <div className="h-64 sm:h-72 w-full bg-slate-100 relative overflow-hidden cursor-pointer" onClick={() => onView(property)}>
+      <div className="aspect-video w-full bg-slate-100 relative overflow-hidden">
         <OptimizedImage src={property.foto_portada || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400'} alt={property.titulo} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent opacity-70"></div>
-        <div className="absolute top-5 left-5 flex flex-col gap-2 z-10">
-          <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-white shadow-xl backdrop-blur-md ring-1 ring-white/30 ${statusColors[property.estado] || 'bg-slate-500'}`}>{property.estado}</span>
-          <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] bg-white/95 text-slate-900 shadow-xl backdrop-blur-md w-fit ring-1 ring-black/5">{property.tipo_operacion}</span>
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-white shadow-xl backdrop-blur-md ring-1 ring-white/30 ${statusColors[property.estado] || 'bg-slate-500'}`}>{property.estado}</span>
+          <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] bg-white/95 text-slate-900 shadow-xl backdrop-blur-md w-fit ring-1 ring-black/5">{property.tipo_operacion}</span>
         </div>
-        <button className={`absolute top-5 right-5 p-3 rounded-full backdrop-blur-md transition-all duration-500 z-10 ${isFavorite ? 'bg-rose-500 text-white' : 'bg-white/20 text-white hover:bg-white hover:text-rose-500'}`} onClick={(e) => { e.stopPropagation(); setIsFavorite(!isFavorite); }}>
-          <Heart size={20} fill={isFavorite ? "currentColor" : "none"} strokeWidth={3} />
+        <button
+          className={`absolute top-4 right-4 p-2.5 rounded-full backdrop-blur-md transition-all duration-500 z-10 ${isFavorite ? 'bg-rose-500 text-white' : 'bg-white/20 text-white hover:bg-white hover:text-rose-500'}`}
+          onClick={handleToggleFavorite}
+        >
+          <Heart size={18} fill={isFavorite ? "currentColor" : "none"} strokeWidth={3} />
         </button>
-        <div className="absolute bottom-6 left-8 right-8 text-white z-10">
+        <div className="absolute bottom-4 left-6 right-6 text-white z-10">
           <div className="flex items-baseline gap-1.5 mb-1">
             <span className="text-[10px] font-black text-slate-300">{property.moneda}</span>
-            <p className="text-3xl font-black tracking-tighter">{precio?.toLocaleString()}</p>
+            <p className="text-2xl font-black tracking-tighter">{precio?.toLocaleString()}</p>
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-200 flex items-center gap-2 truncate"><MapPin size={12} className="text-indigo-400" /> {property.barrio}</p>
         </div>
       </div>
-      <div className="p-8 flex flex-col flex-1">
-        <h3 className="text-lg font-black text-slate-900 mb-6 line-clamp-1">{property.titulo}</h3>
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="flex flex-col items-center justify-center p-3 bg-slate-50/50 rounded-2xl border border-slate-100">
-            <BedDouble size={20} className="text-indigo-600 mb-1.5" />
-            <span className="text-sm font-black text-slate-900">{property.dormitorios || 0}</span>
+      <div className="p-5 flex flex-col">
+        <h3 className="text-base font-black text-slate-900 mb-4 line-clamp-1">{property.titulo}</h3>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="flex flex-col items-center justify-center p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
+            <BedDouble size={18} className="text-indigo-600 mb-1" />
+            <span className="text-xs font-black text-slate-900">{property.dormitorios || 0}</span>
           </div>
-          <div className="flex flex-col items-center justify-center p-3 bg-slate-50/50 rounded-2xl border border-slate-100">
-            <Bath size={20} className="text-indigo-600 mb-1.5" />
-            <span className="text-sm font-black text-slate-900">{property.banos_completos || 0}</span>
+          <div className="flex flex-col items-center justify-center p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
+            <Bath size={18} className="text-indigo-600 mb-1" />
+            <span className="text-xs font-black text-slate-900">{property.banos_completos || 0}</span>
           </div>
-          <div className="flex flex-col items-center justify-center p-3 bg-slate-50/50 rounded-2xl border border-slate-100">
-            <Ruler size={20} className="text-indigo-600 mb-1.5" />
-            <span className="text-sm font-black text-slate-900">{property.sup_cubierta}</span>
-          </div>
-        </div>
-        <div className="mt-auto pt-6 flex items-center justify-between border-t border-slate-100/50">
-          <div className="flex items-center gap-2">
-            <button onClick={(e) => { e.stopPropagation(); onView(property, true); }} className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"><Edit size={16} strokeWidth={2.5} /></button>
-            <button onClick={(e) => { e.stopPropagation(); onView(property); }} className="p-3 bg-slate-900 text-white rounded-xl hover:bg-indigo-600 transition-all shadow-xl"><ChevronRight size={16} strokeWidth={3.5} /></button>
+          <div className="flex flex-col items-center justify-center p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
+            <Ruler size={18} className="text-indigo-600 mb-1" />
+            <span className="text-xs font-black text-slate-900">{property.sup_cubierta}</span>
           </div>
         </div>
       </div>
@@ -639,6 +670,24 @@ const Properties = () => {
     setLoading(false);
   };
 
+  const handleToggleFavorite = async (property: Property) => {
+    try {
+      const updatedProperty = {
+        ...property,
+        es_favorita: !property.es_favorita
+      };
+
+      await propertiesService.saveProperty(updatedProperty);
+
+      // Update local state
+      setProperties((prev: Property[]) =>
+        prev.map((p: Property) => p.id === property.id ? { ...p, es_favorita: !p.es_favorita } : p)
+      );
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
   const displayedProps = useMemo(() => {
     if (activeTab === 'emprendimientos') return [];
     let props = properties.filter(p => activeTab === 'propiedades' ? p.estado !== 'borrador' : p.estado === 'borrador');
@@ -714,7 +763,7 @@ const Properties = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 mb-16">
-        <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl flex gap-1 overflow-x-auto no-scrollbar">
+        <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl flex gap-1 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
           <TabButton active={activeTab === 'propiedades'} onClick={() => setActiveTab('propiedades')} icon={Home} label="Propiedades" />
           <TabButton active={activeTab === 'emprendimientos'} onClick={() => setActiveTab('emprendimientos')} icon={Building2} label="Emprendimientos" />
           <TabButton active={activeTab === 'acquisition'} onClick={() => setActiveTab('acquisition')} icon={Clock} label="Captaciones" />
@@ -737,9 +786,10 @@ const Properties = () => {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-40 gap-6">
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Sincronizando Inventario Real Estate...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-12">
+          {[...Array(6)].map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-12">
@@ -754,7 +804,7 @@ const Properties = () => {
             )
           ) : (
             properties.length > 0 ? (
-              displayedProps.map(prop => <PropertyCard key={prop.id} property={prop} onView={(p: any, edit = false) => { if (edit) { setEditingProp(p); setIsModalOpen(true); } else setViewingProp(p); }} />)
+              displayedProps.map(prop => <PropertyCard key={prop.id} property={prop} onView={(p: any) => setViewingProp(p)} onToggleFavorite={handleToggleFavorite} />)
             ) : (
               <div className="col-span-full py-40 text-center bg-white/20 rounded-[4rem] border-2 border-dashed border-slate-200">
                 <Home size={60} className="mx-auto text-slate-200 mb-6" />

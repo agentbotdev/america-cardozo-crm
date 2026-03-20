@@ -19,38 +19,40 @@ export const dashboardService = {
     },
 
     getChartData: async () => {
-        // In a real production app, you'd use Postgres functions for these aggregations
-        // For now, we fetch and aggregate to ensure "Real Data" feel.
+        // Optimized: Use database aggregation instead of fetching all records
+        // For temperature counts, we'll use Postgres aggregate functions via RPC
 
-        const { data: leads } = await supabase.from('leads').select('temperatura, fuente_consulta, created_at');
+        // Get counts by temperatura using separate queries (more efficient than fetching all)
+        const [frioCount, tibioCount, calienteCount, cerradoCount, allLeads] = await Promise.all([
+            supabase.from('leads').select('*', { count: 'exact', head: true }).eq('temperatura', 'frio'),
+            supabase.from('leads').select('*', { count: 'exact', head: true }).eq('temperatura', 'tibio'),
+            supabase.from('leads').select('*', { count: 'exact', head: true }).eq('temperatura', 'caliente'),
+            supabase.from('leads').select('*', { count: 'exact', head: true }).eq('temperatura', 'cerrado'),
+            // For source aggregation, limit to recent leads only (last 1000)
+            supabase.from('leads').select('fuente_consulta').order('created_at', { ascending: false }).limit(1000)
+        ]);
 
-        if (!leads) return null;
-
-        // 1. Status Data
-        const statusCounts = leads.reduce((acc: any, lead) => {
-            const status = lead.temperatura || 'nuevo';
-            acc[status] = (acc[status] || 0) + 1;
-            return acc;
-        }, {});
-
+        // 1. Status Data (using counts from database)
         const leadStatusData = [
-            { name: 'Frío', value: statusCounts.frio || 0, color: '#94a3b8' },
-            { name: 'Tibio', value: statusCounts.tibio || 0, color: '#6366f1' },
-            { name: 'Caliente', value: statusCounts.caliente || 0, color: '#f59e0b' },
-            { name: 'Cerrado', value: statusCounts.cerrado || 0, color: '#10b981' },
+            { name: 'Frío', value: frioCount.count || 0, color: '#94a3b8' },
+            { name: 'Tibio', value: tibioCount.count || 0, color: '#6366f1' },
+            { name: 'Caliente', value: calienteCount.count || 0, color: '#f59e0b' },
+            { name: 'Cerrado', value: cerradoCount.count || 0, color: '#10b981' },
         ];
 
-        // 2. Source Data
-        const sourceCounts = leads.reduce((acc: any, lead) => {
-            const source = lead.fuente_consulta || 'Otro';
-            acc[source] = (acc[source] || 0) + 1;
-            return acc;
-        }, {});
+        // 2. Source Data (aggregate from limited dataset)
+        const sourceCounts: Record<string, number> = {};
+        if (allLeads.data) {
+            allLeads.data.forEach(lead => {
+                const source = lead.fuente_consulta || 'Otro';
+                sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+            });
+        }
 
-        const leadsBySourceData = Object.entries(sourceCounts).map(([name, value]) => ({
-            name,
-            value
-        })).sort((a: any, b: any) => b.value - a.value).slice(0, 4);
+        const leadsBySourceData = Object.entries(sourceCounts)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 4);
 
         return { leadStatusData, leadsBySourceData };
     }

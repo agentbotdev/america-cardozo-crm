@@ -195,10 +195,17 @@ const Dashboard: React.FC = () => {
   });
   const [hotLeads, setHotLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('Agente');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) setUserName(data.user.email.split('@')[0]);
+    });
+  }, []);
 
   // Sparkline data: simulados (7 días)
   const sparkLeads   = useMemo(() => [4, 7, 5, 9, 6, 11, 8], []);
@@ -353,7 +360,7 @@ const Dashboard: React.FC = () => {
         {/* Header con título + campanita + refresh */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-slate-800">Dashboard</h1>
+            <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Hola, {userName} 👋</h1>
             <p className="text-xs text-slate-400 font-semibold mt-0.5">
               Actualizado {lastUpdated.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
             </p>
