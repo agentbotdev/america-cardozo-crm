@@ -27,7 +27,7 @@ export const propertiesService = {
         }
 
         // 1. Fetch properties sin ordenar por 'created_at' en DB para evitar error 42703 si la tabla fue modificada
-        const { data, error } = await query.limit(100);
+        const { data, error } = await query.limit(1000);
 
         if (error) {
             console.error('❌ Supabase fetch error:', error);

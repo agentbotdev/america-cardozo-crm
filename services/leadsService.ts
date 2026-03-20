@@ -30,11 +30,16 @@ export const leadsService = {
         const leads = (data || []).map(l => ({
             ...l,
             id: String(l.id),
-            estado_temperatura: l.temperatura,
-            etapa_proceso: l.etapa,
-            busca_venta: l.tipo_operacion_buscada === 'venta',
-            busca_alquiler: l.tipo_operacion_buscada === 'alquiler',
-            propiedades_enviadas_ids: l.propiedades_recomendadas || []
+            nombre: l.nombre || 'Sin Nombre',
+            telefono: l.telefono || '',
+            email: l.email || '',
+            fuente_consulta: l.fuente_consulta || l.origen || 'WhatsApp',
+            estado_temperatura: l.estado_temperatura || l.temperatura || 'Frio',
+            etapa_proceso: l.etapa_proceso || l.etapa || 'Inicio',
+            estado_seguimiento: l.estado_seguimiento || 'Nuevo',
+            busca_venta: l.busca_venta || l.tipo_operacion_buscada === 'venta',
+            busca_alquiler: l.busca_alquiler || l.tipo_operacion_buscada === 'alquiler',
+            propiedades_enviadas_ids: l.propiedades_enviadas_ids || l.propiedades_recomendadas || []
         }));
 
         const endTime = performance.now();
@@ -55,12 +60,13 @@ export const leadsService = {
     },
 
     saveLead: async (lead: Partial<Lead>) => {
-        const { id, estado_temperatura, etapa_proceso, busca_venta, busca_alquiler, propiedades_enviadas_ids, ...rest } = lead;
+        const { id, estado_temperatura, etapa_proceso, estado_seguimiento, busca_venta, busca_alquiler, propiedades_enviadas_ids, ...rest } = lead;
 
         const dataToSave: any = {
             ...rest,
             temperatura: estado_temperatura,
             etapa: etapa_proceso,
+            estado_seguimiento: estado_seguimiento,
             tipo_operacion_buscada: busca_venta ? 'venta' : (busca_alquiler ? 'alquiler' : undefined),
             propiedades_recomendadas: propiedades_enviadas_ids,
             updated_at: new Date().toISOString()
@@ -88,6 +94,47 @@ export const leadsService = {
         leadsService.invalidateCache();
 
         return savedId;
+    },
+
+    updateLeadStatus: async (leadId: string, newStatus: string) => {
+        const { error } = await supabase
+            .from('leads')
+            .update({ estado_seguimiento: newStatus, updated_at: new Date().toISOString() })
+            .eq('id', leadId);
+        
+        if (error) {
+            console.error('❌ Error updating lead status:', error);
+            throw error;
+        }
+        
+        leadsService.invalidateCache();
+    },
+
+    updateLeadStage: async (leadId: string, newStage: string) => {
+        const { error } = await supabase
+            .from('leads')
+            .update({ 
+                etapa_proceso: newStage, 
+                etapa: newStage, // fallback
+                updated_at: new Date().toISOString() 
+            })
+            .eq('id', leadId);
+        
+        if (error) {
+            console.error('❌ Error updating lead stage:', error);
+            throw error;
+        }
+        
+        leadsService.invalidateCache();
+        return { error: null };
+    },
+
+    createLead: async (leadData: any) => {
+        return leadsService.saveLead(leadData);
+    },
+
+    updateLead: async (id: string, leadData: any) => {
+        return leadsService.saveLead({ ...leadData, id });
     },
 
     async assignPropertyToLead(leadId: string, propertyId: string) {

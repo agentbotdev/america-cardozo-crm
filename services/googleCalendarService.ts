@@ -2,7 +2,6 @@
 import { supabase } from './supabaseClient';
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 const REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 const FALLBACK_USER_ID = '00000000-0000-0000-0000-000000000000'; // For local testing without login
@@ -29,25 +28,13 @@ export const googleCalendarService = {
     },
 
     exchangeCodeForToken: async (code: string) => {
-        const url = 'https://oauth2.googleapis.com/token';
-        const values = {
-            code,
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
-            redirect_uri: REDIRECT_URI,
-            grant_type: 'authorization_code',
-        };
-
-        const response = await fetch(url, {
-            method: 'POST',
-            body: new URLSearchParams(values),
+        const { data: tokens, error: funcError } = await supabase.functions.invoke('google-calendar-auth', {
+            body: { action: 'exchange_code', code, redirect_uri: REDIRECT_URI }
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to exchange code for token');
+        if (funcError || tokens.error) {
+            throw new Error(funcError?.message || tokens.error || 'Failed to exchange code for token');
         }
-
-        const tokens = await response.json();
 
         // Save to Supabase
         const { data: { user } } = await supabase.auth.getUser();
@@ -93,24 +80,14 @@ export const googleCalendarService = {
     },
 
     refreshAccessToken: async (refresh_token: string) => {
-        const url = 'https://oauth2.googleapis.com/token';
-        const values = {
-            refresh_token,
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
-            grant_type: 'refresh_token',
-        };
-
-        const response = await fetch(url, {
-            method: 'POST',
-            body: new URLSearchParams(values),
+        const { data: tokens, error: funcError } = await supabase.functions.invoke('google-calendar-auth', {
+            body: { action: 'refresh_token', refresh_token }
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to refresh token');
+        if (funcError || tokens.error) {
+            throw new Error(funcError?.message || tokens.error || 'Failed to refresh token');
         }
 
-        const tokens = await response.json();
         const { data: { user } } = await supabase.auth.getUser();
         const userId = user?.id || FALLBACK_USER_ID;
 
