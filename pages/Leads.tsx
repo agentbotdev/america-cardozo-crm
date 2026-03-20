@@ -10,7 +10,7 @@ import { Lead, ChatMessage, LeadHistory } from '../types';
 import { leadsService } from '../services/leadsService';
 import { propertiesService } from '../services/propertiesService';
 import { supabase } from '../services/supabaseClient';
-import { LeadFiltersPanel, LeadFilters } from '../components/leads/LeadFiltersPanel';
+import { LeadFiltersPanel, LeadFilters } from '../components/Leads/LeadFiltersPanel';
 
 const statusColors: Record<string, string> = {
   frio: 'bg-blue-100 text-blue-600',
