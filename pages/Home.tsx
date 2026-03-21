@@ -146,7 +146,7 @@ const Dashboard: React.FC = () => {
             { dia: 'Sáb', leads: 3, visitas: 2 },
             { dia: 'Dom', leads: 2, visitas: 1 }
           ],
-          chartPorOperacion: chartData.chartPorOperacion || [
+          chartPorOperacion: [
             { name: 'Venta', value: 35 }, { name: 'Alquiler', value: 45 }, { name: 'Desarrollo', value: 10 }
           ]
         });

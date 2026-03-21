@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      const p = await authService.getProfile(userId);
+      const p = await authService.getUserProfile(userId);
       setProfile(p);
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await authService.signOut();
+    await authService.logout();
   };
 
   const isAdmin = profile?.role === 'admin';

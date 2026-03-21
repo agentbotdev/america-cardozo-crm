@@ -160,7 +160,6 @@ export interface Property {
   fecha_captacion?: string;
   propietario_nombre?: string;
   propietario_telefono?: string;
-  es_favorita?: boolean;
 
   // Analítica
   cantidad_consultas: number;
@@ -201,7 +200,6 @@ export interface Lead {
 
   estado_temperatura: ClientStatus;
   etapa_proceso: SalesStage;
-  estado_seguimiento?: string;
   score: number;
   probabilidad_cierre?: number;
   prioridad?: string;
