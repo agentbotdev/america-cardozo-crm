@@ -7,6 +7,11 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled promise rejection:', e.reason);
+  e.preventDefault();
+});
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>

@@ -1,116 +1,55 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error: Error | null;
-  errorInfo: ErrorInfo | null;
+  error?: Error;
 }
 
 class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    };
+  public state: State = {
+    hasError: false
+  };
+
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
-    return {
-      hasError: true,
-      error,
-    };
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Uncaught error:', error, errorInfo);
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    this.setState({
-      error,
-      errorInfo,
-    });
-  }
-
-  handleReload = () => {
+  private handleReload = () => {
     window.location.reload();
   };
 
-  render() {
+  public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
-          <div className="max-w-md w-full text-center">
-            <div className="bg-slate-800 rounded-lg p-8 shadow-xl border border-slate-700">
-              {/* Error Icon */}
-              <div className="mb-6">
-                <svg
-                  className="w-16 h-16 mx-auto text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-
-              {/* Error Message */}
-              <h2 className="text-xl font-semibold text-white mb-2">
-                Algo salió mal
-              </h2>
-              <p className="text-gray-400 mb-6">
-                Ocurrió un error inesperado. Por favor, intenta recargar la página.
-              </p>
-
-              {/* Error Details (collapsed by default in production) */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="text-left mb-6 bg-slate-900 rounded p-4 border border-slate-600">
-                  <summary className="text-sm text-gray-300 cursor-pointer mb-2">
-                    Detalles del error
-                  </summary>
-                  <pre className="text-xs text-red-400 overflow-auto max-h-40">
-                    {this.state.error.toString()}
-                    {this.state.errorInfo?.componentStack}
-                  </pre>
-                </details>
-              )}
-
-              {/* Reload Button */}
-              <button
-                onClick={this.handleReload}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium
-                         px-6 py-3 rounded-lg transition-colors duration-200
-                         focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-                         focus:ring-offset-slate-800"
-              >
-                Recargar página
-              </button>
-
-              {/* Support Link */}
-              <p className="mt-4 text-sm text-gray-500">
-                Si el problema persiste,{' '}
-                <a
-                  href="#/support"
-                  className="text-indigo-400 hover:text-indigo-300 underline"
-                >
-                  contacta con soporte
-                </a>
-              </p>
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full text-center shadow-2xl">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-red-500 text-3xl">⚠️</span>
             </div>
+            <h1 className="text-2xl font-black text-slate-900 mb-2">¡Ups! Algo salió mal</h1>
+            <p className="text-slate-500 mb-8 text-sm">
+              Ocurrió un error inesperado en la aplicación. Por favor, intentá recargar la página.
+            </p>
+            <button
+              onClick={this.handleReload}
+              className="w-full bg-slate-900 text-white font-black py-4 px-4 rounded-2xl hover:bg-indigo-600 transition-colors shadow-lg active:scale-95"
+            >
+              Recargar página
+            </button>
           </div>
         </div>
       );
     }
 
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
 
