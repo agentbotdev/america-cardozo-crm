@@ -1,6 +1,7 @@
 
 import React, { useState, useContext, createContext, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import ChatBotWidget from './ChatBotWidget';
 import {
   Home, Building2, Users, UserCircle, CalendarDays, CheckSquare,
   BarChart3, LifeBuoy, Settings, Menu, Bell, Search, LogOut, ChevronLeft, ChevronRight, X,
@@ -68,6 +69,8 @@ const AppLayout: React.FC = () => {
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const showChatBot = location.pathname === '/' || location.pathname === '/soporte';
 
   useEffect(() => {
     // Check for Google OAuth code in the root URL (due to Google redirecting away from HashRouter paths)
@@ -330,6 +333,8 @@ const AppLayout: React.FC = () => {
             <Outlet />
           </main>
         </div>
+
+        {showChatBot && <ChatBotWidget />}
       </div>
     </LayoutContext.Provider>
   );

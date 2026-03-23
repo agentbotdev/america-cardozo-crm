@@ -5,7 +5,7 @@ import {
   Plus, MapPin, Search, X, Heart,
   BedDouble, Bath, Ruler, ChevronLeft, ChevronRight, Home, Info, Layers,
   Building2, Image as ImageIcon, Edit, Upload, Trash2, CheckCircle2,
-  Trash, Save, Map as MapIcon, ArrowLeft, Clock, Sparkles, Loader2, Bot
+  Trash, Save, Map as MapIcon, ArrowLeft, Clock, Sparkles, Loader2, Bot, SlidersHorizontal
 } from 'lucide-react';
 import { propertiesService } from '../services/propertiesService';
 import { developmentsService, Development } from '../services/developmentsService';
@@ -14,6 +14,7 @@ import { openaiService } from '../services/openaiService';
 import PropertySearch from '../components/PropertySearch';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PropertyFiltersDrawer, PropertyFilters } from '../components/properties/PropertyFiltersDrawer';
 
 // --- SHARED UI SUB-COMPONENTS ---
 
@@ -203,19 +204,19 @@ const PropertyCard = React.memo(({ property, onView, onToggleFavorite }: any) =>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-200 flex items-center gap-2 truncate"><MapPin size={12} className="text-indigo-400" /> {property.barrio}</p>
         </div>
       </div>
-      <div className="p-5 flex flex-col">
-        <h3 className="text-base font-black text-slate-900 mb-4 line-clamp-1">{property.titulo}</h3>
+      <div className="p-4 flex flex-col">
+        <h3 className="text-base font-black text-slate-900 mb-3 line-clamp-1">{property.titulo}</h3>
         <div className="grid grid-cols-3 gap-2">
-          <div className="flex flex-col items-center justify-center p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
-            <BedDouble size={18} className="text-indigo-600 mb-1" />
+          <div className="flex flex-col items-center justify-center p-2 bg-slate-50/50 rounded-xl border border-slate-100">
+            <BedDouble size={16} className="text-indigo-600 mb-0.5" />
             <span className="text-xs font-black text-slate-900">{property.dormitorios || 0}</span>
           </div>
-          <div className="flex flex-col items-center justify-center p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
-            <Bath size={18} className="text-indigo-600 mb-1" />
+          <div className="flex flex-col items-center justify-center p-2 bg-slate-50/50 rounded-xl border border-slate-100">
+            <Bath size={16} className="text-indigo-600 mb-0.5" />
             <span className="text-xs font-black text-slate-900">{property.banos_completos || 0}</span>
           </div>
-          <div className="flex flex-col items-center justify-center p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
-            <Ruler size={18} className="text-indigo-600 mb-1" />
+          <div className="flex flex-col items-center justify-center p-2 bg-slate-50/50 rounded-xl border border-slate-100">
+            <Ruler size={16} className="text-indigo-600 mb-0.5" />
             <span className="text-xs font-black text-slate-900">{property.sup_cubierta}</span>
           </div>
         </div>
@@ -302,7 +303,7 @@ const PropertyDetailView = ({ property, onClose, onEdit }: any) => {
       <div className="flex-1 overflow-y-auto no-scrollbar pt-32 px-6 pb-20">
         <div className="max-w-7xl mx-auto space-y-12">
           <div className="relative h-[40vh] md:h-[55vh] rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-2xl group cursor-pointer" onClick={() => setShowGallery(true)}>
-            <img src={images[currentImageIndex]} className="w-full h-full object-cover" alt="" />
+            <img src={images[currentImageIndex]} className="w-full h-full object-cover" alt="" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
             <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 text-white">
               <h1 className="text-2xl md:text-5xl font-black mb-2 md:mb-4 tracking-tighter">{property.titulo}</h1>
@@ -346,7 +347,7 @@ const PropertyDetailView = ({ property, onClose, onEdit }: any) => {
           <div className="fixed inset-0 z-[250] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-8">
             <button onClick={() => setShowGallery(false)} className="absolute top-10 right-10 text-white p-4 hover:bg-white/10 rounded-full transition-all"><X size={32} /></button>
             <div className="relative w-full max-w-6xl h-[70vh]">
-              <img src={images[currentImageIndex]} className="w-full h-full object-contain" alt="" />
+              <img src={images[currentImageIndex]} className="w-full h-full object-contain" alt="" loading="lazy" />
               <button onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length); }} className="absolute left-0 top-1/2 -translate-y-1/2 p-4 bg-white/10 text-white rounded-full hover:bg-white/20"><ChevronLeft size={32} /></button>
               <button onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => (prev + 1) % images.length); }} className="absolute right-0 top-1/2 -translate-y-1/2 p-4 bg-white/10 text-white rounded-full hover:bg-white/20"><ChevronRight size={32} /></button>
             </div>
@@ -637,6 +638,7 @@ const Properties = () => {
   const [developments, setDevelopments] = useState<Development[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'propiedades' | 'emprendimientos' | 'acquisition'>('propiedades');
+  const [subTab, setSubTab] = useState<'todas' | 'venta' | 'alquiler' | 'favoritas'>('todas');
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingProp, setViewingProp] = useState<Property | null>(null);
   const [editingProp, setEditingProp] = useState<Property | null>(null);
@@ -644,6 +646,8 @@ const Properties = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<PropertyFilters>({});
   const [searchResults, setSearchResults] = useState<Property[] | null>(null);
   const [searchExplanation, setSearchExplanation] = useState<string>('');
 
@@ -672,12 +676,8 @@ const Properties = () => {
 
   const handleToggleFavorite = async (property: Property) => {
     try {
-      const updatedProperty = {
-        ...property,
-        es_favorita: !property.es_favorita
-      };
-
-      await propertiesService.saveProperty(updatedProperty);
+      // Optimized: use dedicated toggleFavorite method
+      await propertiesService.toggleFavorite(property.id, property.es_favorita || false);
 
       // Update local state
       setProperties((prev: Property[]) =>
@@ -690,7 +690,22 @@ const Properties = () => {
 
   const displayedProps = useMemo(() => {
     if (activeTab === 'emprendimientos') return [];
+
+    // Base filter by tab
     let props = properties.filter(p => activeTab === 'propiedades' ? p.estado !== 'borrador' : p.estado === 'borrador');
+
+    // Subtab filter
+    if (activeTab === 'propiedades') {
+      if (subTab === 'venta') {
+        props = props.filter(p => p.tipo_operacion === 'venta');
+      } else if (subTab === 'alquiler') {
+        props = props.filter(p => p.tipo_operacion === 'alquiler');
+      } else if (subTab === 'favoritas') {
+        props = props.filter(p => p.es_favorita === true);
+      }
+    }
+
+    // Search term filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       props = props.filter(p =>
@@ -698,8 +713,95 @@ const Properties = () => {
         p.barrio?.toLowerCase().includes(term)
       );
     }
+
+    // Advanced filters
+    if (filters.tipo_operacion && filters.tipo_operacion.length > 0) {
+      props = props.filter(p => filters.tipo_operacion!.includes(p.tipo_operacion));
+    }
+
+    if (filters.tipo_inmueble && filters.tipo_inmueble.length > 0) {
+      props = props.filter(p => filters.tipo_inmueble!.includes(p.tipo));
+    }
+
+    if (filters.zona) {
+      const zona = filters.zona.toLowerCase();
+      props = props.filter(p =>
+        p.zona?.toLowerCase().includes(zona) ||
+        p.barrio?.toLowerCase().includes(zona)
+      );
+    }
+
+    if (filters.precio_min !== undefined) {
+      props = props.filter(p => {
+        const precio = p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler;
+        return precio && precio >= filters.precio_min!;
+      });
+    }
+
+    if (filters.precio_max !== undefined) {
+      props = props.filter(p => {
+        const precio = p.tipo_operacion === 'venta' ? p.precio_venta : p.precio_alquiler;
+        return precio && precio <= filters.precio_max!;
+      });
+    }
+
+    if (filters.ambientes && filters.ambientes.length > 0) {
+      props = props.filter(p => {
+        const ambientes = p.ambientes || 0;
+        if (filters.ambientes!.includes(5)) {
+          return filters.ambientes!.includes(ambientes) || ambientes >= 5;
+        }
+        return filters.ambientes!.includes(ambientes);
+      });
+    }
+
+    if (filters.dormitorios && filters.dormitorios.length > 0) {
+      props = props.filter(p => {
+        const dorms = p.dormitorios || 0;
+        if (filters.dormitorios!.includes(4)) {
+          return filters.dormitorios!.includes(dorms) || dorms >= 4;
+        }
+        return filters.dormitorios!.includes(dorms);
+      });
+    }
+
+    if (filters.superficie_min !== undefined) {
+      props = props.filter(p => (p.sup_cubierta || 0) >= filters.superficie_min!);
+    }
+
+    if (filters.superficie_max !== undefined) {
+      props = props.filter(p => (p.sup_cubierta || 0) <= filters.superficie_max!);
+    }
+
+    if (filters.comodidades && filters.comodidades.length > 0) {
+      props = props.filter(p => {
+        return filters.comodidades!.every(comodidad => {
+          return (p as any)[comodidad] === true;
+        });
+      });
+    }
+
+    if (filters.estado && filters.estado.length > 0) {
+      props = props.filter(p => filters.estado!.includes(p.estado));
+    }
+
+    if (filters.publicado_en && filters.publicado_en.length > 0) {
+      props = props.filter(p => {
+        return filters.publicado_en!.some(portal => {
+          if (portal === 'zonaprop') return p.publicado_zonaprop;
+          if (portal === 'argenprop') return p.publicado_argenprop;
+          if (portal === 'mercadolibre') return p.publicado_mercadolibre;
+          return false;
+        });
+      });
+    }
+
+    if (filters.vendedor) {
+      props = props.filter(p => p.vendedor_asignado === filters.vendedor);
+    }
+
     return props;
-  }, [properties, activeTab, searchTerm]);
+  }, [properties, activeTab, subTab, searchTerm, filters]);
 
   const displayedDevs = useMemo(() => {
     if (activeTab !== 'emprendimientos') return [];
@@ -762,27 +864,51 @@ const Properties = () => {
         </button>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 mb-16">
-        <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl flex gap-1 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <TabButton active={activeTab === 'propiedades'} onClick={() => setActiveTab('propiedades')} icon={Home} label="Propiedades" />
-          <TabButton active={activeTab === 'emprendimientos'} onClick={() => setActiveTab('emprendimientos')} icon={Building2} label="Emprendimientos" />
-          <TabButton active={activeTab === 'acquisition'} onClick={() => setActiveTab('acquisition')} icon={Clock} label="Captaciones" />
-        </div>
-        <div className="flex gap-4 flex-1">
-          <div className="flex-1 relative group">
-            <Search size={22} className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-            <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-100 rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
+      <div className="flex flex-col gap-6 mb-16">
+        {/* Main Tabs */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl flex gap-1 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <TabButton active={activeTab === 'propiedades'} onClick={() => setActiveTab('propiedades')} icon={Home} label="Propiedades" />
+            <TabButton active={activeTab === 'emprendimientos'} onClick={() => setActiveTab('emprendimientos')} icon={Building2} label="Emprendimientos" />
+            <TabButton active={activeTab === 'acquisition'} onClick={() => setActiveTab('acquisition')} icon={Clock} label="Captaciones" />
           </div>
-          {activeTab === 'propiedades' && (
-            <button
-              onClick={() => setIsSearchModalOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
-            >
-              <Bot size={20} />
-              <span className="hidden md:inline">Buscador IA</span>
-            </button>
-          )}
+          <div className="flex gap-4 flex-1">
+            <div className="flex-1 relative group">
+              <Search size={22} className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+              <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-100 rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
+            </div>
+            {activeTab === 'propiedades' && (
+              <>
+                <button
+                  onClick={() => setIsFiltersOpen(true)}
+                  className="bg-white border border-slate-100 px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap text-slate-700 hover:text-indigo-600"
+                >
+                  <SlidersHorizontal size={20} />
+                  <span className="hidden md:inline">Filtros</span>
+                </button>
+                <button
+                  onClick={() => setIsSearchModalOpen(true)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
+                >
+                  <Bot size={20} />
+                  <span className="hidden md:inline">Buscador IA</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* SubTabs for Propiedades */}
+        {activeTab === 'propiedades' && (
+          <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex gap-1 min-w-max">
+              <TabButton active={subTab === 'todas'} onClick={() => setSubTab('todas')} icon={Layers} label="Todas" />
+              <TabButton active={subTab === 'venta'} onClick={() => setSubTab('venta')} icon={Building2} label="Venta" />
+              <TabButton active={subTab === 'alquiler'} onClick={() => setSubTab('alquiler')} icon={Home} label="Alquiler" />
+              <TabButton active={subTab === 'favoritas'} onClick={() => setSubTab('favoritas')} icon={Heart} label="Favoritas" />
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -839,6 +965,15 @@ const Properties = () => {
             alert('No se encontraron propiedades con esos criterios.');
           }
         }}
+      />
+
+      {/* Filters Drawer */}
+      <PropertyFiltersDrawer
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        filters={filters}
+        onChange={setFilters}
+        resultCount={displayedProps.length}
       />
     </div>
   );

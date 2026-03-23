@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(findstr:*)",
+      "Bash(git pull:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: complete CRM restoration phases 1-5 and 8\n\nImplemented comprehensive fixes and enhancements across critical modules:\n\nPhase 1-3 \\(Infrastructure & Core\\):\n- Add ErrorBoundary for crash handling\n- Implement lazy loading with React.Suspense\n- Optimize dashboard performance with database-level aggregation\n- Remove unused LiveChat module\n- Fix sidebar navigation order\n- Connect global search to real Supabase data with debouncing\n- Create comprehensive taxonomy.ts with business constants\n- Update types.ts with missing Lead, Property, Visit fields\n\nPhase 4 \\(Properties\\):\n- Fix mobile tab scrolling with scrollbar-hide utility\n- Refactor PropertyCard \\(clickable, remove extra buttons\\)\n- Implement real favorite toggle functionality\n- Add skeleton loaders for better UX\n\nPhase 5 \\(Leads\\):\n- Fix detail panel blur bug \\(proper z-index layering\\)\n- Create LeadFiltersPanel with 12 comprehensive filter sections\n- Implement chat message saving to Supabase database\n- Add Enter key support for sending messages\n\nPhase 8 \\(Reports\\):\n- Fix mobile tabs scrolling for all devices\n- Create reportsService.ts with real data fetching for 5 dashboards\n- Connect all dashboard tabs to live Supabase data \\(Leads, Sales, Rentals, Properties, Captación\\)\n- Implement dynamic CSV export with actual dashboard data\n\nAll modules now use real database queries instead of mock data.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git rebase:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(git merge:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nmerge: integrate restoration phases with remote changes\n\nResolved conflicts by keeping restoration work \\(phases 1-5 and 8\\) which includes:\n- ErrorBoundary and lazy loading\n- Comprehensive taxonomy system\n- Properties module enhancements\n- Leads module with advanced filters and chat\n- Reports module with real Supabase data\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npm run build:*)",
+      "Bash(dir:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git ls-tree:*)",
+      "Bash(git rm:*)",
+      "Bash(test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git restore:*)",
+      "Bash(npm install:*)",
+      "Bash(ls:*)",
+      "Bash(npx vite build)"
+    ]
+  }
+}

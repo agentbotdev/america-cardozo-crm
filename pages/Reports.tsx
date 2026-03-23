@@ -1,50 +1,43 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { reportsService } from '../services/reportsService';
 import {
-  Users, DollarSign, Home, Key, Zap, Target,
-  Activity, Filter, Download, ChevronRight, ChevronLeft,
-  ArrowUpRight, ArrowDownRight, Sparkles, Clock, CheckCircle2,
-  Building2, Briefcase, Layers, RotateCcw, Star, MoreHorizontal,
-  Eye, SlidersHorizontal, X as XIcon
+  Users, DollarSign, Home, Key, Zap, Target, Activity, Filter, Download,
+  ChevronRight, ChevronLeft, ArrowUpRight, Sparkles, Clock, CheckCircle2,
+  Building2, Briefcase, Star, RotateCcw, Eye, X as XIcon, Layers, Brain,
+  MessageSquare, TrendingUp, AlertCircle
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart as ReBarChart, Bar as ReBar, LineChart, Line,
-  CartesianGrid, PieChart, Pie, Cell
+  BarChart as ReBarChart, Bar as ReBar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
-import {
-  BarChart,
-  LinearXAxis,
-  LinearXAxisTickSeries,
-  LinearXAxisTickLabel,
-  LinearYAxis,
-  LinearYAxisTickSeries,
-  BarSeries,
-  Bar,
-  GridlineSeries,
-  Gridline
-} from 'reaviz';
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
 
-// --- CUSTOM HIGH-FIDELITY COMPONENTS ---
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPER COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════
 
 const KPICard = ({ title, value, trend, icon: Icon, delay = 0, color = 'indigo' }: any) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: delay * 0.1 }}
-    className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col justify-between transform-gpu"
+    transition={{ delay: delay * 0.05 }}
+    className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col justify-between"
   >
     <div className="flex justify-between items-start mb-6">
       <div className={`p-3.5 rounded-2xl bg-${color}-50 text-${color}-600 group-hover:scale-110 transition-transform shadow-sm`}>
         <Icon size={22} />
       </div>
-      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border ${trend.includes('+') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-        {trend}
-      </div>
+      {trend && (
+        <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border ${
+          trend.includes('+') || trend.includes('↑')
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+            : 'bg-rose-50 text-rose-700 border-rose-100'
+        }`}>
+          {trend}
+        </div>
+      )}
     </div>
     <div>
       <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 leading-none">{title}</p>
@@ -53,386 +46,834 @@ const KPICard = ({ title, value, trend, icon: Icon, delay = 0, color = 'indigo' 
   </motion.div>
 );
 
-const GroupedIncidentReportCard = ({ title, metrics, chartData }: any) => {
+const LoadingState = () => (
+  <div className="flex items-center justify-center py-32">
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cargando datos...</p>
+    </div>
+  </div>
+);
+
+const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  <div className="flex items-center justify-center py-32">
+    <div className="text-center max-w-md">
+      <AlertCircle className="w-16 h-16 text-rose-400 mx-auto mb-4" />
+      <h3 className="text-lg font-black text-slate-800 mb-2">Error al cargar datos</h3>
+      <p className="text-sm text-slate-500 mb-6">{message}</p>
+      <button
+        onClick={onRetry}
+        className="px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all"
+      >
+        Reintentar
+      </button>
+    </div>
+  </div>
+);
+
+const EmptyState = () => (
+  <div className="flex items-center justify-center py-32">
+    <div className="text-center max-w-md">
+      <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+      <h3 className="text-lg font-black text-slate-800 mb-2">Sin datos para el período</h3>
+      <p className="text-sm text-slate-500">Intenta ajustar el rango de fechas o los filtros aplicados.</p>
+    </div>
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD LEADS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const LeadsDashboard = ({ data }: { data: any }) => {
+  if (!data) return <EmptyState />;
+
   return (
-    <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8 flex flex-col h-full overflow-hidden transform-gpu transition-all hover:shadow-2xl">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-none">{title} Report</h3>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Analytical insights by source</p>
-        </div>
-        <div className="flex gap-2">
-          {['Directo', 'Web', 'Referido', 'Bot'].map((l, i) => (
-            <div key={l} className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i] }}></div>
-              <span className="text-[9px] font-black text-slate-400 uppercase">{l}</span>
-            </div>
-          ))}
-        </div>
+    <div className="space-y-10 animate-fade-in">
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
+        <KPICard title="Total Leads" value={data.totalLeads?.toLocaleString() || '0'} trend="+12%" icon={Users} color="blue" delay={0} />
+        <KPICard title="Hot Leads" value={data.hotLeads?.toLocaleString() || '0'} trend="+8" icon={Sparkles} color="rose" delay={1} />
+        <KPICard title="Tasa Respuesta" value={data.responseRate || '0%'} trend="+4%" icon={Zap} color="emerald" delay={2} />
+        <KPICard title="Score Avg" value={data.avgScore || '0'} trend="+0.5" icon={Target} color="indigo" delay={3} />
+        <KPICard title="Conversión" value={data.conversionRate || '0%'} trend="+2%" icon={CheckCircle2} color="amber" delay={4} />
+        <KPICard title="Sin Respuesta" value={data.sinRespuesta?.toLocaleString() || '0'} trend={undefined} icon={Clock} color="slate" delay={5} />
       </div>
 
-      <div className="h-[240px] mb-8 w-full">
-        <BarChart
-          height={240}
-          data={chartData || [
-            { key: 'Jan', data: [{ key: 'A', data: 20 }, { key: 'B', data: 35 }, { key: 'C', data: 45 }, { key: 'D', data: 15 }] },
-            { key: 'Feb', data: [{ key: 'A', data: 25 }, { key: 'B', data: 40 }, { key: 'C', data: 50 }, { key: 'D', data: 20 }] },
-            { key: 'Mar', data: [{ key: 'A', data: 15 }, { key: 'B', data: 30 }, { key: 'C', data: 40 }, { key: 'D', data: 25 }] },
-            { key: 'Apr', data: [{ key: 'A', data: 30 }, { key: 'B', data: 45 }, { key: 'C', data: 55 }, { key: 'D', data: 10 }] },
-          ]}
-          yAxis={<LinearYAxis axisLine={null} tickSeries={<LinearYAxisTickSeries line={null} label={null} />} />}
-          xAxis={<LinearXAxis type="category" tickSeries={<LinearXAxisTickSeries label={<LinearXAxisTickLabel padding={10} rotation={-45} fill="#94a3b8" />} />} />}
-          series={<BarSeries type="grouped" layout="vertical" bar={<Bar width={8} glow={{ blur: 20, opacity: 0.7 }} gradient={null} />} colorScheme={COLORS} groupPadding={20} />}
-          gridlines={<GridlineSeries line={<Gridline strokeColor="rgba(148, 163, 184, 0.1)" />} />}
-        />
-      </div>
-
-      <div className="space-y-5 border-t border-slate-50 pt-8 mt-auto">
-        <div className="grid grid-cols-2 gap-8 mb-4">
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Volumen Crítico</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">321</span>
-              <span className="text-[11px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-lg">↑ 12%</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Volumen Total</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">1,120</span>
-              <span className="text-[11px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-lg">↓ 4%</span>
-            </div>
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Leads por Fuente */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Leads por Fuente</h3>
+          <div className="h-[300px]">
+            {data.chartBySource && data.chartBySource.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartBySource} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={100} style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#6366f1" radius={[0, 8, 8, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
           </div>
         </div>
 
-        {metrics?.map((m: any, i: number) => (
-          <div key={i} className="flex justify-between items-center group">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-slate-50 rounded-xl text-slate-400 group-hover:text-indigo-600 transition-colors">
-                {m.icon}
-              </div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest group-hover:text-slate-800 transition-colors">{m.label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-black text-slate-900">{m.value}</span>
-              {m.trend === 'up' ? <ArrowUpRight size={14} className="text-rose-500" /> : <ArrowDownRight size={14} className="text-emerald-500" />}
-            </div>
+        {/* Leads por Mes */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Evolución Mensual</h3>
+          <div className="h-[300px]">
+            {data.chartByMonth && data.chartByMonth.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <YAxis />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
           </div>
-        ))}
+        </div>
+
+        {/* Distribución por Temperatura */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Distribución Temperatura</h3>
+          <div className="h-[300px]">
+            {data.chartByTemperatura && data.chartByTemperatura.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={data.chartByTemperatura} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                    {data.chartByTemperatura.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Leads por Etapa */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Leads por Etapa</h3>
+          <div className="h-[300px]">
+            {data.chartByEtapa && data.chartByEtapa.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByEtapa} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={120} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-const GlowingLineCard = ({ title, trend = "+5.2%" }: any) => (
-  <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8 flex flex-col h-full overflow-hidden relative group">
-    <div className="mb-8">
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="text-2xl font-black text-slate-900 tracking-tighter">{title}</h3>
-        <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">{trend}</span>
-      </div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Data Monitor: Q1 2024</p>
-    </div>
-    <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={[
-          { n: 'Jan', v1: 40, v2: 60 }, { n: 'Feb', v1: 70, v2: 45 },
-          { n: 'Mar', v1: 55, v2: 80 }, { n: 'Apr', v1: 90, v2: 55 },
-          { n: 'May', v1: 85, v2: 95 }, { n: 'Jun', v1: 110, v2: 70 },
-        ]}>
-          <defs>
-            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
-          <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
-          <XAxis dataKey="n" hide /> <YAxis hide />
-          <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)', fontWeight: 'bold' }} />
-          <Line type="monotone" dataKey="v1" stroke="#6366f1" strokeWidth={5} dot={false} filter="url(#glow)" />
-          <Line type="monotone" dataKey="v2" stroke="#f59e0b" strokeWidth={5} dot={false} filter="url(#glow)" />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-    <div className="flex justify-between mt-6 pt-6 border-t border-slate-50">
-      {['Ene', 'Mar', 'Jun'].map(m => <span key={m} className="text-[11px] font-black text-slate-300 uppercase tracking-widest">{m}</span>)}
-    </div>
-  </div>
-);
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD VENTAS
+// ═══════════════════════════════════════════════════════════════════════════
 
-const StatisticsCard = ({ title, value, subtext }: any) => (
-  <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8 flex flex-col h-full overflow-hidden">
-    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{title}</p>
-    <div className="flex items-baseline gap-2 mb-4">
-      <h3 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter">{value}</h3>
-      <span className="text-sm font-bold text-slate-300">USD</span>
-    </div>
-    <p className="text-emerald-500 text-[11px] font-black tracking-widest mb-8">{subtext}</p>
-    <div className="h-[120px] w-full mb-8">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={[{ v: 10 }, { v: 25 }, { v: 18 }, { v: 35 }, { v: 25 }, { v: 45 }, { v: 30 }]}>
-          <Area type="monotone" dataKey="v" stroke="#1e293b" fill="#f8fafc" strokeWidth={3} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-    <div className="space-y-5 mt-auto">
-      <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-        <span>Dominancia del Mercado</span>
-        <span className="text-slate-900">84.2%</span>
-      </div>
-      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
-        <div className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" style={{ width: '60%' }}></div>
-        <div className="h-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" style={{ width: '25%' }}></div>
-        <div className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ width: '15%' }}></div>
-      </div>
-    </div>
-  </div>
-);
+const SalesDashboard = ({ data }: { data: any }) => {
+  if (!data) return <EmptyState />;
 
-const FunnelCard = ({ title, color = "#10b981" }: any) => (
-  <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8 flex flex-col h-full overflow-hidden">
-    <div className="mb-10 flex flex-col sm:flex-row justify-between items-start gap-6">
-      <div>
-        <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest mb-1">{title} Rate</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-4xl font-black text-slate-900 tracking-tighter">16.9%</span>
-          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full text-[11px] font-black shadow-sm">+2.1%</span>
-        </div>
+  return (
+    <div className="space-y-10 animate-fade-in">
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <KPICard title="GMV Total" value={data.gmv || '$0M'} trend="+18%" icon={DollarSign} color="emerald" delay={0} />
+        <KPICard title="Ventas Cerradas" value={data.totalSales?.toLocaleString() || '0'} trend="+12" icon={CheckCircle2} color="indigo" delay={1} />
+        <KPICard title="Pipeline Activo" value={data.pipelineCount?.toLocaleString() || '0'} trend="+14" icon={Layers} color="blue" delay={2} />
+        <KPICard title="Días Cierre Avg" value={data.avgClosingDays || '0d'} trend="-4d" icon={Clock} color="amber" delay={3} />
+        <KPICard title="Comisiones" value={data.commission || '$0k'} trend="+14%" icon={Zap} color="rose" delay={4} />
       </div>
-      <button className="bg-slate-900 text-white p-3 px-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-indigo-600 transition-all active:scale-95">DETALLES</button>
-    </div>
-    <div className="h-[180px] w-full mb-8">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={[{ n: 1, v: 20 }, { n: 2, v: 45 }, { n: 3, v: 30 }, { n: 4, v: 65 }, { n: 5, v: 45 }, { n: 6, v: 85 }]}>
-          <Area type="monotone" dataKey="v" stroke={color} fill={`${color}10`} strokeWidth={5} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-    <div className="grid grid-cols-2 gap-4 mt-auto">
-      <div className="bg-slate-50 p-5 rounded-[2rem] text-center border border-slate-100 hover:bg-white hover:shadow-md transition-all group">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-indigo-600">Entrantes</p>
-        <p className="text-2xl font-black text-slate-900">3,842</p>
-      </div>
-      <div className="bg-slate-50 p-5 rounded-[2rem] text-center border border-slate-100 hover:bg-white hover:shadow-md transition-all group">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-rose-600">Salidas</p>
-        <p className="text-2xl font-black text-slate-900">1,256</p>
-      </div>
-    </div>
-  </div>
-);
 
-// --- MAIN REPORT DASHBOARDS PER CATEGORY ---
-
-const commonMetrics = [
-  { label: 'Tiempo de Respuesta Promedio', value: '6 Horas', icon: <Zap size={14} />, trend: 'up' },
-  { label: 'Tiempo de Resolución de Incidencias', value: '4 Horas', icon: <Clock size={14} />, trend: 'up' },
-  { label: 'Escalado de Incidencias', value: '10%', icon: <Target size={14} />, trend: 'down' }
-];
-
-const LeadsDashboard = ({ data }: { data: any }) => (
-  <div className="space-y-10 animate-fade-in">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Total Leads" value={data?.totalLeads?.toLocaleString() || '0'} trend="+12%" icon={Users} color="blue" />
-      <KPICard title="Tasa Respuesta" value={data?.responseRate || '0%'} trend="+4%" icon={Zap} color="emerald" />
-      <KPICard title="Lead Score Avg" value={data?.avgScore || '0'} trend="+0.5" icon={Target} color="indigo" />
-      <KPICard title="Leads Hot" value={data?.hotLeads || '0'} trend="+8" icon={Sparkles} color="rose" />
-      <KPICard title="Conversión" value={data?.conversionRate || '0%'} trend="+2%" icon={CheckCircle2} color="amber" />
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
-        <GroupedIncidentReportCard title="Adquisición de Leads" metrics={commonMetrics} />
-      </div>
-      <div className="lg:col-span-1">
-        <StatisticsCard title="Lifetime Value Estimado" value="4.00T" subtext="+7.79% VS MES ANTERIOR" />
-      </div>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <GlowingLineCard title="Interés Entrante" />
-      <div className="bg-slate-900 rounded-[3rem] p-8 text-white h-full relative overflow-hidden flex flex-col justify-between shadow-2xl">
-        <div className="relative z-10">
-          <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6">Retention Score</h3>
-          <p className="text-7xl font-black tracking-tighter text-indigo-400">84.2%</p>
-          <p className="text-sm font-bold text-slate-400 mt-6 leading-relaxed max-w-xs">Eficiencia de retención proyectada por AgentBot Pro.</p>
-        </div>
-        <div className="mt-8 relative z-10">
-          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]" style={{ width: '84.2%' }}></div>
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Cierres por Mes */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Cierres por Mes</h3>
+          <div className="h-[300px]">
+            {data.chartByMonth && data.chartByMonth.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <YAxis />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
           </div>
         </div>
-        <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12"><Activity size={200} /></div>
-      </div>
-      <FunnelCard title="Cualificación de Leads" color="#6366f1" />
-    </div>
-  </div>
-);
 
-const SalesDashboard = ({ data }: { data: any }) => (
-  <div className="space-y-10 animate-fade-in">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="GMV USD" value={data?.gmv || '$0M'} trend="+18%" icon={DollarSign} color="emerald" />
-      <KPICard title="Pipeline" value={data?.pipelineCount || '0'} trend="+12" icon={Layers} color="indigo" />
-      <KPICard title="Cierre Medio" value={data?.avgClosingDays || '0d'} trend="-4d" icon={Clock} color="blue" />
-      <KPICard title="Comisiones" value={data?.commission || '$0k'} trend="+14%" icon={Zap} color="amber" />
-      <KPICard title="Alcance Metas" value="92%" trend="+5%" icon={Target} color="rose" />
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
-        <GroupedIncidentReportCard title="Operación de Ventas" metrics={commonMetrics} />
-      </div>
-      <div className="lg:col-span-1">
-        <StatisticsCard title="Ingresos Proyectados" value="1.25M" subtext="+12.2% SOBRE FORECAST" />
-      </div>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <GlowingLineCard title="Velocidad de Ventas" trend="+14.2%" />
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-xl">
-        <h3 className="text-xl font-black uppercase tracking-widest text-slate-400 mb-8">Broker Performance</h3>
-        <div className="space-y-8">
-          {['Carolina', 'Andrés', 'Sofía'].map((n, i) => (
-            <div key={n} className="flex items-center gap-5 group cursor-pointer">
-              <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-sm group-hover:scale-110 transition-transform shadow-lg">{n.charAt(0)}</div>
-              <div className="flex-1">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-black text-slate-800">{n} Mendes</span>
-                  <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{100 - i * 15}% GOAL</span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.3)]" style={{ width: `${100 - i * 15}%` }}></div>
-                </div>
-              </div>
-            </div>
-          ))}
+        {/* Cierres por Vendedor */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Cierres por Vendedor</h3>
+          <div className="h-[300px]">
+            {data.chartByVendedor && data.chartByVendedor.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByVendedor} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={100} style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#6366f1" radius={[0, 8, 8, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Evolución GMV */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8 lg:col-span-2">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Evolución GMV por Mes</h3>
+          <div className="h-[300px]">
+            {data.chartGmvByMonth && data.chartGmvByMonth.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.chartGmvByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <YAxis />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <Line type="monotone" dataKey="gmv" stroke="#10b981" strokeWidth={3} dot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
         </div>
       </div>
-      <FunnelCard title="Cierres de Ventas" color="#10b981" />
     </div>
-  </div>
-);
+  );
+};
 
-const AlquilerDashboard = ({ data }: { data: any }) => (
-  <div className="space-y-10 animate-fade-in">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Contratos Activos" value={data?.activeContracts || '0'} trend="+14" icon={Key} color="purple" />
-      <KPICard title="Recaudación" value={data?.totalRentalValue || '$0M'} trend="+5%" icon={DollarSign} color="emerald" />
-      <KPICard title="Vacancia" value={data?.vacancyRate || '0%'} trend="-1.1%" icon={Building2} color="blue" />
-      <KPICard title="Renovaciones" value={data?.renewalRate || '0%'} trend="+2%" icon={RotateCcw} color="amber" />
-      <KPICard title="Yield Avg" value={data?.avgYield || '0%'} trend="+0.2%" icon={Activity} color="rose" />
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
-        <GroupedIncidentReportCard title="Rotación de Alquileres" metrics={commonMetrics} />
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD ALQUILERES
+// ═══════════════════════════════════════════════════════════════════════════
+
+const AlquilerDashboard = ({ data }: { data: any }) => {
+  if (!data) return <EmptyState />;
+
+  return (
+    <div className="space-y-10 animate-fade-in">
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <KPICard title="Contratos Activos" value={data.activeContracts?.toLocaleString() || '0'} trend="+14" icon={Key} color="purple" delay={0} />
+        <KPICard title="Recaudación Total" value={data.totalRentalValue || '$0M'} trend="+5%" icon={DollarSign} color="emerald" delay={1} />
+        <KPICard title="Tasa Vacancia" value={data.vacancyRate || '0%'} trend="-1.1%" icon={Building2} color="blue" delay={2} />
+        <KPICard title="Tasa Renovación" value={data.renewalRate || '0%'} trend="+2%" icon={RotateCcw} color="amber" delay={3} />
+        <KPICard title="Yield Promedio" value={data.avgYield || '0%'} trend="+0.2%" icon={Activity} color="rose" delay={4} />
       </div>
-      <div className="lg:col-span-1">
-        <StatisticsCard title="Valor Renta Total" value="2.40M" subtext="+4.1% TENDENCIA ALTA" />
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Alquileres por Mes */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Alquileres por Mes</h3>
+          <div className="h-[300px]">
+            {data.chartByMonth && data.chartByMonth.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <YAxis />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Alquileres por Vendedor */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Alquileres por Vendedor</h3>
+          <div className="h-[300px]">
+            {data.chartByVendedor && data.chartByVendedor.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByVendedor} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={100} style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Distribución Rangos de Precio */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8 lg:col-span-2">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Distribución Rangos de Precio</h3>
+          <div className="h-[300px]">
+            {data.chartByPriceRange && data.chartByPriceRange.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={data.chartByPriceRange} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                    {data.chartByPriceRange.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <GlowingLineCard title="Crecimiento Ocupación" />
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-xl flex flex-col justify-between">
-        <h3 className="text-xl font-black uppercase tracking-widest text-slate-400 mb-6">Evolución Yield</h3>
-        <div className="h-[200px]">
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD PROPIEDADES
+// ═══════════════════════════════════════════════════════════════════════════
+
+const StockDashboard = ({ data }: { data: any }) => {
+  if (!data) return <EmptyState />;
+
+  return (
+    <div className="space-y-10 animate-fade-in">
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-6">
+        <KPICard title="Total Stock" value={data.totalProperties?.toLocaleString() || '0'} trend="+32" icon={Home} color="indigo" delay={0} />
+        <KPICard title="Publicadas" value={data.publicadas?.toLocaleString() || '0'} trend="+5%" icon={CheckCircle2} color="emerald" delay={1} />
+        <KPICard title="En Captación" value={data.enCaptacion?.toLocaleString() || '0'} trend="+8" icon={Briefcase} color="amber" delay={2} />
+        <KPICard title="Valor Inventario" value={data.totalValue || '$0M'} trend="+4%" icon={DollarSign} color="blue" delay={3} />
+        <KPICard title="Aging Medio" value={data.avgAging || '0d'} trend="-12d" icon={Clock} color="rose" delay={4} />
+        <KPICard title="Sin Foto" value={data.propsWithoutPhoto?.toLocaleString() || '0'} trend={undefined} icon={Eye} color="slate" delay={5} />
+        <KPICard title="Estancadas >90d" value={data.staleProperties?.toLocaleString() || '0'} trend={undefined} icon={AlertCircle} color="rose" delay={6} />
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Distribución por Estado */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Distribución por Estado</h3>
+          <div className="h-[300px]">
+            {data.chartByEstado && data.chartByEstado.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={data.chartByEstado} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                    {data.chartByEstado.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Top 10 Tipos */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Top 10 Tipos</h3>
+          <div className="h-[300px]">
+            {data.chartByTipo && data.chartByTipo.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByTipo} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={100} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#f59e0b" radius={[0, 8, 8, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Top 10 Zonas */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Top 10 Zonas</h3>
+          <div className="h-[300px]">
+            {data.chartByZona && data.chartByZona.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByZona} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={120} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#06b6d4" radius={[0, 8, 8, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Publicadas por Mes */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Publicadas por Mes</h3>
+          <div className="h-[300px]">
+            {data.chartByMonth && data.chartByMonth.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <YAxis />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#6366f1" radius={[8, 8, 0, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD CAPTACIÓN
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CaptacionDashboard = ({ data }: { data: any }) => {
+  if (!data) return <EmptyState />;
+
+  return (
+    <div className="space-y-10 animate-fade-in">
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <KPICard title="Nuevas Captac." value={data.newCaptaciones?.toLocaleString() || '0'} trend="+4" icon={Briefcase} color="rose" delay={0} />
+        <KPICard title="Exclusividades" value={data.exclusivityRate || '0%'} trend="+5%" icon={Star} color="amber" delay={1} />
+        <KPICard title="Valor Entrante" value={data.incomingValue || '$0M'} trend="+1.2M" icon={DollarSign} color="emerald" delay={2} />
+        <KPICard title="Tasa Conversión" value={data.conversionRate || '0%'} trend="+5%" icon={RotateCcw} color="blue" delay={3} />
+        <KPICard title="Tasaciones" value={data.tasaciones?.toLocaleString() || '0'} trend="+22" icon={Layers} color="indigo" delay={4} />
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Captaciones por Mes */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Captaciones por Mes</h3>
+          <div className="h-[300px]">
+            {data.chartByMonth && data.chartByMonth.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                  <YAxis />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#ef4444" radius={[8, 8, 0, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Top 10 Zonas */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Captaciones por Zona</h3>
+          <div className="h-[300px]">
+            {data.chartByZona && data.chartByZona.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByZona} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={100} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#f59e0b" radius={[0, 8, 8, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Captaciones por Tipo */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Captaciones por Tipo</h3>
+          <div className="h-[300px]">
+            {data.chartByTipo && data.chartByTipo.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ReBarChart data={data.chartByTipo} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={100} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <ReBar dataKey="value" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                </ReBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Captaciones por Vendedor */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Captaciones por Vendedor</h3>
+          <div className="h-[300px]">
+            {data.chartByVendedor && data.chartByVendedor.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={data.chartByVendedor} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                    {data.chartByVendedor.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                  <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">Sin datos</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD IA (MOCKDATA)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const IADashboard = () => {
+  // Mockdata estructurado según Prompt 8
+  const mockConversacionesPorDia = Array.from({ length: 30 }, (_, i) => ({
+    name: `Día ${i + 1}`,
+    conversaciones: Math.floor(Math.random() * 80) + 40
+  }));
+
+  const mockDistribucionCanal = [
+    { name: 'Zonaprop', value: 580 },
+    { name: 'WhatsApp', value: 420 },
+    { name: 'Instagram', value: 310 },
+    { name: 'Argenprop', value: 280 },
+    { name: 'Web', value: 157 },
+    { name: 'Otros', value: 100 }
+  ];
+
+  const mockTopIntenciones = [
+    { name: 'Precio Alquiler', value: 420 },
+    { name: 'Disponibilidad', value: 380 },
+    { name: 'Info Barrio', value: 290 },
+    { name: 'Sacar Turno', value: 245 },
+    { name: 'Precio Venta', value: 198 },
+    { name: 'Características', value: 167 },
+    { name: 'Financiación', value: 134 },
+    { name: 'Tasación', value: 98 },
+    { name: 'Info Expensas', value: 87 },
+    { name: 'Contacto Dueño', value: 72 }
+  ];
+
+  const mockNoResuelto = [
+    { name: 'Documentación Legal', value: 45 },
+    { name: 'Negociación Precio', value: 38 },
+    { name: 'Visita Urgente', value: 31 },
+    { name: 'Consulta Jurídica', value: 24 },
+    { name: 'Otro', value: 19 }
+  ];
+
+  const mockFunnel = [
+    { name: 'Derivaciones', value: 312 },
+    { name: 'Contacto Humano', value: 280 },
+    { name: 'Visita', value: 89 },
+    { name: 'Cierre', value: 37 }
+  ];
+
+  // Heatmap 7x24 (lunes a domingo, 0-23 horas)
+  const mockHeatmap = Array.from({ length: 7 }, (_, day) =>
+    Array.from({ length: 24 }, (_, hour) => {
+      // Horas pico: 9-11hs y 18-21hs en días hábiles
+      const isDayTime = day < 5 && ((hour >= 9 && hour <= 11) || (hour >= 18 && hour <= 21));
+      return isDayTime ? Math.floor(Math.random() * 40) + 60 : Math.floor(Math.random() * 30) + 10;
+    })
+  );
+
+  const daysOfWeek = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+  return (
+    <div className="space-y-10 animate-fade-in">
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard title="Total Conversaciones" value="1,847" trend="+12%" icon={MessageSquare} color="indigo" delay={0} />
+        <KPICard title="Sin Intervención" value="73%" trend="+5%" icon={Brain} color="emerald" delay={1} />
+        <KPICard title="Derivaciones" value="312" trend="+8" icon={Users} color="amber" delay={2} />
+        <KPICard title="Tasa Contención" value="83%" trend="+2%" icon={CheckCircle2} color="rose" delay={3} />
+        <KPICard title="Tiempo Respuesta" value="8s" trend="-2s" icon={Clock} color="blue" delay={4} />
+        <KPICard title="Leads Calificados" value="234" trend="+14" icon={Target} color="purple" delay={5} />
+        <KPICard title="Deriv → Visita" value="28%" trend="+3%" icon={TrendingUp} color="cyan" delay={6} />
+        <KPICard title="Deriv → Cierre" value="12%" trend="+1%" icon={DollarSign} color="emerald" delay={7} />
+      </div>
+
+      {/* Charts Row 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Conversaciones por Día */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest">Conversaciones por Día</h3>
+            <select className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+              <option>Día</option>
+              <option>Semana</option>
+              <option>Mes</option>
+            </select>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={mockConversacionesPorDia}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="name" style={{ fontSize: '10px', fontWeight: 'bold' }} tick={{ display: 'none' }} />
+                <YAxis />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                <Line type="monotone" dataKey="conversaciones" stroke="#6366f1" strokeWidth={3} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Distribución por Canal */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Distribución por Canal</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={mockDistribucionCanal} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                  {mockDistribucionCanal.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Top 10 Intenciones */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Top 10 Intenciones</h3>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ReBarChart data={mockTopIntenciones} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="name" width={120} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                <ReBar dataKey="value" fill="#10b981" radius={[0, 8, 8, 0]} />
+              </ReBarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Consultas No Resueltas */}
+        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+          <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Consultas No Resueltas</h3>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ReBarChart data={mockNoResuelto} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="name" width={120} style={{ fontSize: '10px', fontWeight: 'bold' }} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+                <ReBar dataKey="value" fill="#ef4444" radius={[0, 8, 8, 0]} />
+              </ReBarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Funnel Post-Derivación */}
+      <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+        <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Funnel Post-Derivación</h3>
+        <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ReBarChart data={[{ n: 'Q1', v: 4.5 }, { n: 'Q2', v: 5.1 }, { n: 'Q3', v: 4.9 }, { n: 'Q4', v: 5.8 }]}>
-              <XAxis dataKey="n" hide />
-              <ReBar dataKey="v" fill="#8b5cf6" radius={[15, 15, 0, 0]} barSize={40} />
+            <ReBarChart data={mockFunnel} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="name" width={120} style={{ fontSize: '12px', fontWeight: 'bold' }} />
+              <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }} />
+              <ReBar dataKey="value" fill="#6366f1" radius={[0, 8, 8, 0]} />
             </ReBarChart>
           </ResponsiveContainer>
         </div>
-      </div>
-      <FunnelCard title="Conversión Reservas" color="#8b5cf6" />
-    </div>
-  </div>
-);
-
-const StockDashboard = ({ data }: { data: any }) => (
-  <div className="space-y-10 animate-fade-in">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Unidades Stock" value={data?.totalProperties || '0'} trend="+32" icon={Home} color="indigo" />
-      <KPICard title="Valor Inventario" value={data?.totalValue || '$0M'} trend="+4%" icon={DollarSign} color="emerald" />
-      <KPICard title="Aging Medio" value={data?.avgAging || '0d'} trend="-12d" icon={Clock} color="blue" />
-      <KPICard title="Vistas Totales" value={data?.totalViews || '0'} trend="+18%" icon={Eye} color="rose" />
-      <KPICard title="Eficiencia Pub" value={data?.publicationEfficiency ? `${data.publicationEfficiency}%` : '0%'} trend="+5%" icon={CheckCircle2} color="amber" />
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
-        <GroupedIncidentReportCard title="Profundidad de Inventario" metrics={commonMetrics} />
-      </div>
-      <div className="lg:col-span-1">
-        <StatisticsCard title="Valuación Activos" value="182M" subtext="+2.8% APRECIACIÓN MERCADO" />
-      </div>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <GlowingLineCard title="Absorción de Mercado" />
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-xl">
-        <h3 className="text-xl font-black uppercase tracking-widest text-slate-400 mb-8">Densidad Geográfica</h3>
-        <div className="space-y-6">
-          {['Palermo', 'Recoleta', 'Nordelta'].map((b, i) => (
-            <div key={b} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl hover:bg-indigo-50 transition-colors cursor-pointer border border-slate-100">
-              <span className="text-xs font-black text-slate-700 uppercase tracking-widest">{b}</span>
-              <span className="text-sm font-black text-slate-900">{200 - i * 40} Unid.</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <FunnelCard title="Embudo Listados" color="#06b6d4" />
-    </div>
-  </div>
-);
-
-const CaptacionDashboard = ({ data }: { data: any }) => (
-  <div className="space-y-10 animate-fade-in">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Nuevas Captac." value={data?.newCaptaciones || '0'} trend="+4" icon={Briefcase} color="rose" />
-      <KPICard title="Exclusividades" value={data?.exclusivityRate || '0%'} trend="+5%" icon={Star} color="amber" />
-      <KPICard title="Valor Entrante" value={data?.incomingValue || '$0M'} trend="+1.2M" icon={DollarSign} color="emerald" />
-      <KPICard title="Tasa Conversión" value={data?.conversionRate || '0%'} trend="+5%" icon={RotateCcw} color="blue" />
-      <KPICard title="Tasaciones" value={data?.tasaciones || '0'} trend="+22" icon={Layers} color="indigo" />
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
-        <GroupedIncidentReportCard title="Pipeline Adquisición" metrics={commonMetrics} />
-      </div>
-      <div className="lg:col-span-1">
-        <StatisticsCard title="Meta Adquisición" value="12.5M" subtext="74% DE OBJETIVO Q1" />
-      </div>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <GlowingLineCard title="Velocidad Autorización" />
-      <div className="bg-slate-900 rounded-[3rem] p-8 text-white h-full shadow-2xl relative overflow-hidden flex flex-col justify-center">
-        <div className="flex items-center gap-3 mb-8 relative z-10">
-          <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-xl border border-white/10">
-            <img src="/LOGOCORTOAGENT.jpg" alt="Logo" className="w-full h-full object-cover" />
+        <div className="mt-6 grid grid-cols-3 gap-4 text-center">
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Deriv → Contacto</p>
+            <p className="text-xl font-black text-slate-900">90%</p>
           </div>
-          <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 relative z-10">Proyección IA</h3>
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Contacto → Visita</p>
+            <p className="text-xl font-black text-slate-900">32%</p>
+          </div>
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Visita → Cierre</p>
+            <p className="text-xl font-black text-slate-900">42%</p>
+          </div>
         </div>
-        <p className="text-4xl font-black tracking-tighter leading-tight relative z-10">AgentBot proyecta un crecimiento del <span className="text-rose-500">22%</span> en captaciones exclusivas para Q2.</p>
-        <div className="absolute -bottom-10 -right-10 opacity-5 scale-150 rotate-12"><Target size={200} /></div>
       </div>
-      <FunnelCard title="Embudo Captación" color="#f43f5e" />
-    </div>
-  </div>
-);
 
-// --- HUB COMPONENT ---
+      {/* Heatmap 7x24 */}
+      <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-8">
+        <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-widest">Actividad por Hora (Heatmap 7×24)</h3>
+        <div className="overflow-x-auto">
+          <div className="min-w-[800px]">
+            {/* Hours header */}
+            <div className="grid grid-cols-25 gap-1 mb-2">
+              <div className="w-12"></div>
+              {Array.from({ length: 24 }, (_, i) => (
+                <div key={i} className="text-[9px] font-bold text-slate-400 text-center">{i}</div>
+              ))}
+            </div>
+            {/* Heatmap grid */}
+            {mockHeatmap.map((dayData, dayIndex) => (
+              <div key={dayIndex} className="grid grid-cols-25 gap-1 mb-1">
+                <div className="text-[10px] font-black text-slate-400 uppercase w-12 flex items-center">{daysOfWeek[dayIndex]}</div>
+                {dayData.map((intensity, hourIndex) => {
+                  const bgColor = intensity > 80
+                    ? 'bg-indigo-600'
+                    : intensity > 60
+                    ? 'bg-indigo-500'
+                    : intensity > 40
+                    ? 'bg-indigo-400'
+                    : intensity > 20
+                    ? 'bg-indigo-200'
+                    : 'bg-slate-100';
+                  return (
+                    <div key={hourIndex} className={`h-8 rounded ${bgColor} transition-all hover:scale-110 cursor-pointer`} title={`${daysOfWeek[dayIndex]} ${hourIndex}:00 - ${intensity}%`}></div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-6 text-[10px] font-bold text-slate-400 uppercase">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-slate-100 rounded"></div>
+            <span>Bajo</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-indigo-300 rounded"></div>
+            <span>Medio</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-indigo-600 rounded"></div>
+            <span>Alto</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN REPORTS COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 
 const Reports: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'leads' | 'sales' | 'alquiler' | 'stock' | 'captacion'>('leads');
-  const [isExporting, setIsExporting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'leads' | 'sales' | 'alquiler' | 'stock' | 'captacion' | 'ia'>('leads');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ desde: '', hasta: '', vendedor: '', tipo: 'todos' });
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [filters, setFilters] = useState({ desde: '', hasta: '' });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
 
-  const tabOrder = ['leads', 'sales', 'alquiler', 'stock', 'captacion'] as const;
+  const tabOrder = ['leads', 'sales', 'alquiler', 'stock', 'captacion', 'ia'] as const;
   const currentIdx = tabOrder.indexOf(activeTab);
   const goPrev = () => currentIdx > 0 && setActiveTab(tabOrder[currentIdx - 1]);
   const goNext = () => currentIdx < tabOrder.length - 1 && setActiveTab(tabOrder[currentIdx + 1]);
 
+  const categories = [
+    { id: 'leads', label: 'Leads', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { id: 'sales', label: 'Ventas', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { id: 'alquiler', label: 'Alquileres', icon: Key, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { id: 'stock', label: 'Propiedades', icon: Home, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { id: 'captacion', label: 'Captación', icon: Target, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { id: 'ia', label: 'IA', icon: Brain, color: 'text-cyan-600', bg: 'bg-cyan-50' }
+  ];
+
+  // Shortcuts de fecha
+  const applyDateShortcut = (shortcut: 'hoy' | 'semana' | 'mes' | 'año') => {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    let desde = '';
+
+    switch (shortcut) {
+      case 'hoy':
+        desde = today;
+        break;
+      case 'semana':
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        desde = weekAgo.toISOString().split('T')[0];
+        break;
+      case 'mes':
+        const monthAgo = new Date(now);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        desde = monthAgo.toISOString().split('T')[0];
+        break;
+      case 'año':
+        const yearAgo = new Date(now);
+        yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+        desde = yearAgo.toISOString().split('T')[0];
+        break;
+    }
+
+    setFilters({ desde, hasta: today });
+  };
+
   // Fetch data when tab or filters change
   useEffect(() => {
+    if (activeTab === 'ia') {
+      // IA tab uses mockdata, no fetch needed
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const dateRange = { desde: filters.desde, hasta: filters.hasta };
         let data = null;
@@ -455,9 +896,13 @@ const Reports: React.FC = () => {
             break;
         }
 
+        if (!data) {
+          setError('No se pudieron cargar los datos. Intenta de nuevo.');
+        }
         setDashboardData(data);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+      } catch (err: any) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.message || 'Error desconocido');
       } finally {
         setLoading(false);
       }
@@ -466,105 +911,85 @@ const Reports: React.FC = () => {
     fetchData();
   }, [activeTab, filters.desde, filters.hasta]);
 
-  const categories = [
-    { id: 'leads', label: 'LEADS', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { id: 'sales', label: 'VENTA', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { id: 'alquiler', label: 'ALQUILER', icon: Key, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { id: 'stock', label: 'PROPIEDADES', icon: Home, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { id: 'captacion', label: 'CAPTACIÓN', icon: Target, color: 'text-rose-600', bg: 'bg-rose-50' },
-  ];
-
-  // Export CSV real
-  const handleExportCSV = () => {
-    if (!dashboardData) {
-      alert('No hay datos para exportar. Por favor, espera a que carguen los datos.');
+  // Export CSV con BOM
+  const exportToCSV = (data: Record<string, any>[], filename: string) => {
+    if (!data || data.length === 0) {
+      alert('No hay datos para exportar.');
       return;
     }
 
-    const csvRows: string[][] = [
-      ['Métrica', 'Valor']
-    ];
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row =>
+        headers.map(h => {
+          const val = row[h] ?? '';
+          const str = String(val).replace(/"/g, '""');
+          return str.includes(',') || str.includes('\n') ? `"${str}"` : str;
+        }).join(',')
+      )
+    ].join('\n');
 
-    // Add data based on active tab
-    switch (activeTab) {
-      case 'leads':
-        csvRows.push(['Total Leads', String(dashboardData.totalLeads || 0)]);
-        csvRows.push(['Leads Hot', String(dashboardData.hotLeads || 0)]);
-        csvRows.push(['Tasa de Respuesta', dashboardData.responseRate || '0%']);
-        csvRows.push(['Score Promedio', String(dashboardData.avgScore || 0)]);
-        csvRows.push(['Tasa de Conversión', dashboardData.conversionRate || '0%']);
-        break;
-      case 'sales':
-        csvRows.push(['GMV Total', dashboardData.gmv || '$0M']);
-        csvRows.push(['Pipeline', String(dashboardData.pipelineCount || 0)]);
-        csvRows.push(['Cierre Medio', dashboardData.avgClosingDays || '0d']);
-        csvRows.push(['Comisiones', dashboardData.commission || '$0k']);
-        break;
-      case 'alquiler':
-        csvRows.push(['Contratos Activos', String(dashboardData.activeContracts || 0)]);
-        csvRows.push(['Valor Total Rentas', dashboardData.totalRentalValue || '$0M']);
-        csvRows.push(['Tasa de Vacancia', dashboardData.vacancyRate || '0%']);
-        csvRows.push(['Tasa de Renovación', dashboardData.renewalRate || '0%']);
-        csvRows.push(['Yield Promedio', dashboardData.avgYield || '0%']);
-        break;
-      case 'stock':
-        csvRows.push(['Unidades en Stock', String(dashboardData.totalProperties || 0)]);
-        csvRows.push(['Valor de Inventario', dashboardData.totalValue || '$0M']);
-        csvRows.push(['Aging Promedio', dashboardData.avgAging || '0d']);
-        csvRows.push(['Vistas Totales', dashboardData.totalViews || '0']);
-        csvRows.push(['Eficiencia de Publicación', `${dashboardData.publicationEfficiency || 0}%`]);
-        csvRows.push(['Propiedades sin Foto', String(dashboardData.propsWithoutPhoto || 0)]);
-        csvRows.push(['Propiedades > 90 días', String(dashboardData.staleProperties || 0)]);
-        break;
-      case 'captacion':
-        csvRows.push(['Nuevas Captaciones', String(dashboardData.newCaptaciones || 0)]);
-        csvRows.push(['Tasa de Exclusividad', dashboardData.exclusivityRate || '0%']);
-        csvRows.push(['Valor Entrante', dashboardData.incomingValue || '$0M']);
-        csvRows.push(['Tasa de Conversión', dashboardData.conversionRate || '0%']);
-        csvRows.push(['Tasaciones', String(dashboardData.tasaciones || 0)]);
-        break;
-    }
-
-    // Add filters info
-    csvRows.push([]);
-    csvRows.push(['Filtros Aplicados', '']);
-    if (filters.desde) csvRows.push(['Fecha Desde', filters.desde]);
-    if (filters.hasta) csvRows.push(['Fecha Hasta', filters.hasta]);
-    if (filters.vendedor) csvRows.push(['Vendedor', filters.vendedor]);
-    if (filters.tipo !== 'todos') csvRows.push(['Tipo', filters.tipo]);
-
-    const csvContent = csvRows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `reporte_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = filename;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
-  // Export PDF via print
-  const handleExportPDF = () => {
-    setIsExporting(true);
-    setTimeout(() => {
-      window.print();
-      setIsExporting(false);
-    }, 300);
+  const handleExportCSV = () => {
+    if (!dashboardData) {
+      alert('No hay datos para exportar. Espera a que carguen los datos.');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    let dataToExport: any[] = [];
+    let filename = `reporte-${activeTab}-${today}.csv`;
+
+    switch (activeTab) {
+      case 'leads':
+        dataToExport = dashboardData.rawLeads || [];
+        break;
+      case 'sales':
+        dataToExport = dashboardData.rawSales || [];
+        break;
+      case 'alquiler':
+        dataToExport = dashboardData.rawRentals || [];
+        break;
+      case 'stock':
+        dataToExport = dashboardData.rawProperties || [];
+        break;
+      case 'captacion':
+        dataToExport = dashboardData.rawCaptaciones || [];
+        break;
+      case 'ia':
+        alert('La exportación CSV no está disponible para el dashboard de IA (mockdata).');
+        return;
+    }
+
+    exportToCSV(dataToExport, filename);
   };
 
-  const handleExport = handleExportCSV;
-
   return (
-    <div className="max-w-[1600px] mx-auto pb-24 animate-fade-in px-4 md:px-0 transform-gpu bg-[#F8FAFC]">
-
+    <div className="max-w-[1600px] mx-auto pb-24 animate-fade-in px-4 md:px-0 bg-[#F8FAFC]">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-12 gap-10 pt-6">
         <div className="space-y-5 max-w-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-1.5 bg-slate-900 rounded-full shadow-lg"></div>
-            <span className="text-[10px] lg:text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">Business Intelligence Pro v4.5</span>
+            <span className="text-[10px] lg:text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">
+              Business Intelligence Pro v4.5
+            </span>
           </div>
-          <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black text-slate-900 tracking-tighter leading-none drop-shadow-sm">Analytical Hub</h1>
+          <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black text-slate-900 tracking-tighter leading-none drop-shadow-sm">
+            Analytical Hub
+          </h1>
           <p className="text-sm sm:text-base lg:text-xl font-medium text-slate-500 tracking-tight leading-relaxed">
             Módulo predictivo avanzado para el monitoreo en tiempo real de activos inmobiliarios y eficiencia de ventas.
           </p>
@@ -572,78 +997,107 @@ const Reports: React.FC = () => {
 
         <div className="flex w-full lg:w-auto gap-4 p-4 rounded-[3.5rem] bg-white border border-slate-100 shadow-2xl shadow-slate-200/50">
           <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 sm:px-10 py-4 sm:py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-[10px] sm:text-[12px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl active:scale-95 disabled:opacity-50 whitespace-nowrap"
+            onClick={handleExportCSV}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 sm:px-10 py-4 sm:py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-[10px] sm:text-[12px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl active:scale-95 whitespace-nowrap"
           >
-            {isExporting ? <RotateCcw size={16} className="animate-spin" /> : <Download size={16} />}
-            {isExporting ? 'GENERANDO...' : 'EXPORT BI REPORT'}
+            <Download size={16} />
+            EXPORT CSV
           </button>
-          <button 
+          <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`p-6 transition-colors rounded-full border shadow-inner ${showFilters ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'text-slate-500 hover:text-slate-900 bg-slate-50 border-slate-100'}`}
+            className={`p-6 transition-colors rounded-full border shadow-inner ${
+              showFilters ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'text-slate-500 hover:text-slate-900 bg-slate-50 border-slate-100'
+            }`}
           >
             <Filter size={24} />
           </button>
         </div>
       </div>
 
-      {/* Panel filtros avanzados (slide-down) */}
-      {showFilters && (
-        <div className="mb-8 p-5 bg-white border border-slate-100 rounded-3xl shadow-lg animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
-              <SlidersHorizontal size={15} className="text-indigo-500" /> Filtros Avanzados
-            </h3>
-            <button onClick={() => setShowFilters(false)} className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
-              <XIcon size={13} className="text-slate-500" />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Desde</label>
-              <input type="date" value={filters.desde} onChange={e => setFilters({...filters, desde: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100" />
+      {/* Panel filtros + shortcuts */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-8 p-5 bg-white border border-slate-100 rounded-3xl shadow-lg overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                <Filter size={15} className="text-indigo-500" /> Filtros de Fecha
+              </h3>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+              >
+                <XIcon size={13} className="text-slate-500" />
+              </button>
             </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hasta</label>
-              <input type="date" value={filters.hasta} onChange={e => setFilters({...filters, hasta: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Vendedor</label>
-              <select value={filters.vendedor} onChange={e => setFilters({...filters, vendedor: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100 appearance-none">
-                <option value="">Todos</option>
-                <option value="carolina">Carolina</option>
-                <option value="andres">Andrés</option>
-                <option value="sofia">Sofía</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tipo</label>
-              <select value={filters.tipo} onChange={e => setFilters({...filters, tipo: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100 appearance-none">
-                <option value="todos">Venta + Alquiler</option>
-                <option value="venta">Solo Ventas</option>
-                <option value="alquiler">Solo Alquiler</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button onClick={() => setFilters({ desde: '', hasta: '', vendedor: '', tipo: 'todos' })}
-              className="px-4 py-2 text-xs font-black text-slate-500 hover:text-slate-800 transition-colors">
-              Limpiar filtros
-            </button>
-            <button onClick={() => setShowFilters(false)}
-              className="px-5 py-2 bg-slate-900 text-white text-xs font-black rounded-xl hover:bg-indigo-600 transition-colors active:scale-95">
-              Aplicar
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Tabs centrados + flechas navegación */}
+            {/* Shortcuts */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                onClick={() => applyDateShortcut('hoy')}
+                className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold hover:bg-indigo-50 hover:border-indigo-200 transition-all"
+              >
+                Hoy
+              </button>
+              <button
+                onClick={() => applyDateShortcut('semana')}
+                className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold hover:bg-indigo-50 hover:border-indigo-200 transition-all"
+              >
+                Esta Semana
+              </button>
+              <button
+                onClick={() => applyDateShortcut('mes')}
+                className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold hover:bg-indigo-50 hover:border-indigo-200 transition-all"
+              >
+                Este Mes
+              </button>
+              <button
+                onClick={() => applyDateShortcut('año')}
+                className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold hover:bg-indigo-50 hover:border-indigo-200 transition-all"
+              >
+                Este Año
+              </button>
+            </div>
+
+            {/* Date inputs */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Desde</label>
+                <input
+                  type="date"
+                  value={filters.desde}
+                  onChange={e => setFilters({ ...filters, desde: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hasta</label>
+                <input
+                  type="date"
+                  value={filters.hasta}
+                  onChange={e => setFilters({ ...filters, hasta: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setFilters({ desde: '', hasta: '' })}
+                className="px-4 py-2 text-xs font-black text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Tabs con scroll mobile */}
       <div className="flex items-center gap-2 mb-16 overflow-x-auto scrollbar-hide pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Flecha izquierda */}
         <button
@@ -655,24 +1109,24 @@ const Reports: React.FC = () => {
         </button>
 
         {/* Tabs */}
-        <div className="flex gap-2 flex-1 justify-center overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveTab(cat.id as any)}
-            className={`flex items-center gap-3 px-6 py-3.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all duration-300 border relative group shrink-0
-              ${activeTab === cat.id
-                ? `${cat.bg} ${cat.color} border-transparent shadow-xl scale-105 z-10`
-                : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50 hover:text-slate-600'
+        <div className="flex gap-2 flex-1 justify-center overflow-x-auto scrollbar-hide px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveTab(cat.id as any)}
+              className={`flex items-center gap-3 px-4 sm:px-6 py-3.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all duration-300 border relative group shrink-0 ${
+                activeTab === cat.id
+                  ? `${cat.bg} ${cat.color} border-transparent shadow-xl scale-105 z-10`
+                  : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50 hover:text-slate-600'
               }`}
-          >
-            <cat.icon size={15} className="shrink-0 transition-transform group-hover:scale-110" />
-            <span className="whitespace-nowrap">{cat.label}</span>
-            {activeTab === cat.id && (
-              <motion.div layoutId="bi-tab-marker" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-current rounded-full" />
-            )}
-          </button>
-        ))}
+            >
+              <cat.icon size={15} className="shrink-0 transition-transform group-hover:scale-110" />
+              <span className="whitespace-nowrap">{cat.label}</span>
+              {activeTab === cat.id && (
+                <motion.div layoutId="bi-tab-marker" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-current rounded-full" />
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Flecha derecha */}
@@ -686,22 +1140,27 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Analytics Content */}
-      <div className="min-h-[1400px] transform-gpu">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 40, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -40, scale: 1.02 }}
-            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-          >
-            {activeTab === 'leads' && <LeadsDashboard data={dashboardData} />}
-            {activeTab === 'sales' && <SalesDashboard data={dashboardData} />}
-            {activeTab === 'alquiler' && <AlquilerDashboard data={dashboardData} />}
-            {activeTab === 'stock' && <StockDashboard data={dashboardData} />}
-            {activeTab === 'captacion' && <CaptacionDashboard data={dashboardData} />}
-          </motion.div>
-        </AnimatePresence>
+      <div className="min-h-[1400px]">
+        {loading && <LoadingState />}
+        {error && !loading && <ErrorState message={error} onRetry={() => setFilters({ ...filters })} />}
+        {!loading && !error && (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 40, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -40, scale: 1.02 }}
+              transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            >
+              {activeTab === 'leads' && <LeadsDashboard data={dashboardData} />}
+              {activeTab === 'sales' && <SalesDashboard data={dashboardData} />}
+              {activeTab === 'alquiler' && <AlquilerDashboard data={dashboardData} />}
+              {activeTab === 'stock' && <StockDashboard data={dashboardData} />}
+              {activeTab === 'captacion' && <CaptacionDashboard data={dashboardData} />}
+              {activeTab === 'ia' && <IADashboard />}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
     </div>
   );

@@ -494,7 +494,8 @@ const Leads: React.FC = () => {
     estadosSeguimiento: [],
     vendedores: [],
     fuentes: [],
-    conVisitaProxima: false
+    conVisitaProxima: false,
+    etiquetas: []
   });
 
   useEffect(() => {
@@ -554,9 +555,12 @@ const Leads: React.FC = () => {
         (!advancedFilters.presupuestoMin || (lead.presupuesto_max || 0) >= advancedFilters.presupuestoMin) &&
         (!advancedFilters.presupuestoMax || (lead.presupuesto_max || 0) <= advancedFilters.presupuestoMax);
 
+      const matchesEtiquetas = advancedFilters.etiquetas.length === 0 ||
+        (lead.tags || []).some(tag => advancedFilters.etiquetas.includes(tag));
+
       return matchesSearch && matchesFilter && matchesAdvancedSearch && matchesTemperatura &&
         matchesEtapa && matchesOperacion && matchesTipoInmueble && matchesEstadoSeguimiento &&
-        matchesVendedor && matchesFuente && matchesPresupuesto;
+        matchesVendedor && matchesFuente && matchesPresupuesto && matchesEtiquetas;
     });
 
     if (sortBy === 'price_asc') {
@@ -576,7 +580,7 @@ const Leads: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-black/40 z-40"
               onClick={() => setSelectedLead(null)}
             />
             <LeadDetailPanel

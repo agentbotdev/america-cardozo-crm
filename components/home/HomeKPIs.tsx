@@ -77,24 +77,24 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, suffix = '', subtext, p
 
   return (
     <div
-      className="bg-white border border-slate-100 p-5 rounded-3xl relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-200/60"
+      className="bg-white border border-slate-100 p-6 rounded-3xl relative overflow-hidden group hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-slate-200/80"
       style={{ opacity: 0, transform: 'translateY(16px)', animation: `slideUp 0.5s ease forwards ${delay}ms` }}
     >
-      <div className="flex justify-between items-start mb-3">
-        <div className={`w-11 h-11 rounded-2xl ${theme.bg} ${theme.icon} flex items-center justify-center shadow-sm`}>
-          <Icon size={22} />
+      <div className="flex justify-between items-start mb-4">
+        <div className={`w-14 h-14 rounded-2xl ${theme.bg} ${theme.icon} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+          <Icon size={28} strokeWidth={2.5} />
         </div>
         {subtext && (
-          <span className={`text-[10px] font-bold px-2 py-1 rounded-full border flex items-center gap-1 ${positive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-            <TrendingUp size={10} className={positive ? '' : 'rotate-180'} />
+          <span className={`text-[11px] font-extrabold px-2.5 py-1.5 rounded-full border-2 flex items-center gap-1.5 ${positive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+            <TrendingUp size={12} strokeWidth={3} className={positive ? '' : 'rotate-180'} />
             {subtext}
           </span>
         )}
       </div>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{title}</p>
-      <h3 className="text-3xl font-black text-slate-800 tracking-tight">{animated}{suffix}</h3>
+      <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 leading-none">{title}</p>
+      <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-1">{animated}<span className="text-2xl">{suffix}</span></h3>
       {sparkData && sparkData.length > 1 && (
-        <div className="mt-3 opacity-60 group-hover:opacity-100 transition-opacity">
+        <div className="mt-4 opacity-70 group-hover:opacity-100 transition-opacity">
           <Sparkline data={sparkData} color={theme.spark} />
         </div>
       )}

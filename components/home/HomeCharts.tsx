@@ -92,14 +92,14 @@ export const HomeCharts: React.FC<HomeChartsProps> = ({ chartsData }) => {
         </div>
       </div>
 
-      {/* Fuente de Oportunidades */}
+      {/* Fuente de Oportunidades - COMPACTO */}
       <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-black text-slate-800 mb-4">Fuente de Oportunidades</h3>
-        <div className="h-44">
+        <h3 className="text-xs font-black text-slate-800 mb-3">Fuentes</h3>
+        <div className="h-32">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartsData.leadsBySourceData} layout="vertical" barSize={14} margin={{ left: 8, right: 16 }}>
+            <BarChart data={chartsData.leadsBySourceData} layout="vertical" barSize={10} margin={{ left: 8, right: 16 }}>
               <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" width={65} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} />
               <Tooltip cursor={{ fill: 'rgba(100,116,139,0.06)' }} contentStyle={{ borderRadius: '8px', background: '#1e293b', color: '#fff', border: 'none' }} itemStyle={{ color: '#fff' }} />
               <Bar dataKey="value" fill="#64748b" radius={[0, 6, 6, 0]}>
                 {chartsData.leadsBySourceData.map((_, i) => (

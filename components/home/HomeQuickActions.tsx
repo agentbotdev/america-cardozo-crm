@@ -1,21 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Zap, Home, UserPlus, Star, Calendar, BarChart3, 
-  ChevronRight, MessageSquare, Briefcase, Settings
+import {
+  Zap, Home, UserPlus, Star, Calendar, BarChart3,
+  ChevronRight, MessageSquare, Briefcase, Settings, CheckSquare
 } from 'lucide-react';
 
 export const HomeQuickActions: React.FC = () => {
   const navigate = useNavigate();
-  
+
   const actions = [
     { icon: Home,     label: 'Nueva Captación', desc: 'Registrar propiedad',    action: () => navigate('/properties'), color: 'bg-emerald-50 text-emerald-600' },
-    { icon: UserPlus, label: 'Oportunidad Rápida', desc: 'Ingreso manual',      action: () => navigate('/leads'),      color: 'bg-blue-50 text-blue-600' },
+    { icon: UserPlus, label: 'Nuevo Lead', desc: 'Oportunidad rápida',      action: () => navigate('/leads'),      color: 'bg-blue-50 text-blue-600' },
+    { icon: Calendar, label: 'Nueva Visita',   desc: 'Agendar visita',          action: () => navigate('/visits'),     color: 'bg-indigo-50 text-indigo-600' },
+    { icon: CheckSquare, label: 'Nueva Tarea',   desc: 'Crear tarea',          action: () => navigate('/tasks'),     color: 'bg-purple-50 text-purple-600' },
+    { icon: BarChart3,label: 'Generar Reporte',     desc: 'Analytics completo',     action: () => navigate('/reports'),    color: 'bg-violet-50 text-violet-600' },
     { icon: Star,     label: 'Ver Destacados',   desc: 'Propiedades top',       action: () => navigate('/properties'), color: 'bg-amber-50 text-amber-600' },
-    { icon: Calendar, label: 'Agendar Visita',   desc: 'Nueva visita',          action: () => navigate('/visits'),     color: 'bg-indigo-50 text-indigo-600' },
     { icon: MessageSquare, label: 'Chat WhatsApp', desc: 'Mensajes',            action: () => navigate('/control'),    color: 'bg-green-50 text-green-600' },
-    { icon: Briefcase, label: 'Mis Clientes',    desc: 'Búsqueda de clientes',  action: () => navigate('/clients'),    color: 'bg-teal-50 text-teal-600' },
-    { icon: BarChart3,label: 'Ver Reportes',     desc: 'Análisis completo',     action: () => navigate('/reports'),    color: 'bg-violet-50 text-violet-600' },
+    { icon: Briefcase, label: 'Mis Clientes',    desc: 'Base de clientes',  action: () => navigate('/clients'),    color: 'bg-teal-50 text-teal-600' },
     { icon: Settings, label: 'Configurar',       desc: 'Ajustes del CRM',       action: () => navigate('/settings'),   color: 'bg-slate-50 text-slate-600' }
   ];
 

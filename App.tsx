@@ -13,6 +13,7 @@ const Visits = lazy(() => import('./pages/Visits'));
 const Reports = lazy(() => import('./pages/Reports'));
 const ControlCenter = lazy(() => import('./pages/ControlCenter'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Tasks = lazy(() => import('./pages/Tasks'));
 const Support = lazy(() => import('./pages/Support'));
 const Login = lazy(() => import('./pages/Login'));
 
@@ -43,6 +44,7 @@ const App: React.FC = () => {
                 <Route path="leads" element={<Leads />} />
                 <Route path="clientes" element={<Clients />} />
                 <Route path="visitas" element={<Visits />} />
+                <Route path="tareas" element={<Tasks />} />
                 <Route path="reportes" element={<Reports />} />
                 <Route path="control-center" element={<ControlCenter />} />
                 <Route path="soporte" element={<Support />} />

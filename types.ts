@@ -329,16 +329,21 @@ export interface DashboardStats {
 }
 
 // Tareas
-export type TaskStatus = 'pendiente' | 'en_proceso' | 'completada';
+export type TaskStatus = 'pendiente' | 'en_proceso' | 'en_revision' | 'completada' | 'cancelada';
+export type TaskPriority = 'urgente' | 'alta' | 'media' | 'baja';
 
 export interface CRMTask {
   id: string;
   titulo: string;
   descripcion?: string;
+  prioridad?: TaskPriority;
   estado: TaskStatus;
   fecha_vencimiento?: string;
+  creado_por?: string;
   asignados: string[]; // IDs o nombres de múltiples asignados
   lead_id?: string;
   propiedad_id?: string;
+  tags?: string[];
   created_at?: string;
+  updated_at?: string;
 }

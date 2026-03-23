@@ -194,7 +194,7 @@ export const propertiesService = {
     },
 
     deleteProperty: async (id: string) => {
-        const { error } = await supabase
+        const { error} = await supabase
             .from('propiedades')
             .delete()
             .eq('id', id);
@@ -204,5 +204,19 @@ export const propertiesService = {
         propertiesService.invalidateCache();
 
         return true;
+    },
+
+    toggleFavorite: async (id: string, currentValue: boolean) => {
+        const { error } = await supabase
+            .from('propiedades')
+            .update({ es_favorita: !currentValue })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        // Invalidar cache después de actualizar favorito
+        propertiesService.invalidateCache();
+
+        return !currentValue;
     }
 };

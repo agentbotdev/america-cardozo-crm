@@ -10,6 +10,9 @@ import { HomeHotLeads } from '../components/home/HomeHotLeads';
 import { HomeQuickActions } from '../components/home/HomeQuickActions';
 import { HomeTasksWidget } from '../components/home/HomeTasksWidget';
 import { HomeFeed } from '../components/home/HomeFeed';
+import { HomePipelineFunnel } from '../components/home/HomePipelineFunnel';
+import { HomeWeeklyActivity } from '../components/home/HomeWeeklyActivity';
+import { HomeTaskAssigner } from '../components/home/HomeTaskAssigner';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 interface Notification {
@@ -263,11 +266,14 @@ const Dashboard: React.FC = () => {
 
         {/* Cuerpos principales */}
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
-          
+
           {/* Main Charts area (col-span-2) */}
           <div className="xl:col-span-2 space-y-6">
             <HomeCharts chartsData={charts} />
-            
+
+            {/* Pipeline Funnel - NUEVO */}
+            <HomePipelineFunnel />
+
             {/* AI Insight */}
             <div className="bg-slate-900 p-5 rounded-3xl shadow-xl shadow-slate-800/20 text-white relative overflow-hidden group border border-slate-700">
               <div className="absolute top-0 right-0 w-48 h-48 bg-slate-800 rounded-full blur-3xl opacity-50 group-hover:opacity-70 transition-opacity" />
@@ -283,7 +289,7 @@ const Dashboard: React.FC = () => {
                   {hotLeads.length > 0 ? `${hotLeads.length} oportunidades detectadas` : 'Sistema en monitoreo'}
                 </h4>
                 <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-                  {hotLeads.length > 0 
+                  {hotLeads.length > 0
                     ? `${hotLeads[0]?.nombre} muestra señales de cierre inminente. Contactar en las próximas 2 hs maximiza probabilidad de cierre.`
                     : 'La inteligencia artificial no ha detectado anomalías o leads calientes en este momento.'}
                 </p>
@@ -297,6 +303,7 @@ const Dashboard: React.FC = () => {
           {/* Right sidebar part 1 */}
           <div className="space-y-6 flex flex-col h-full">
             <HomeQuickActions />
+            <HomeTaskAssigner />
             <HomeHotLeads hotLeads={hotLeads} />
             <div className="flex-1 min-h-[300px]">
               <HomeTasksWidget />
@@ -308,6 +315,11 @@ const Dashboard: React.FC = () => {
              <HomeFeed />
           </div>
 
+        </div>
+
+        {/* Weekly Activity Charts - NUEVO (full width) */}
+        <div className="mt-8">
+          <HomeWeeklyActivity />
         </div>
       </div>
     </>

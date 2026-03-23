@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, DollarSign, MapPin, Calendar, Filter, Users, Zap } from 'lucide-react';
+import { X, Search, DollarSign, MapPin, Calendar, Filter, Users, Zap, Tag } from 'lucide-react';
 import {
   TEMPERATURAS_LEAD,
   ETAPAS_PROCESO,
@@ -29,6 +29,7 @@ export interface LeadFilters {
   fechaHasta?: string;
   sinRespuestaDias?: number;
   conVisitaProxima: boolean;
+  etiquetas: string[];
 }
 
 interface LeadFiltersPanelProps {
@@ -69,7 +70,8 @@ export const LeadFiltersPanel: React.FC<LeadFiltersPanelProps> = ({
       estadosSeguimiento: [],
       vendedores: [],
       fuentes: [],
-      conVisitaProxima: false
+      conVisitaProxima: false,
+      etiquetas: []
     });
   };
 
@@ -233,7 +235,49 @@ export const LeadFiltersPanel: React.FC<LeadFiltersPanelProps> = ({
             />
           </FilterSection>
 
-          {/* 7. Presupuesto */}
+          {/* 7. Etiquetas / Tags */}
+          <FilterSection title="Etiquetas / Tags">
+            <div className="space-y-3">
+              <div className="relative">
+                <Tag className="absolute left-4 top-4 text-slate-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Escribe una etiqueta y presiona Enter..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                      const newTag = e.currentTarget.value.trim();
+                      if (!filters.etiquetas.includes(newTag)) {
+                        updateFilter('etiquetas', [...filters.etiquetas, newTag]);
+                      }
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                  className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all"
+                />
+              </div>
+              {filters.etiquetas.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {filters.etiquetas.map((tag, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 border-indigo-200"
+                    >
+                      <Tag size={12} />
+                      {tag}
+                      <button
+                        onClick={() => updateFilter('etiquetas', filters.etiquetas.filter((_, i) => i !== index))}
+                        className="ml-1 hover:text-indigo-800 transition-colors"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </FilterSection>
+
+          {/* 8. Presupuesto */}
           <FilterSection title="Presupuesto (USD)">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -265,7 +309,7 @@ export const LeadFiltersPanel: React.FC<LeadFiltersPanelProps> = ({
             </div>
           </FilterSection>
 
-          {/* 8. Estado de Seguimiento */}
+          {/* 9. Estado de Seguimiento */}
           <FilterSection title="Estado de Seguimiento">
             <MultiSelectChips
               options={ESTADOS_SEGUIMIENTO}
@@ -275,7 +319,7 @@ export const LeadFiltersPanel: React.FC<LeadFiltersPanelProps> = ({
             />
           </FilterSection>
 
-          {/* 9. Vendedor Asignado */}
+          {/* 10. Vendedor Asignado */}
           <FilterSection title="Vendedor Asignado">
             <div className="flex flex-wrap gap-2">
               {VENDEDORES.map(vendedor => {
@@ -302,7 +346,7 @@ export const LeadFiltersPanel: React.FC<LeadFiltersPanelProps> = ({
             </div>
           </FilterSection>
 
-          {/* 10. Fuente del Lead */}
+          {/* 11. Fuente del Lead */}
           <FilterSection title="Fuente del Lead">
             <MultiSelectChips
               options={FUENTES_LEAD}
@@ -311,7 +355,7 @@ export const LeadFiltersPanel: React.FC<LeadFiltersPanelProps> = ({
             />
           </FilterSection>
 
-          {/* 11. Rango de Fechas */}
+          {/* 12. Rango de Fechas */}
           <FilterSection title="Rango de Fechas">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -341,7 +385,7 @@ export const LeadFiltersPanel: React.FC<LeadFiltersPanelProps> = ({
             </div>
           </FilterSection>
 
-          {/* 12. Filtros Especiales */}
+          {/* 13. Filtros Especiales */}
           <FilterSection title="Filtros Especiales">
             <div className="space-y-3">
               <div className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
