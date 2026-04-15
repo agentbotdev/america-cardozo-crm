@@ -5,7 +5,7 @@ import {
   Building2, Calendar, MessageSquare, Zap, User, MapPin, Tag,
   Star, AlertTriangle, Send, CheckCircle2, XCircle, Copy, ExternalLink,
   ChevronRight, TrendingUp, Heart, Home, DollarSign, Hash,
-  ListTodo, Search, Plus, Trash2
+  ListTodo, Search, Plus, Trash2, Snowflake, Sun, Flame
 } from 'lucide-react';
 import { Client } from '../../types';
 import { ETAPAS_PROCESO, VENDEDORES, getVendedorLabel } from '../../config/taxonomy';
@@ -59,11 +59,11 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'acciones',    label: 'Acciones',     icon: Zap },
 ];
 
-const TEMP_CONFIG: Record<string, { label: string; bg: string; text: string; icon: string }> = {
-  frio:      { label: 'FRÍO',      bg: 'bg-blue-50',   text: 'text-blue-600',   icon: '🧊' },
-  tibio:     { label: 'TIBIO',     bg: 'bg-amber-50',  text: 'text-amber-600',  icon: '🌤️' },
-  caliente:  { label: 'CALIENTE',  bg: 'bg-red-50',    text: 'text-red-600',    icon: '🔥' },
-  ultra:     { label: 'ULTRA',     bg: 'bg-purple-50', text: 'text-purple-600', icon: '⚡' },
+const TEMP_CONFIG: Record<string, { label: string; bg: string; text: string; icon: React.ElementType }> = {
+  frio:      { label: 'FRÍO',      bg: 'bg-blue-50',   text: 'text-blue-600',   icon: Snowflake },
+  tibio:     { label: 'TIBIO',     bg: 'bg-amber-50',  text: 'text-amber-600',  icon: Sun      },
+  caliente:  { label: 'CALIENTE',  bg: 'bg-red-50',    text: 'text-red-600',    icon: Flame    },
+  ultra:     { label: 'ULTRA',     bg: 'bg-indigo-50', text: 'text-indigo-600', icon: Zap      },
 };
 
 const ETAPA_COLOR: Record<string, string> = {
@@ -72,7 +72,7 @@ const ETAPA_COLOR: Record<string, string> = {
   'Seguimiento':     'bg-indigo-100 text-indigo-700',
   'Visita agendada': 'bg-yellow-100 text-yellow-700',
   'Negociación':     'bg-orange-100 text-orange-700',
-  'Cierre':          'bg-green-100 text-green-700',
+  'Cierre':          'bg-emerald-100 text-emerald-700',
 };
 
 const TIPO_NOTA_ICON: Record<string, React.ElementType> = {
@@ -114,9 +114,11 @@ function formatPrecio(n?: number): string {
 const TempPill: React.FC<{ temp?: string }> = ({ temp }) => {
   if (!temp) return null;
   const cfg = TEMP_CONFIG[temp.toLowerCase()] ?? TEMP_CONFIG['frio'];
+  const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black ${cfg.bg} ${cfg.text}`}>
-      {cfg.icon} {cfg.label}
+      <Icon size={10} className="shrink-0" />
+      {cfg.label}
     </span>
   );
 };
@@ -155,7 +157,7 @@ const InfoRow: React.FC<{ icon: React.ElementType; label: string; value?: string
           className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-slate-100"
           title="Copiar"
         >
-          {copied ? <CheckCircle2 size={12} className="text-green-500" /> : <Copy size={12} className="text-slate-400" />}
+          {copied ? <CheckCircle2 size={12} className="text-emerald-500" /> : <Copy size={12} className="text-slate-400" />}
         </button>
       )}
     </div>
@@ -173,10 +175,10 @@ const TabResumen: React.FC<{ lead: Client }> = ({ lead }) => (
         <p className="text-3xl font-black text-indigo-700">{lead.score ?? 0}</p>
         <p className="text-[9px] text-indigo-400 font-bold">/100</p>
       </div>
-      <div className="bg-green-50 rounded-2xl p-4 text-center">
-        <p className="text-[9px] font-black text-green-300 uppercase tracking-widest mb-1">Cierre</p>
-        <p className="text-3xl font-black text-green-700">{lead.probabilidad_cierre ?? 0}%</p>
-        <p className="text-[9px] text-green-400 font-bold">prob.</p>
+      <div className="bg-emerald-50 rounded-2xl p-4 text-center">
+        <p className="text-[9px] font-black text-emerald-300 uppercase tracking-widest mb-1">Cierre</p>
+        <p className="text-3xl font-black text-emerald-700">{lead.probabilidad_cierre ?? 0}%</p>
+        <p className="text-[9px] text-emerald-400 font-bold">prob.</p>
       </div>
     </div>
 
@@ -196,7 +198,7 @@ const TabResumen: React.FC<{ lead: Client }> = ({ lead }) => (
         {lead.busca_venta      && <span className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-black rounded-full"><Home size={10} /> COMPRA</span>}
         {lead.busca_alquiler   && <span className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-full"><Home size={10} /> ALQUILER</span>}
         {lead.busca_inversion  && <span className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 text-[10px] font-black rounded-full"><TrendingUp size={10} /> INVERSIÓN</span>}
-        {lead.busca_temporario && <span className="flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-700 text-[10px] font-black rounded-full"><Calendar size={10} /> TEMPORARIO</span>}
+        {lead.busca_temporario && <span className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-black rounded-full"><Calendar size={10} /> TEMPORARIO</span>}
       </div>
       {lead.venta_presupuesto_max && (
         <div className="mt-3 flex items-center gap-2">
@@ -215,7 +217,7 @@ const TabResumen: React.FC<{ lead: Client }> = ({ lead }) => (
 
     {/* IA Insights */}
     {(lead.recomendacion_ia || lead.sentimiento_general) && (
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 p-4">
+      <div className="bg-indigo-50 rounded-2xl border border-indigo-100 p-4">
         <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1">
           <Zap size={10} /> IA Insight
         </p>
@@ -542,7 +544,7 @@ const TabPropiedades: React.FC<{ lead: Client; onUpdate: (updated: Client) => vo
 const VISITA_ESTADO_STYLE: Record<string, string> = {
   agendada:     'bg-blue-50 text-blue-700',
   confirmada:   'bg-indigo-50 text-indigo-700',
-  realizada:    'bg-green-50 text-green-700',
+  realizada:    'bg-emerald-50 text-emerald-700',
   cancelada:    'bg-red-50 text-red-600',
   reprogramada: 'bg-amber-50 text-amber-700',
 };
@@ -626,7 +628,7 @@ const TAREA_PRIORIDAD_STYLE: Record<string, string> = {
 const TAREA_ESTADO_ICON: Record<string, React.ReactNode> = {
   pendiente:   <div className="w-4 h-4 rounded-full border-2 border-slate-300" />,
   en_progreso: <div className="w-4 h-4 rounded-full border-2 border-indigo-400 bg-indigo-100" />,
-  completada:  <CheckCircle2 size={16} className="text-green-500" />,
+  completada:  <CheckCircle2 size={16} className="text-emerald-500" />,
   cancelada:   <XCircle size={16} className="text-slate-300" />,
 };
 
@@ -920,17 +922,19 @@ const TabAcciones: React.FC<{ lead: Client; onUpdate: (updated: Client) => void 
           <div className="flex gap-2">
             {(['frio', 'tibio', 'caliente', 'ultra'] as const).map(t => {
               const cfg = TEMP_CONFIG[t];
+              const Icon = cfg.icon;
               return (
                 <button
                   key={t}
                   onClick={() => setTemperatura(t)}
-                  className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all ${
+                  className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all flex flex-col items-center gap-0.5 ${
                     temperatura === t
                       ? `${cfg.bg} ${cfg.text} ring-2 ring-current ring-offset-1`
                       : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                   }`}
                 >
-                  {cfg.icon}
+                  <Icon size={12} />
+                  {cfg.label}
                 </button>
               );
             })}
@@ -970,7 +974,7 @@ const TabAcciones: React.FC<{ lead: Client; onUpdate: (updated: Client) => void 
           disabled={saving}
           className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-black transition-all ${
             saved
-              ? 'bg-green-500 text-white'
+              ? 'bg-emerald-500 text-white'
               : 'bg-slate-900 text-white hover:bg-indigo-700'
           } disabled:opacity-50`}
         >
@@ -1054,7 +1058,7 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ lead, onClose, onUpdate }) 
               <div className="flex items-center gap-4">
                 {/* Avatar */}
                 <div className="relative">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-200">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-200">
                     {initials}
                   </div>
                   {lead.estado_comercial === 'vip' && (

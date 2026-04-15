@@ -13,6 +13,7 @@ import { ETAPAS_PROCESO, VENDEDORES } from '../config/taxonomy';
 import {
   Phone, Plus, X, Search, Edit, AlertTriangle, RefreshCw,
   ChevronDown, Check, SlidersHorizontal, SearchX, ChevronLeft, ChevronRight, ArrowRight, Mail,
+  Snowflake, Sun, Flame, Zap,
 } from 'lucide-react';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -45,16 +46,16 @@ const etapaColor: Record<string, string> = {
   'Inicio': 'bg-slate-100 text-slate-500',
   'Indagación': 'bg-blue-50 text-blue-600',
   'Seguimiento': 'bg-indigo-50 text-indigo-600',
-  'Visita agendada': 'bg-violet-50 text-violet-600',
+  'Visita agendada': 'bg-indigo-50 text-indigo-600',
   'Negociación': 'bg-amber-50 text-amber-700',
   'Cierre': 'bg-emerald-50 text-emerald-600',
 };
 
-const tempConfig: Record<string, { label: string; bg: string; text: string }> = {
-  frio: { label: 'Frío', bg: 'bg-blue-50', text: 'text-blue-600' },
-  tibio: { label: 'Tibio', bg: 'bg-amber-50', text: 'text-amber-600' },
-  caliente: { label: '🔥 Caliente', bg: 'bg-red-50', text: 'text-red-600' },
-  ultra_caliente: { label: '⚡ Ultra', bg: 'bg-rose-50', text: 'text-rose-700' },
+const tempConfig: Record<string, { label: string; bg: string; text: string; icon: React.ElementType }> = {
+  frio:     { label: 'Frío',     bg: 'bg-blue-50',   text: 'text-blue-600',   icon: Snowflake },
+  tibio:    { label: 'Tibio',    bg: 'bg-amber-50',  text: 'text-amber-600',  icon: Sun       },
+  caliente: { label: 'Caliente', bg: 'bg-red-50',    text: 'text-red-600',    icon: Flame     },
+  ultra:    { label: 'Ultra',    bg: 'bg-rose-50',   text: 'text-rose-700',   icon: Zap       },
 };
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -67,9 +68,11 @@ const MicroBadge: React.FC<{ label: string; className?: string }> = ({ label, cl
 
 const TempBadge: React.FC<{ temp?: string }> = ({ temp }) => {
   if (!temp) return null;
-  const cfg = tempConfig[temp] ?? { label: temp, bg: 'bg-slate-50', text: 'text-slate-500' };
+  const cfg = tempConfig[temp] ?? { label: temp, bg: 'bg-slate-50', text: 'text-slate-500', icon: Snowflake };
+  const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${cfg.bg} ${cfg.text}`}>
+      <Icon size={10} className="shrink-0" />
       {cfg.label}
     </span>
   );
@@ -917,8 +920,8 @@ const Clients: React.FC = () => {
                     <div className="flex flex-wrap gap-1.5">
                       {client.busca_venta && <MicroBadge label="Venta" className="bg-emerald-50 text-emerald-600 border-emerald-100" />}
                       {client.busca_alquiler && <MicroBadge label="Alquiler" className="bg-blue-50 text-blue-600 border-blue-100" />}
-                      {client.busca_inversion && <MicroBadge label="Inversión" className="bg-violet-50 text-violet-600 border-violet-100" />}
-                      {client.busca_temporario && <MicroBadge label="Temp." className="bg-teal-50 text-teal-600 border-teal-100" />}
+                      {client.busca_inversion && <MicroBadge label="Inversión" className="bg-indigo-50 text-indigo-600 border-indigo-100" />}
+                      {client.busca_temporario && <MicroBadge label="Temp." className="bg-blue-50 text-blue-600 border-blue-100" />}
                       <TempBadge temp={client.temperatura} />
                       <EtapaBadge etapa={client.etapa_proceso} />
                     </div>
@@ -1003,8 +1006,8 @@ const Clients: React.FC = () => {
                             <div className="flex flex-wrap gap-1">
                               {client.busca_venta && <MicroBadge label="Venta" className="bg-emerald-50 text-emerald-600 border-emerald-100" />}
                               {client.busca_alquiler && <MicroBadge label="Alquiler" className="bg-blue-50 text-blue-600 border-blue-100" />}
-                              {client.busca_inversion && <MicroBadge label="Inversión" className="bg-violet-50 text-violet-600 border-violet-100" />}
-                              {client.busca_temporario && <MicroBadge label="Temp." className="bg-teal-50 text-teal-600 border-teal-100" />}
+                              {client.busca_inversion && <MicroBadge label="Inversión" className="bg-indigo-50 text-indigo-600 border-indigo-100" />}
+                              {client.busca_temporario && <MicroBadge label="Temp." className="bg-blue-50 text-blue-600 border-blue-100" />}
                             </div>
                           </td>
                           {/* Etapa */}

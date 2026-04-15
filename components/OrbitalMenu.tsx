@@ -26,7 +26,7 @@ const OrbitalMenu: React.FC = () => {
 
       {/* Orbit Rings */}
       <div className="absolute w-[220px] h-[220px] rounded-full border border-indigo-100 animate-spin-slow"></div>
-      <div className="absolute w-[160px] h-[160px] rounded-full border border-purple-50 animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '18s' }}></div>
+      <div className="absolute w-[160px] h-[160px] rounded-full border border-indigo-50 animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '18s' }}></div>
 
       {/* Nodes */}
       {items.map((item, index) => {

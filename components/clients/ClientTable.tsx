@@ -48,18 +48,18 @@ export const ClientTable: React.FC<ClientTableProps> = ({
     pausado: 'bg-slate-100 text-slate-600',
     perdido: 'bg-red-100 text-red-600',
     derivado: 'bg-orange-100 text-orange-600',
-    cerrado: 'bg-green-100 text-green-600'
+    cerrado: 'bg-emerald-100 text-emerald-600'
   };
 
   const stageColors: Record<string, string> = {
     contacto_inicial: 'bg-slate-100 text-slate-600',
     indagacion: 'bg-indigo-100 text-indigo-600',
-    props_enviadas: 'bg-purple-100 text-purple-600',
+    props_enviadas: 'bg-indigo-100 text-indigo-600',
     visita_agendada: 'bg-blue-100 text-blue-600',
-    visita_realizada: 'bg-cyan-100 text-cyan-600',
+    visita_realizada: 'bg-blue-100 text-blue-600',
     negociacion: 'bg-amber-100 text-amber-600',
     cierre: 'bg-emerald-100 text-emerald-600',
-    postventa: 'bg-green-100 text-green-600'
+    postventa: 'bg-emerald-100 text-emerald-600'
   };
 
   const SortIcon: React.FC<{ field: SortField }> = ({ field }) => {
@@ -155,7 +155,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                     <td className="px-6 py-5">
                       <div className="flex flex-wrap gap-1">
                         {lead.busca_venta && <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[9px] font-bold">Venta</span>}
-                        {lead.busca_alquiler && <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-[9px] font-bold">Alquiler</span>}
+                        {lead.busca_alquiler && <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[9px] font-bold">Alquiler</span>}
                         {lead.busca_inversion && <span className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md text-[9px] font-bold">Inversión</span>}
                       </div>
                     </td>

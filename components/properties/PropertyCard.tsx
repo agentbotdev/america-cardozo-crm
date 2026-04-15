@@ -16,7 +16,7 @@ const PropertyCard = React.memo(({ property, onView }: PropertyCardProps) => {
     pausada: 'bg-amber-500',
     reservada: 'bg-orange-500',
     vendida: 'bg-slate-500',
-    alquilada: 'bg-purple-600',
+    alquilada: 'bg-indigo-600',
     borrador: 'bg-slate-300'
   };
   const precio = property.tipo_operacion === 'venta' ? property.precio_venta : property.precio_alquiler;

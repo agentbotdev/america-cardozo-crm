@@ -15,7 +15,8 @@ const ControlCenter = lazy(() => import('./pages/ControlCenter'));
 const Settings      = lazy(() => import('./pages/Settings'));
 const Support       = lazy(() => import('./pages/Support'));
 const Tasks         = lazy(() => import('./pages/Tasks'));
-const LiveChat      = lazy(() => import('./pages/LiveChat'));
+// TODO: removed - live chat deprecated
+// const LiveChat   = lazy(() => import('./pages/LiveChat'));
 
 const App: React.FC = () => {
   return (
@@ -50,7 +51,8 @@ const App: React.FC = () => {
             <Route path="control-center" element={<Suspense fallback={null}><ControlCenter /></Suspense>} />
             <Route path="soporte" element={<Suspense fallback={null}><Support /></Suspense>} />
             <Route path="tareas" element={<Suspense fallback={null}><Tasks /></Suspense>} />
-            <Route path="live-chat" element={<Suspense fallback={null}><LiveChat /></Suspense>} />
+            {/* TODO: removed - live chat deprecated */}
+            {/* <Route path="live-chat" element={<Suspense fallback={null}><LiveChat /></Suspense>} /> */}
             <Route path="configuracion" element={<Suspense fallback={null}><Settings /></Suspense>} />
           </Route>
 

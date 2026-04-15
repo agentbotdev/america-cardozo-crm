@@ -23,7 +23,7 @@ const TICKET_STATES = [
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
   abierto: { bg: 'bg-amber-50', text: 'text-amber-600', icon: Clock },
   en_proceso: { bg: 'bg-blue-50', text: 'text-blue-600', icon: AlertCircle },
-  resuelto: { bg: 'bg-green-50', text: 'text-green-600', icon: CheckCircle2 },
+  resuelto: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: CheckCircle2 },
   cerrado: { bg: 'bg-slate-100', text: 'text-slate-500', icon: XCircle },
 };
 
@@ -222,7 +222,7 @@ const TicketDetail: React.FC<TicketDetailProps> = ({ ticket, onClose, onStatusCh
 
           {ticket.estado !== 'resuelto' && ticket.estado !== 'cerrado' && (
             <button onClick={() => onStatusChange(ticket.id, 'resuelto')}
-              className="px-3 py-1.5 bg-green-50 text-green-600 rounded-xl text-xs font-black hover:bg-green-100 transition-colors flex items-center gap-1">
+              className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-black hover:bg-emerald-100 transition-colors flex items-center gap-1">
               <CheckCircle2 size={12} /> Marcar resuelto
             </button>
           )}

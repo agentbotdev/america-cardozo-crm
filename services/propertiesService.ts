@@ -1,19 +1,85 @@
 import { supabase } from './supabaseClient';
-import { Property, Photo } from '../types';
+import { Property, Photo, PropertyType } from '../types';
 
 // Cache para propiedades
 let propertiesCache: { data: Property[]; timestamp: number } | null = null;
 const CACHE_DURATION = 30000; // 30 segundos
 
+/** Campos necesarios para la card de propiedad (sin select *) */
+const LIST_SELECT = [
+    'tokko_id', 'titulo', 'barrio',
+    'precio_venta', 'precio_alquiler', 'moneda_venta', 'moneda_alquiler', 'moneda',
+    'foto_portada_url', 'tipo_operacion', 'tipo_propiedad',
+    'ambientes', 'dormitorios', 'banos', 'superficie_cubierta', 'estado', 'created_at',
+].join(', ');
+
+export const PAGE_SIZE = 24;
+
+/** Normaliza una fila de propiedades para la lista/cards (sin fotos) */
+const normalizeForCard = (p: Record<string, unknown>): Property => ({
+    ...(p as unknown as Property),
+    id: String(p['tokko_id'] ?? ''),
+    fotos: [],
+    titulo: (p['titulo'] as string | undefined) ?? `Propiedad en ${p['barrio'] ?? 'Venta/Alquiler'}`,
+    tipo: ((p['tipo_propiedad'] as string | undefined) ?? 'otro') as PropertyType,
+    direccion_completa: '',
+    ambientes: (p['ambientes'] as number | undefined) ?? 0,
+    dormitorios: (p['dormitorios'] as number | undefined) ?? 0,
+    banos_completos: (p['banos'] as number | undefined) ?? 0,
+    sup_cubierta: (p['superficie_cubierta'] as number | undefined) ?? 0,
+    sup_total_lote: 0,
+    foto_portada: (p['foto_portada_url'] as string | undefined)
+        ?? 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400',
+    moneda: (p['tipo_operacion'] === 'venta'
+        ? ((p['moneda_venta'] as string | undefined) ?? 'USD')
+        : ((p['moneda_alquiler'] as string | undefined) ?? 'ARS')) as 'USD' | 'ARS',
+});
+
 export const propertiesService = {
+    /**
+     * Obtiene una página de propiedades publicadas (no borrador).
+     * Usa select específico y range para paginación eficiente.
+     */
+    fetchPropertiesPage: async (page: number = 0): Promise<{ data: Property[]; count: number }> => {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        const { data, error, count } = await supabase
+            .from('propiedades')
+            .select(LIST_SELECT, { count: 'exact' })
+            .neq('estado', 'borrador')
+            .range(from, to)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        return {
+            data: (data as unknown as Record<string, unknown>[] ?? []).map(normalizeForCard),
+            count: count ?? 0,
+        };
+    },
+
+    /**
+     * Obtiene todas las captaciones (estado = 'borrador').
+     * Son pocas — no requieren paginación.
+     */
+    fetchBorradores: async (): Promise<Property[]> => {
+        const { data, error } = await supabase
+            .from('propiedades')
+            .select(LIST_SELECT)
+            .eq('estado', 'borrador')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return (data as unknown as Record<string, unknown>[] ?? []).map(normalizeForCard);
+    },
+
     fetchProperties: async (activeType?: 'published' | 'acquisition', forceRefresh = false) => {
         // Usar cache si está disponible y es reciente
         if (!forceRefresh && propertiesCache && Date.now() - propertiesCache.timestamp < CACHE_DURATION) {
-            console.log('✅ Using cached properties');
             return propertiesCache.data;
         }
 
-        console.log('🔄 Fetching properties from Supabase...');
         const startTime = performance.now();
 
         let query = supabase
@@ -90,7 +156,7 @@ export const propertiesService = {
         });
 
         const endTime = performance.now();
-        console.log(`✅ Fetched ${props.length} properties in ${(endTime - startTime).toFixed(0)}ms`);
+        void endTime; // performance tracking — remove in future if unneeded
 
         // Actualizar cache
         propertiesCache = {
@@ -104,7 +170,6 @@ export const propertiesService = {
     // Invalidar cache cuando se guarda una propiedad
     invalidateCache: () => {
         propertiesCache = null;
-        console.log('🗑️ Properties cache invalidated');
     },
 
     saveProperty: async (property: Partial<Property>) => {

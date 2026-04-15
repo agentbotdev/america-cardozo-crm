@@ -7,13 +7,32 @@ import {
   Building2, Image as ImageIcon, Edit, Upload, Trash2, CheckCircle2,
   Trash, Save, Map as MapIcon, ArrowLeft, Clock, Sparkles, Loader2, Bot
 } from 'lucide-react';
-import { propertiesService } from '../services/propertiesService';
+import { propertiesService, PAGE_SIZE } from '../services/propertiesService';
 import { developmentsService, Development } from '../services/developmentsService';
 import { storageService } from '../services/storageService';
 import { aiService } from '../services/aiService';
 import PropertySearch from '../components/PropertySearch';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// --- SKELETON CARD ---
+const PropertyCardSkeleton = () => (
+  <div className="bg-white rounded-[3rem] overflow-hidden animate-pulse border border-slate-100">
+    <div className="h-64 sm:h-72 bg-slate-100" />
+    <div className="p-8 space-y-4">
+      <div className="h-5 bg-slate-100 rounded-xl w-3/4" />
+      <div className="grid grid-cols-3 gap-3">
+        <div className="h-16 bg-slate-100 rounded-2xl" />
+        <div className="h-16 bg-slate-100 rounded-2xl" />
+        <div className="h-16 bg-slate-100 rounded-2xl" />
+      </div>
+      <div className="flex gap-2 pt-2">
+        <div className="h-10 w-10 bg-slate-100 rounded-xl" />
+        <div className="h-10 w-10 bg-slate-100 rounded-xl" />
+      </div>
+    </div>
+  </div>
+);
 
 // --- SHARED UI SUB-COMPONENTS ---
 
@@ -136,7 +155,7 @@ const PropertyCard = React.memo(({ property, onView }: any) => {
     pausada: 'bg-amber-500',
     reservada: 'bg-orange-500',
     vendida: 'bg-slate-500',
-    alquilada: 'bg-purple-600',
+    alquilada: 'bg-indigo-600',
     borrador: 'bg-slate-300'
   };
   const precio = property.tipo_operacion === 'venta' ? property.precio_venta : property.precio_alquiler;
@@ -200,7 +219,7 @@ const DevelopmentCard = React.memo(({ development, onView }: { development: Deve
     en_construccion: 'bg-amber-500',
     preventa: 'bg-emerald-500',
     entregado: 'bg-slate-500',
-    lanzamiento: 'bg-purple-600'
+    lanzamiento: 'bg-indigo-600'
   };
 
   return (
@@ -355,7 +374,7 @@ const PropertyFormModal = ({ isOpen, onClose, onSave, propertyToEdit }: any) => 
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose}></div>
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl relative z-[210] overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
           <div className="flex items-center gap-4">
@@ -505,7 +524,7 @@ const DevelopmentFormModal = ({ isOpen, onClose, onSave, devToEdit }: any) => {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose}></div>
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-full max-w-3xl rounded-[3rem] shadow-2xl relative z-[210] overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
           <div className="flex items-center gap-6">
@@ -583,7 +602,7 @@ const AIEnhanceButton: React.FC<{
     <button
       onClick={handleEnhance}
       disabled={isEnhancing}
-      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isEnhancing ? (
         <>
@@ -602,7 +621,13 @@ const AIEnhanceButton: React.FC<{
 
 // --- MAIN PAGE COMPONENT ---
 const Properties = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
+  // Propiedades publicadas (paginadas) y captaciones (borrador, pocas — sin paginación)
+  const [publishedProps, setPublishedProps] = useState<Property[]>([]);
+  const [borradores, setBorradores] = useState<Property[]>([]);
+  const [totalPublished, setTotalPublished] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [developments, setDevelopments] = useState<Development[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'propiedades' | 'emprendimientos' | 'acquisition'>('propiedades');
@@ -620,37 +645,68 @@ const Properties = () => {
 
   const loadData = async () => {
     setLoading(true);
-    
     try {
-      const pData = await propertiesService.fetchProperties();
-      console.log('Fetched properties inside component:', pData?.length);
-      setProperties(pData as any);
-    } catch (error) { 
-      console.error('Error fetching properties', error); 
-    }
+      const [pageResult, borradoresResult, devsResult] = await Promise.allSettled([
+        propertiesService.fetchPropertiesPage(0),
+        propertiesService.fetchBorradores(),
+        developmentsService.fetchDevelopments(),
+      ]);
 
-    try {
-      const dData = await developmentsService.fetchDevelopments();
-      setDevelopments(dData as any);
-    } catch (error) { 
-      console.error('Error fetching developments', error); 
-    }
+      if (pageResult.status === 'fulfilled') {
+        setPublishedProps(pageResult.value.data);
+        setTotalPublished(pageResult.value.count);
+        setCurrentPage(0);
+      } else {
+        console.error('Error fetching published properties:', pageResult.reason);
+      }
 
-    setLoading(false);
+      if (borradoresResult.status === 'fulfilled') {
+        setBorradores(borradoresResult.value);
+      } else {
+        console.error('Error fetching borradores:', borradoresResult.reason);
+      }
+
+      if (devsResult.status === 'fulfilled') {
+        setDevelopments(devsResult.value as any);
+      } else {
+        console.error('Error fetching developments:', devsResult.reason);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const loadMore = async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const next = currentPage + 1;
+      const { data } = await propertiesService.fetchPropertiesPage(next);
+      setPublishedProps(prev => [...prev, ...data]);
+      setCurrentPage(next);
+    } catch (error) {
+      console.error('Error loading more properties:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Para backward-compat con PropertySearch (recibe array de props)
+  const allPropsForSearch = useMemo(
+    () => [...publishedProps, ...borradores],
+    [publishedProps, borradores]
+  );
 
   const displayedProps = useMemo(() => {
     if (activeTab === 'emprendimientos') return [];
-    let props = properties.filter(p => activeTab === 'propiedades' ? p.estado !== 'borrador' : p.estado === 'borrador');
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      props = props.filter(p =>
-        p.titulo?.toLowerCase().includes(term) ||
-        p.barrio?.toLowerCase().includes(term)
-      );
-    }
-    return props;
-  }, [properties, activeTab, searchTerm]);
+    const source = activeTab === 'acquisition' ? borradores : publishedProps;
+    if (!searchTerm) return source;
+    const term = searchTerm.toLowerCase();
+    return source.filter(p =>
+      p.titulo?.toLowerCase().includes(term) ||
+      p.barrio?.toLowerCase().includes(term)
+    );
+  }, [publishedProps, borradores, activeTab, searchTerm]);
 
   const displayedDevs = useMemo(() => {
     if (activeTab !== 'emprendimientos') return [];
@@ -701,7 +757,12 @@ const Properties = () => {
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-500/10 blur-3xl rounded-full"></div>
           <h1 className="text-3xl sm:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-4 relative">Portafolio Inmobiliario</h1>
           <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-widest flex items-center gap-3 relative">
-            <Layers size={18} className="text-indigo-400" /> {activeTab === 'emprendimientos' ? `${developments.length} Emprendimientos` : `${properties.length} Propiedades`}
+            <Layers size={18} className="text-indigo-400" />
+            {activeTab === 'emprendimientos'
+              ? `${developments.length} Emprendimientos`
+              : activeTab === 'acquisition'
+              ? `${borradores.length} Captaciones`
+              : `${totalPublished || publishedProps.length} Propiedades`}
           </p>
         </div>
         <button
@@ -727,7 +788,7 @@ const Properties = () => {
           {activeTab === 'propiedades' && (
             <button
               onClick={() => setIsSearchModalOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
+              className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
             >
               <Bot size={20} />
               <span className="hidden md:inline">Buscador IA</span>
@@ -737,9 +798,10 @@ const Properties = () => {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-40 gap-6">
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Sincronizando Inventario Real Estate...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-12">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <PropertyCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-12">
@@ -752,15 +814,26 @@ const Properties = () => {
                 <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No hay emprendimientos registrados</p>
               </div>
             )
+          ) : displayedProps.length > 0 ? (
+            <>
+              {displayedProps.map(prop => <PropertyCard key={prop.id} property={prop} onView={(p: any, edit = false) => { if (edit) { setEditingProp(p); setIsModalOpen(true); } else setViewingProp(p); }} />)}
+              {activeTab === 'propiedades' && totalPublished > publishedProps.length && !searchTerm && (
+                <div className="col-span-full flex justify-center pt-4">
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="px-12 py-5 bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-100 rounded-2xl text-sm font-black text-slate-400 hover:text-indigo-600 transition-all disabled:opacity-50"
+                  >
+                    {loadingMore ? 'Cargando...' : `Cargar más propiedades (${totalPublished - publishedProps.length} restantes)`}
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
-            properties.length > 0 ? (
-              displayedProps.map(prop => <PropertyCard key={prop.id} property={prop} onView={(p: any, edit = false) => { if (edit) { setEditingProp(p); setIsModalOpen(true); } else setViewingProp(p); }} />)
-            ) : (
-              <div className="col-span-full py-40 text-center bg-white/20 rounded-[4rem] border-2 border-dashed border-slate-200">
-                <Home size={60} className="mx-auto text-slate-200 mb-6" />
-                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No se encontraron unidades</p>
-              </div>
-            )
+            <div className="col-span-full py-40 text-center bg-white/20 rounded-[4rem] border-2 border-dashed border-slate-200">
+              <Home size={60} className="mx-auto text-slate-200 mb-6" />
+              <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No se encontraron unidades</p>
+            </div>
           )}
         </div>
       )}
@@ -777,7 +850,7 @@ const Properties = () => {
             setSearchTerm('');
           }
         }}
-        properties={properties}
+        properties={allPropsForSearch}
         onResults={(results, explanation) => {
           setSearchResults(results);
           setSearchExplanation(explanation || '');

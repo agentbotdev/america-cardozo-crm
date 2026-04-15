@@ -37,7 +37,7 @@ const AIEnhanceButton = ({ type, currentValue, context, onEnhance, className = "
       type="button"
       disabled={loading || !currentValue}
       onClick={handleEnhance}
-      className={`group flex items-center gap-3 px-6 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-500 ${!currentValue ? 'opacity-30 grayscale cursor-not-allowed' : 'hover:scale-105 hover:shadow-xl hover:shadow-indigo-200/50 active:scale-95'} ${className}`}
+      className={`group flex items-center gap-3 px-6 py-2 bg-gradient-to-r from-indigo-600 to-rose-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-500 ${!currentValue ? 'opacity-30 grayscale cursor-not-allowed' : 'hover:scale-105 hover:shadow-xl hover:shadow-indigo-200/50 active:scale-95'} ${className}`}
     >
       <AnimatePresence mode="wait">
         {loading ? (

@@ -441,7 +441,7 @@ const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                       >
                         {v.iniciales}
                         {isActive && (
-                          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center">
+                          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center">
                             <Check size={8} className="text-white" />
                           </span>
                         )}

@@ -162,7 +162,7 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                 className="relative bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50">
+                <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-indigo-100">
                     <div>
                         <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-2">
                             Buscador Inteligente
@@ -182,7 +182,7 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                     <button
                         onClick={() => setSearchMode('chatbot')}
                         className={`flex-1 p-4 md:p-6 rounded-2xl font-black text-sm md:text-base uppercase tracking-widest transition-all flex items-center justify-center gap-3 ${searchMode === 'chatbot'
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl'
+                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xl'
                             : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                             }`}
                     >
@@ -193,7 +193,7 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                     <button
                         onClick={() => setSearchMode('filters')}
                         className={`flex-1 p-4 md:p-6 rounded-2xl font-black text-sm md:text-base uppercase tracking-widest transition-all flex items-center justify-center gap-3 ${searchMode === 'filters'
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl'
+                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xl'
                             : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                             }`}
                     >
@@ -236,9 +236,9 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                                 )}
 
                                 {/* Chat Input */}
-                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-8 rounded-3xl border-2 border-indigo-100">
+                                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-8 rounded-3xl border-2 border-indigo-100">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-xl flex items-center justify-center">
                                             <Sparkles size={20} className="text-white" />
                                         </div>
                                         <div>
@@ -266,7 +266,7 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                                         <button
                                             onClick={handleChatbotSearch}
                                             disabled={!chatQuery.trim() || isSearching}
-                                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                            className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                                         >
                                             {isSearching ? (
                                                 <>
@@ -476,7 +476,7 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
                                 {/* Search Button */}
                                 <button
                                     onClick={handleFilterSearch}
-                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-6 rounded-2xl font-black text-sm uppercase tracking-widest hover:shadow-2xl transition-all flex items-center justify-center gap-3"
+                                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-8 py-6 rounded-2xl font-black text-sm uppercase tracking-widest hover:shadow-2xl transition-all flex items-center justify-center gap-3"
                                 >
                                     <Search size={20} />
                                     Buscar Propiedades

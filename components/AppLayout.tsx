@@ -4,7 +4,7 @@ import { Outlet, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient';
 import {
   LayoutDashboard, Building2, Users, UserCircle, CalendarDays,
-  BarChart3, LifeBuoy, MessageSquare, Settings, Menu, Bell, Search, LogOut, ChevronLeft, ChevronRight, X,
+  BarChart3, LifeBuoy, Settings, Menu, Bell, Search, LogOut, ChevronLeft, ChevronRight, X,
   Bot, Zap, ListTodo
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -134,7 +134,6 @@ const AppLayout: React.FC = () => {
     { to: '/visitas', icon: CalendarDays, label: 'Visitas' },
     { to: '/reportes', icon: BarChart3, label: 'Reportes' },
     { to: '/control-center', icon: Zap, label: 'Control Center' },
-    { to: '/live-chat', icon: MessageSquare, label: 'Live Chat' },
     { to: '/tareas', icon: ListTodo, label: 'Tareas' },
     { to: '/soporte', icon: LifeBuoy, label: 'Soporte' },
     { to: '/configuracion', icon: Settings, label: 'Configuración' },
@@ -244,7 +243,7 @@ const AppLayout: React.FC = () => {
         </motion.aside>
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-          <header className="h-20 flex items-center justify-between px-6 lg:px-10 shrink-0 bg-white/80 backdrop-blur-xl border-b border-slate-100/50 relative z-[90]">
+          <header className="h-20 flex items-center justify-between px-6 lg:px-10 shrink-0 bg-white/80 backdrop-blur-md border-b border-white/60 sticky top-0 z-[90]">
             <div className="flex items-center flex-1">
               <button
                 onClick={() => setSidebarOpen(true)}

@@ -69,7 +69,7 @@ export default function ControlCenter() {
   const tabs = [
     { id: 'ia', label: 'AGENTE IA', icon: Bot, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { id: 'metrics', label: 'METRICAS GLOBALES', icon: BarChart3, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { id: 'infra', label: 'INFRAESTRUCTURA', icon: Server, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { id: 'infra', label: 'INFRAESTRUCTURA', icon: Server, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { id: 'mcp', label: 'CHATWOOT / MCP', icon: MessageSquare, color: 'text-rose-600', bg: 'bg-rose-50' }
   ] as const;
 
@@ -144,8 +144,8 @@ export default function ControlCenter() {
                 </div>
 
                 <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-bl-[6rem] group-hover:scale-110 transition-transform"></div>
-                    <Users size={24} className="text-purple-500 mb-6 relative z-10" strokeWidth={3} />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-[6rem] group-hover:scale-110 transition-transform"></div>
+                    <Users size={24} className="text-indigo-500 mb-6 relative z-10" strokeWidth={3} />
                     <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">Interacciones</h3>
                     <div className="flex items-end gap-3 relative z-10">
                         <span className="text-5xl font-black text-slate-900 tracking-tighter">2.4k</span>
@@ -279,7 +279,7 @@ export default function ControlCenter() {
                           <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Bot Resolution</h3>
                           <div className="flex items-end gap-3">
                               <span className="text-5xl font-black text-slate-900 tracking-tighter">{bot?.resolution_rate || '72%'}</span>
-                              <span className="text-[10px] font-black text-purple-500 bg-purple-50 px-3 py-1.5 rounded-full mb-2">IA Active</span>
+                              <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-3 py-1.5 rounded-full mb-2">IA Active</span>
                           </div>
                       </div>
                   </div>

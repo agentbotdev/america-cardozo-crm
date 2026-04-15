@@ -15,7 +15,7 @@ const DevelopmentCard = React.memo(({ development, onView }: DevelopmentCardProp
     en_construccion: 'bg-amber-500',
     preventa: 'bg-emerald-500',
     entregado: 'bg-slate-500',
-    lanzamiento: 'bg-purple-600'
+    lanzamiento: 'bg-indigo-600'
   };
 
   return (

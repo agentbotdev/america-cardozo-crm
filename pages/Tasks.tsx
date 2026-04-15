@@ -25,7 +25,7 @@ const STATUS_COLUMNS: { id: TaskStatus; title: string; headerBg: string; icon: R
   { id: 'pendiente', title: 'Pendiente', headerBg: 'bg-amber-500', icon: CircleDashed },
   { id: 'en_proceso', title: 'En Progreso', headerBg: 'bg-blue-500', icon: Clock },
   { id: 'en_revision', title: 'En Revisión', headerBg: 'bg-orange-500', icon: Eye },
-  { id: 'completada', title: 'Completada', headerBg: 'bg-green-500', icon: CheckCircle2 },
+  { id: 'completada', title: 'Completada', headerBg: 'bg-emerald-500', icon: CheckCircle2 },
   { id: 'cancelada', title: 'Cancelada', headerBg: 'bg-slate-400', icon: XCircle },
 ];
 
@@ -786,7 +786,7 @@ const ChartsView: React.FC<{ tasks: CRMTask[] }> = ({ tasks }) => {
 
   const kpis = [
     { label: 'Total Tareas', value: stats.total, icon: CheckCircle2, color: 'bg-slate-900 text-white' },
-    { label: 'Completadas (mes)', value: stats.completadasMes, icon: CheckCircle2, color: 'bg-green-50 text-green-600' },
+    { label: 'Completadas (mes)', value: stats.completadasMes, icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-600' },
     { label: 'Vencidas', value: stats.vencidas, icon: AlertTriangle, color: 'bg-red-50 text-red-600' },
     { label: 'En Progreso', value: stats.enProgreso, icon: Clock, color: 'bg-blue-50 text-blue-600' },
   ];

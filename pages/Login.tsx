@@ -66,7 +66,7 @@ const Login = () => {
 
                         <h1 className="text-7xl xl:text-8xl font-black text-white leading-[0.9] tracking-tighter">
                             America <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-rose-400">Cardozo</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-indigo-300 to-rose-400">Cardozo</span>
                         </h1>
 
                         <p className="text-xl text-slate-400 font-medium max-w-lg leading-relaxed">

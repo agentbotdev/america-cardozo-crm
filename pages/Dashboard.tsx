@@ -69,8 +69,8 @@ const colorMap = {
   indigo:  { bg: 'bg-indigo-50',  icon: 'text-indigo-600',  spark: '#6366f1', badge: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
   rose:    { bg: 'bg-rose-50',    icon: 'text-rose-600',    spark: '#f43f5e', badge: 'bg-rose-50 text-rose-600 border-rose-100' },
   amber:   { bg: 'bg-amber-50',   icon: 'text-amber-600',   spark: '#f59e0b', badge: 'bg-amber-50 text-amber-600 border-amber-100' },
-  violet:  { bg: 'bg-violet-50',  icon: 'text-violet-600',  spark: '#8b5cf6', badge: 'bg-violet-50 text-violet-600 border-violet-100' },
-  cyan:    { bg: 'bg-cyan-50',    icon: 'text-cyan-600',    spark: '#06b6d4', badge: 'bg-cyan-50 text-cyan-600 border-cyan-100' },
+  violet:  { bg: 'bg-indigo-50',  icon: 'text-indigo-600',  spark: '#6366f1', badge: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+  cyan:    { bg: 'bg-blue-50',    icon: 'text-blue-600',    spark: '#3b82f6', badge: 'bg-blue-50 text-blue-600 border-blue-100' },
   slate:   { bg: 'bg-slate-50',   icon: 'text-slate-600',   spark: '#64748b', badge: 'bg-slate-50 text-slate-600 border-slate-200' },
 };
 type ColorKey = keyof typeof colorMap;
@@ -542,7 +542,7 @@ const Dashboard: React.FC = () => {
                   { icon: UserPlus, label: 'Lead Rápido',      desc: 'Ingreso manual',         action: () => navigate('/leads'),                       color: 'bg-blue-50 text-blue-600' },
                   { icon: Star,     label: 'Ver Destacados',   desc: 'Propiedades top',        action: () => navigate('/propiedades'),                  color: 'bg-amber-50 text-amber-600' },
                   { icon: Calendar, label: 'Agendar Visita',   desc: 'Nueva visita',           action: () => navigate('/visitas'),                      color: 'bg-indigo-50 text-indigo-600' },
-                  { icon: BarChart3,label: 'Ver Reportes',     desc: 'Análisis completo',       action: () => navigate('/reportes'),                    color: 'bg-violet-50 text-violet-600' },
+                  { icon: BarChart3,label: 'Ver Reportes',     desc: 'Análisis completo',       action: () => navigate('/reportes'),                    color: 'bg-indigo-50 text-indigo-600' },
                 ].map(({ icon: Ic, label, desc, action, color }, i) => (
                   <button
                     key={i}

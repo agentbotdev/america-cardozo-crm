@@ -25,18 +25,18 @@ const statusColors: Record<string, string> = {
   pausado: 'bg-slate-100 text-slate-600',
   perdido: 'bg-red-100 text-red-600',
   derivado: 'bg-orange-100 text-orange-600',
-  cerrado: 'bg-green-100 text-green-600'
+  cerrado: 'bg-emerald-100 text-emerald-600'
 };
 
 const stageColors: Record<string, string> = {
   contacto_inicial: 'bg-slate-100 text-slate-600',
   indagacion: 'bg-indigo-100 text-indigo-600',
-  props_enviadas: 'bg-purple-100 text-purple-600',
+  props_enviadas: 'bg-indigo-100 text-indigo-600',
   visita_agendada: 'bg-blue-100 text-blue-600',
-  visita_realizada: 'bg-cyan-100 text-cyan-600',
+  visita_realizada: 'bg-blue-100 text-blue-600',
   negociacion: 'bg-amber-100 text-amber-600',
   cierre: 'bg-emerald-100 text-emerald-600',
-  postventa: 'bg-green-100 text-green-600'
+  postventa: 'bg-emerald-100 text-emerald-600'
 };
 
 

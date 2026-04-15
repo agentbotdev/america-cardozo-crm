@@ -251,7 +251,7 @@ const LeadsDashboard = () => (
         </div>
         <div className="mt-8 relative z-10">
           <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]" style={{ width: '84.2%' }}></div>
+            <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)]" style={{ width: '84.2%' }}></div>
           </div>
         </div>
         <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12"><Activity size={200} /></div>
@@ -307,7 +307,7 @@ const SalesDashboard = () => (
 const AlquilerDashboard = () => (
   <div className="space-y-10 animate-fade-in">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <KPICard title="Contratos Activos" value="482" trend="+14" icon={Key} color="purple" />
+      <KPICard title="Contratos Activos" value="482" trend="+14" icon={Key} color="indigo" />
       <KPICard title="Recaudación" value="$2.4M" trend="+5%" icon={DollarSign} color="emerald" />
       <KPICard title="Vacancia" value="2.4%" trend="-1.1%" icon={Building2} color="blue" />
       <KPICard title="Renovaciones" value="85%" trend="+2%" icon={RotateCcw} color="amber" />
@@ -425,7 +425,7 @@ const Reports: React.FC = () => {
   const categories = [
     { id: 'leads', label: 'LEADS', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { id: 'sales', label: 'VENTA', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { id: 'alquiler', label: 'ALQUILER', icon: Key, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { id: 'alquiler', label: 'ALQUILER', icon: Key, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { id: 'stock', label: 'PROPIEDADES', icon: Home, color: 'text-amber-600', bg: 'bg-amber-50' },
     { id: 'captacion', label: 'CAPTACIÓN', icon: Target, color: 'text-rose-600', bg: 'bg-rose-50' },
   ];
