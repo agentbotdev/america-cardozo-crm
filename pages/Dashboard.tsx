@@ -8,8 +8,9 @@ import {
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
-  Tooltip, AreaChart, Area, LineChart, Line, CartesianGrid
+  Tooltip, AreaChart, Area, LineChart, Line, CartesianGrid, LabelList
 } from 'recharts';
+import { motion } from 'framer-motion';
 import { supabase } from '../services/supabaseClient';
 import { dashboardService } from '../services/dashboardService';
 import { Lead } from '../types';
@@ -180,6 +181,46 @@ const NotificationPanel: React.FC<{
   </div>
 );
 
+// ── Constantes analytics ──────────────────────────────────────────────────────
+const ETAPAS_ORDEN = [
+  'contacto_inicial', 'indagacion', 'props_enviadas',
+  'visita_agendada', 'visita_realizada', 'negociacion', 'cierre', 'postventa',
+];
+const ETAPA_COLORS_CHART: Record<string, string> = {
+  contacto_inicial:  '#94a3b8',
+  indagacion:        '#6366f1',
+  props_enviadas:    '#818cf8',
+  visita_agendada:   '#3b82f6',
+  visita_realizada:  '#60a5fa',
+  negociacion:       '#f59e0b',
+  cierre:            '#10b981',
+  postventa:         '#34d399',
+};
+const TEMP_COLORS_CHART: Record<string, string> = {
+  frio:     '#93c5fd',
+  tibio:    '#fcd34d',
+  caliente: '#f97316',
+  ultra:    '#ef4444',
+};
+const TEMP_LABELS_CHART: Record<string, string> = {
+  frio:     'Frío',
+  tibio:    'Tibio',
+  caliente: 'Caliente',
+  ultra:    'Ultra',
+};
+
+const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl text-xs">
+      {label && <p className="font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>}
+      {payload.map((p: any, i: number) => (
+        <p key={i} className="font-bold" style={{ color: p.color ?? p.fill }}>{p.name ?? p.dataKey}: {p.value}</p>
+      ))}
+    </div>
+  );
+};
+
 // ── Dashboard principal ────────────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -200,6 +241,12 @@ const Dashboard: React.FC = () => {
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<{
+    funnelData:     { etapa: string; total: number; fill: string }[];
+    actividadData:  { fecha: string; leads: number }[];
+    tempData:       { name: string; value: number; fill: string }[];
+    vendedoresData: { nombre: string; cierres: number; leads: number }[];
+  }>({ funnelData: [], actividadData: [], tempData: [], vendedoresData: [] });
 
   // Sparkline data: simulados (7 días)
   const sparkLeads   = useMemo(() => [4, 7, 5, 9, 6, 11, 8], []);
@@ -252,6 +299,66 @@ const Dashboard: React.FC = () => {
         });
       }
 
+      // ── Analytics queries (paralelas) ────────────────────────────────────
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+      const [funnelRes, actividadRes, tempRes, vendedoresRes] = await Promise.all([
+        supabase.from('leads').select('etapa_proceso').neq('estado', 'perdido'),
+        supabase.from('leads').select('created_at').gte('created_at', fourteenDaysAgo.toISOString()),
+        supabase.from('leads').select('temperatura'),
+        supabase.from('leads').select('vendedor_asignado_nombre, etapa_proceso'),
+      ]);
+
+      // Funnel por etapa
+      const etapaMap: Record<string, number> = {};
+      (funnelRes.data || []).forEach((l: any) => {
+        const k = l.etapa_proceso || 'contacto_inicial';
+        etapaMap[k] = (etapaMap[k] || 0) + 1;
+      });
+      const funnelData = ETAPAS_ORDEN
+        .map(e => ({ etapa: e, total: etapaMap[e] || 0, fill: ETAPA_COLORS_CHART[e] }))
+        .filter(e => e.total > 0);
+
+      // Actividad últimos 14 días
+      const days = Array.from({ length: 14 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (13 - i));
+        return d.toISOString().split('T')[0];
+      });
+      const actMap: Record<string, number> = {};
+      (actividadRes.data || []).forEach((l: any) => {
+        const k = (l.created_at as string).split('T')[0];
+        actMap[k] = (actMap[k] || 0) + 1;
+      });
+      const actividadData = days.map(d => ({ fecha: d.slice(5), leads: actMap[d] || 0 }));
+
+      // Temperatura donut
+      const tempMap: Record<string, number> = {};
+      (tempRes.data || []).forEach((l: any) => {
+        const k = l.temperatura || 'frio';
+        tempMap[k] = (tempMap[k] || 0) + 1;
+      });
+      const tempData = Object.entries(tempMap).map(([k, v]) => ({
+        name: TEMP_LABELS_CHART[k] ?? k,
+        value: v,
+        fill: TEMP_COLORS_CHART[k] ?? '#94a3b8',
+      }));
+
+      // Vendedores ranking
+      const vendMap: Record<string, { cierres: number; leads: number }> = {};
+      (vendedoresRes.data || []).forEach((l: any) => {
+        const nom = l.vendedor_asignado_nombre || 'Sin asignar';
+        if (!vendMap[nom]) vendMap[nom] = { cierres: 0, leads: 0 };
+        vendMap[nom].leads++;
+        if (l.etapa_proceso === 'cierre' || l.etapa_proceso === 'postventa') vendMap[nom].cierres++;
+      });
+      const vendedoresData = Object.entries(vendMap)
+        .map(([nombre, v]) => ({ nombre, ...v }))
+        .sort((a, b) => b.cierres - a.cierres)
+        .slice(0, 5);
+
+      setAnalyticsData({ funnelData, actividadData, tempData, vendedoresData });
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Dashboard load error:', err);
@@ -597,6 +704,144 @@ const Dashboard: React.FC = () => {
             </div>
 
           </div>
+        </div>
+
+        {/* ── Sección Analytics ─────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+
+          {/* IZQUIERDA: Funnel + Actividad */}
+          <div className="space-y-6">
+
+            {/* ChartFunnel */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+              <div className="mb-5">
+                <h3 className="text-base font-black text-slate-800">Embudo de Pipeline</h3>
+                <p className="text-xs text-slate-400 font-semibold mt-0.5">Leads por etapa de proceso</p>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analyticsData.funnelData} layout="vertical" barSize={14} margin={{ left: 16, right: 48, top: 0, bottom: 0 }}>
+                    <XAxis type="number" hide />
+                    <YAxis
+                      dataKey="etapa"
+                      type="category"
+                      width={120}
+                      tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }}
+                      axisLine={false} tickLine={false}
+                      tickFormatter={(v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.04)' }} />
+                    <Bar dataKey="total" radius={[0, 4, 4, 0]} name="Leads">
+                      {analyticsData.funnelData.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                      <LabelList dataKey="total" position="right" style={{ fontSize: 10, fontWeight: 800, fill: '#475569' }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* ChartActividad */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+              <div className="mb-5">
+                <h3 className="text-base font-black text-slate-800">Nuevas Oportunidades</h3>
+                <p className="text-xs text-slate-400 font-semibold mt-0.5">Ingresos diarios — últimos 14 días</p>
+              </div>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={analyticsData.actividadData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gActividad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} interval={1} />
+                    <YAxis hide />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="leads" stroke="#6366f1" strokeWidth={2.5} fill="url(#gActividad)" name="Leads" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+          </div>
+
+          {/* DERECHA: Temperatura + Vendedores */}
+          <div className="space-y-6">
+
+            {/* ChartTemperatura */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+              <h3 className="text-base font-black text-slate-800 mb-1">Temperatura de Leads</h3>
+              <p className="text-xs text-slate-400 font-semibold mb-4">Distribución actual</p>
+              <div className="h-44 relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={analyticsData.tempData} innerRadius={52} outerRadius={72} paddingAngle={4} dataKey="value" cornerRadius={6} stroke="none">
+                      {analyticsData.tempData.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} stroke="none" />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                  <span className="text-2xl font-black text-slate-800">{analyticsData.tempData.reduce((s, t) => s + t.value, 0)}</span>
+                  <p className="text-[9px] uppercase text-slate-400 font-black tracking-wider">Total</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-center mt-3">
+                {analyticsData.tempData.map((t, i) => (
+                  <span key={i} className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.fill }} />
+                    {t.name} ({t.value})
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* ChartVendedores */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+              <h3 className="text-base font-black text-slate-800 mb-1">Ranking Vendedores</h3>
+              <p className="text-xs text-slate-400 font-semibold mb-4">Top 5 por cierres</p>
+              <div className="space-y-3">
+                {analyticsData.vendedoresData.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-4">Sin datos aún</p>
+                ) : (() => {
+                  const maxCierres = Math.max(...analyticsData.vendedoresData.map(v => v.cierres), 1);
+                  return analyticsData.vendedoresData.map((v, i) => (
+                    <motion.div
+                      key={v.nombre}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex items-center gap-3"
+                    >
+                      <span className="text-[10px] font-black text-slate-400 w-4 text-center">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between mb-1">
+                          <p className="text-xs font-black text-slate-800 truncate">{v.nombre.split(' ')[0]}</p>
+                          <p className="text-[10px] font-black text-emerald-600 shrink-0 ml-2">{v.cierres} cierres</p>
+                        </div>
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(v.cierres / maxCierres) * 100}%` }}
+                            transition={{ delay: i * 0.05 + 0.1, duration: 0.6, ease: 'easeOut' }}
+                            className="h-full bg-indigo-500 rounded-full"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ));
+                })()}
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
     </>

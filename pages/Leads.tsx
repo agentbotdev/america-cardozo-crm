@@ -5,7 +5,7 @@ import {
   Smartphone, MapPin, Send, DollarSign, X, CheckCircle2,
   TrendingUp, ArrowRight, Star, Plus, MessageCircle, BrainCircuit,
   Layers, Zap, Info, MessageSquare, Bot, Target, Edit, Home, Eye,
-  SlidersHorizontal
+  SlidersHorizontal, List, Columns
 } from 'lucide-react';
 import { Lead, ChatMessage, LeadHistory } from '../types';
 import { leadsService } from '../services/leadsService';
@@ -39,6 +39,50 @@ const stageColors: Record<string, string> = {
   postventa: 'bg-emerald-100 text-emerald-600'
 };
 
+
+const KANBAN_COLS = [
+  { id: 'contacto_inicial', label: 'Contacto Inicial', color: 'bg-slate-100 text-slate-600' },
+  { id: 'indagacion',       label: 'Indagación',       color: 'bg-indigo-100 text-indigo-600' },
+  { id: 'props_enviadas',   label: 'Props. Enviadas',  color: 'bg-indigo-100 text-indigo-600' },
+  { id: 'visita_agendada',  label: 'Visita Agendada',  color: 'bg-blue-100 text-blue-600' },
+  { id: 'negociacion',      label: 'Negociación',      color: 'bg-amber-100 text-amber-600' },
+  { id: 'cierre',           label: 'Cierre',           color: 'bg-emerald-100 text-emerald-600' },
+];
+
+const KanbanCard: React.FC<{ lead: Lead; onClick: () => void }> = ({ lead, onClick }) => (
+  <motion.div
+    layout
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    whileHover={{ y: -2 }}
+    onClick={onClick}
+    className="bg-white border border-slate-100 p-4 rounded-[1.8rem] shadow-sm hover:shadow-lg transition-all cursor-pointer group"
+  >
+    <div className="flex items-center gap-3 mb-3">
+      <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm flex-shrink-0 group-hover:scale-110 transition-transform">
+        {lead.nombre.charAt(0)}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-black text-slate-800 truncate">{lead.nombre}</p>
+        <p className="text-[10px] text-slate-400 font-bold truncate">{lead.telefono}</p>
+      </div>
+    </div>
+    <div className="flex items-center justify-between">
+      <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${statusColors[lead.temperatura] || 'bg-slate-100 text-slate-600'}`}>
+        {lead.temperatura}
+      </span>
+      <div className="flex items-center gap-1.5">
+        <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full ${lead.score > 70 ? 'bg-emerald-500' : lead.score > 40 ? 'bg-indigo-500' : 'bg-rose-500'}`}
+            style={{ width: `${lead.score}%` }}
+          />
+        </div>
+        <span className="text-[9px] font-black text-slate-400">{lead.score}</span>
+      </div>
+    </div>
+  </motion.div>
+);
 
 // ... ChatBubble remains same ...
 
@@ -460,6 +504,7 @@ const Leads: React.FC = () => {
   const [sortBy, setSortBy] = useState<'date' | 'price_asc' | 'price_desc'>('date');
   const [advFiltersOpen, setAdvFiltersOpen] = useState(false);
   const [advFilters, setAdvFilters] = useState<AdvancedFilters>(INITIAL_ADVANCED_FILTERS);
+  const [vista, setVista] = useState<'tabla' | 'kanban'>('tabla');
 
   useEffect(() => {
     loadData();
@@ -680,6 +725,20 @@ const Leads: React.FC = () => {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setVista('tabla')}
+                title="Vista tabla"
+                className={`p-4 rounded-[2.2rem] border transition-all ${vista === 'tabla' ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100'}`}
+              >
+                <List size={15} />
+              </button>
+              <button
+                onClick={() => setVista('kanban')}
+                title="Vista kanban"
+                className={`p-4 rounded-[2.2rem] border transition-all ${vista === 'kanban' ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100'}`}
+              >
+                <Columns size={15} />
+              </button>
             </div>
           </div>
 
@@ -734,92 +793,134 @@ const Leads: React.FC = () => {
             )}
           </div>
 
-          {/* Desktop View (Table) */}
-          <div className="hidden lg:block overflow-x-auto no-scrollbar">
+          {/* Desktop View (Tabla | Kanban) */}
+          <div className="hidden lg:block">
             {loading ? (
               <div className="py-48 text-center bg-slate-50/20">
                 <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-slate-400 font-black uppercase tracking-[0.4em]">Cargando Oportunidades...</p>
               </div>
+            ) : vista === 'kanban' ? (
+              /* ── KANBAN VIEW ─────────────────────────────────────────── */
+              <div className="overflow-x-auto no-scrollbar px-10 pb-8 pt-2">
+                <div className="flex gap-5" style={{ minWidth: `${KANBAN_COLS.length * 272}px` }}>
+                  {KANBAN_COLS.map(col => {
+                    const colLeads = filteredLeads.filter(
+                      l => (l.etapa_proceso || l.etapa) === col.id
+                    );
+                    return (
+                      <div key={col.id} className="flex-shrink-0 w-64">
+                        {/* Column header */}
+                        <div className="flex items-center justify-between mb-4 px-1">
+                          <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest ${col.color}`}>
+                            {col.label}
+                          </span>
+                          <span className="w-6 h-6 flex items-center justify-center bg-slate-100 text-slate-500 rounded-lg text-[10px] font-black">
+                            {colLeads.length}
+                          </span>
+                        </div>
+                        {/* Cards */}
+                        <div className="space-y-3">
+                          {colLeads.map(lead => (
+                            <KanbanCard
+                              key={lead.id}
+                              lead={lead}
+                              onClick={() => setSelectedLead(lead)}
+                            />
+                          ))}
+                          {colLeads.length === 0 && (
+                            <div className="border-2 border-dashed border-slate-100 rounded-[1.8rem] p-6 text-center">
+                              <p className="text-[9px] text-slate-300 font-black uppercase tracking-widest">Sin leads</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             ) : (
-              <table className="w-full text-left border-collapse min-w-[1000px]">
-                <thead className="bg-slate-50/30 text-[10px] uppercase text-slate-400 font-black tracking-[0.3em] border-b border-slate-50">
-                  <tr>
-                    <th className="px-10 py-7">Perfil del Prospecto</th>
-                    <th className="px-10 py-7">Tipo de Interés</th>
-                    <th className="px-10 py-7">Pipeline / Status</th>
-                    <th className="px-10 py-7">Inteligencia AgentBot</th>
-                    <th className="px-10 py-7 text-right">Detalle</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredLeads.length > 0 ? filteredLeads.map((lead, idx) => (
-                    <motion.tr
-                      key={lead.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      onClick={() => setSelectedLead(lead)}
-                      className="group hover:bg-slate-50/50 transition-all cursor-pointer border-l-4 border-l-transparent hover:border-l-indigo-600"
-                    >
-                      <td className="px-10 py-8">
-                        <div className="flex items-center gap-5">
-                          <div className="w-12 h-12 rounded-[1.2rem] bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 ring-2 ring-white">
-                            {lead.nombre.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="text-[15px] font-black text-slate-800 group-hover:text-indigo-600 transition-colors leading-none mb-2">{lead.nombre}</p>
-                            <div className="flex items-center gap-2">
-                              <Smartphone size={10} className="text-slate-400" />
-                              <p className="text-[11px] text-slate-400 font-bold tracking-tight">{lead.telefono}</p>
+              /* ── TABLE VIEW ──────────────────────────────────────────── */
+              <div className="overflow-x-auto no-scrollbar">
+                <table className="w-full text-left border-collapse min-w-[1000px]">
+                  <thead className="bg-slate-50/30 text-[10px] uppercase text-slate-400 font-black tracking-[0.3em] border-b border-slate-50">
+                    <tr>
+                      <th className="px-10 py-7">Perfil del Prospecto</th>
+                      <th className="px-10 py-7">Tipo de Interés</th>
+                      <th className="px-10 py-7">Pipeline / Status</th>
+                      <th className="px-10 py-7">Inteligencia AgentBot</th>
+                      <th className="px-10 py-7 text-right">Detalle</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredLeads.length > 0 ? filteredLeads.map((lead, idx) => (
+                      <motion.tr
+                        key={lead.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        onClick={() => setSelectedLead(lead)}
+                        className="group hover:bg-slate-50/50 transition-all cursor-pointer border-l-4 border-l-transparent hover:border-l-indigo-600"
+                      >
+                        <td className="px-10 py-8">
+                          <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-[1.2rem] bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 ring-2 ring-white">
+                              {lead.nombre.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-[15px] font-black text-slate-800 group-hover:text-indigo-600 transition-colors leading-none mb-2">{lead.nombre}</p>
+                              <div className="flex items-center gap-2">
+                                <Smartphone size={10} className="text-slate-400" />
+                                <p className="text-[11px] text-slate-400 font-bold tracking-tight">{lead.telefono}</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-10 py-8">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">{(lead.tipo_operacion_buscada || 'venta').toUpperCase()}</span>
-                          <span className="text-sm font-black text-slate-700 leading-none">{lead.tipo_propiedad_buscada?.[0] || 'Inmueble'}</span>
-                        </div>
-                      </td>
-                      <td className="px-10 py-8">
-                        <div className="flex gap-3">
-                          <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm ${statusColors[lead.temperatura] || 'bg-slate-100 text-slate-600'} `}>
-                            {lead.temperatura}
-                          </span>
-                          <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm ${stageColors[lead.etapa] || 'bg-slate-100 text-slate-600'} `}>
-                            {lead.etapa}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-10 py-8">
-                        <div className="flex items-center gap-4">
-                          <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-50">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${lead.score}%` }}
-                              className={`h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.4)] ${lead.score > 70 ? 'bg-emerald-500' : lead.score > 40 ? 'bg-indigo-500' : 'bg-rose-500'}`}
-                            />
+                        </td>
+                        <td className="px-10 py-8">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">{(lead.tipo_operacion_buscada || 'venta').toUpperCase()}</span>
+                            <span className="text-sm font-black text-slate-700 leading-none">{lead.tipo_propiedad_buscada?.[0] || 'Inmueble'}</span>
                           </div>
-                          <span className="text-[11px] font-black text-slate-900 tracking-widest">{lead.score}/100</span>
-                        </div>
-                      </td>
-                      <td className="px-10 py-8 text-right">
-                        <div className="p-3.5 text-slate-200 group-hover:text-indigo-600 transition-all hover:bg-white hover:shadow-lg rounded-[1.2rem] inline-block border border-transparent hover:border-slate-100">
-                          <ArrowRight size={20} strokeWidth={3} />
-                        </div>
-                      </td>
-                    </motion.tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={5} className="py-48 text-center bg-slate-50/20">
-                        <Users size={64} className="mx-auto mb-8 text-slate-200 animate-pulse" />
-                        <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-lg">No se han encontrado prospectos</p>
-                        <button onClick={() => { setSearchTerm(''); setActiveFilter('todos'); }} className="mt-6 text-indigo-600 font-black uppercase text-xs tracking-widest hover:underline">Reiniciar Búsqueda</button>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </td>
+                        <td className="px-10 py-8">
+                          <div className="flex gap-3">
+                            <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm ${statusColors[lead.temperatura] || 'bg-slate-100 text-slate-600'} `}>
+                              {lead.temperatura}
+                            </span>
+                            <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm ${stageColors[lead.etapa] || 'bg-slate-100 text-slate-600'} `}>
+                              {lead.etapa}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-10 py-8">
+                          <div className="flex items-center gap-4">
+                            <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-50">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${lead.score}%` }}
+                                className={`h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.4)] ${lead.score > 70 ? 'bg-emerald-500' : lead.score > 40 ? 'bg-indigo-500' : 'bg-rose-500'}`}
+                              />
+                            </div>
+                            <span className="text-[11px] font-black text-slate-900 tracking-widest">{lead.score}/100</span>
+                          </div>
+                        </td>
+                        <td className="px-10 py-8 text-right">
+                          <div className="p-3.5 text-slate-200 group-hover:text-indigo-600 transition-all hover:bg-white hover:shadow-lg rounded-[1.2rem] inline-block border border-transparent hover:border-slate-100">
+                            <ArrowRight size={20} strokeWidth={3} />
+                          </div>
+                        </td>
+                      </motion.tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={5} className="py-48 text-center bg-slate-50/20">
+                          <Users size={64} className="mx-auto mb-8 text-slate-200 animate-pulse" />
+                          <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-lg">No se han encontrado prospectos</p>
+                          <button onClick={() => { setSearchTerm(''); setActiveFilter('todos'); }} className="mt-6 text-indigo-600 font-black uppercase text-xs tracking-widest hover:underline">Reiniciar Búsqueda</button>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

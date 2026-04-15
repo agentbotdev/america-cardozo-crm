@@ -11,7 +11,7 @@ import { propertiesService, PAGE_SIZE } from '../services/propertiesService';
 import { developmentsService, Development } from '../services/developmentsService';
 import { storageService } from '../services/storageService';
 import { aiService } from '../services/aiService';
-import PropertySearch from '../components/PropertySearch';
+import { BuscadorIA } from '../components/properties/BuscadorIA';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -638,8 +638,6 @@ const Properties = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [searchResults, setSearchResults] = useState<Property[] | null>(null);
-  const [searchExplanation, setSearchExplanation] = useState<string>('');
 
   useEffect(() => { loadData(); }, []);
 
@@ -690,12 +688,6 @@ const Properties = () => {
       setLoadingMore(false);
     }
   };
-
-  // Para backward-compat con PropertySearch (recibe array de props)
-  const allPropsForSearch = useMemo(
-    () => [...publishedProps, ...borradores],
-    [publishedProps, borradores]
-  );
 
   const displayedProps = useMemo(() => {
     if (activeTab === 'emprendimientos') return [];
@@ -841,27 +833,10 @@ const Properties = () => {
       <PropertyFormModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingProp(null); }} onSave={handleSaveProp} propertyToEdit={editingProp} />
       <DevelopmentFormModal isOpen={isDevModalOpen} onClose={() => { setIsDevModalOpen(false); setEditingDev(null); }} onSave={handleSaveDev} devToEdit={editingDev} />
 
-      {/* Buscador Inteligente */}
-      <PropertySearch
+      {/* Buscador IA */}
+      <BuscadorIA
         isOpen={isSearchModalOpen}
-        onClose={() => {
-          setIsSearchModalOpen(false);
-          if (searchResults === null) {
-            setSearchTerm('');
-          }
-        }}
-        properties={allPropsForSearch}
-        onResults={(results, explanation) => {
-          setSearchResults(results);
-          setSearchExplanation(explanation || '');
-          setIsSearchModalOpen(false);
-          // Mostrar notificación de resultados
-          if (results.length > 0) {
-            alert(`✓ ${explanation}\n\nMostrando ${results.length} propiedades encontradas.`);
-          } else {
-            alert('No se encontraron propiedades con esos criterios.');
-          }
-        }}
+        onClose={() => setIsSearchModalOpen(false)}
       />
     </div>
   );
