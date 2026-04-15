@@ -149,7 +149,7 @@ const KPICards: React.FC = () => {
     (async () => {
       const [r1, r2, r3, r4, r5] = await Promise.all([
         supabase.from('leads').select('*', { count: 'exact', head: true }),
-        supabase.from('leads').select('*', { count: 'exact', head: true }).in('temperatura', ['caliente', 'ultra_caliente']),
+        supabase.from('leads').select('*', { count: 'exact', head: true }).in('temperatura', ['caliente', 'ultra']),
         supabase.from('leads').select('*', { count: 'exact', head: true }).eq('etapa_proceso', 'Negociación'),
         supabase.from('leads').select('*', { count: 'exact', head: true }).eq('etapa_proceso', 'Visita agendada'),
         supabase.from('leads').select('*', { count: 'exact', head: true }).is('vendedor_asignado_nombre', null),

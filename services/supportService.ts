@@ -56,13 +56,13 @@ export const supportService = {
 
       if (error) {
         console.error('Error creating ticket:', error);
-        return [] as any;
+        throw error;
       }
 
       return data;
     } catch (error) {
       console.error('Catch error creating ticket:', error);
-      return [] as any;
+      throw error;
     }
   },
 
@@ -146,7 +146,7 @@ export const supportService = {
 
       if (error) {
         console.error('Error sending message:', error);
-        return [] as any;
+        throw error;
       }
 
       // Update ticket's updated_at timestamp
@@ -158,7 +158,7 @@ export const supportService = {
       return data;
     } catch (error) {
       console.error('Catch error sending message:', error);
-      return [] as any;
+      throw error;
     }
   },
 

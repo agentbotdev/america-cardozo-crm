@@ -247,8 +247,13 @@ const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
           query = query.gte('proxima_visita', new Date().toISOString());
         }
 
-        const { count } = await query;
-        setResultCount(count ?? 0);
+        const { count, error: countError } = await query;
+        if (countError) {
+          console.warn('Count query error:', countError);
+          setResultCount(null);
+        } else {
+          setResultCount(count ?? 0);
+        }
       } catch {
         setResultCount(null);
       } finally {

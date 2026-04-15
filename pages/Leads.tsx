@@ -41,12 +41,12 @@ const stageColors: Record<string, string> = {
 
 
 const KANBAN_COLS = [
-  { id: 'contacto_inicial', label: 'Contacto Inicial', color: 'bg-slate-100 text-slate-600' },
-  { id: 'indagacion',       label: 'Indagación',       color: 'bg-indigo-100 text-indigo-600' },
-  { id: 'props_enviadas',   label: 'Props. Enviadas',  color: 'bg-indigo-100 text-indigo-600' },
-  { id: 'visita_agendada',  label: 'Visita Agendada',  color: 'bg-blue-100 text-blue-600' },
-  { id: 'negociacion',      label: 'Negociación',      color: 'bg-amber-100 text-amber-600' },
-  { id: 'cierre',           label: 'Cierre',           color: 'bg-emerald-100 text-emerald-600' },
+  { id: 'inicio',          label: 'Inicio',           color: 'bg-slate-100 text-slate-600',    etapas: ['Inicio', 'contacto_inicial'] },
+  { id: 'indagacion',      label: 'Indagación',        color: 'bg-indigo-100 text-indigo-600',  etapas: ['Indagación', 'indagacion', 'props_enviadas'] },
+  { id: 'seguimiento',     label: 'Seguimiento',       color: 'bg-violet-100 text-violet-600',  etapas: ['Seguimiento'] },
+  { id: 'visita_agendada', label: 'Visita Agendada',   color: 'bg-blue-100 text-blue-600',      etapas: ['Visita agendada', 'visita_agendada'] },
+  { id: 'negociacion',     label: 'Negociación',       color: 'bg-amber-100 text-amber-600',    etapas: ['Negociación', 'negociacion'] },
+  { id: 'cierre',          label: 'Cierre',            color: 'bg-emerald-100 text-emerald-600', etapas: ['Cierre', 'cierre'] },
 ];
 
 const KanbanCard: React.FC<{ lead: Lead; onClick: () => void }> = ({ lead, onClick }) => (
@@ -806,7 +806,7 @@ const Leads: React.FC = () => {
                 <div className="flex gap-5" style={{ minWidth: `${KANBAN_COLS.length * 272}px` }}>
                   {KANBAN_COLS.map(col => {
                     const colLeads = filteredLeads.filter(
-                      l => (l.etapa_proceso || l.etapa) === col.id
+                      l => col.etapas.includes(l.etapa_proceso || l.etapa || '')
                     );
                     return (
                       <div key={col.id} className="flex-shrink-0 w-64">

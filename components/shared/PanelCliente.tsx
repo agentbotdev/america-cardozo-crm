@@ -663,9 +663,12 @@ const TabTareas: React.FC<{ lead: Client }> = ({ lead }) => {
     fetchTareas();
   }, [lead.id]);
 
+  const [createError, setCreateError] = useState<string | null>(null);
+
   const handleCreate = async () => {
     if (!form.titulo.trim()) return;
     setSaving(true);
+    setCreateError(null);
     const { data, error } = await supabase
       .from('tareas')
       .insert([{
@@ -684,6 +687,8 @@ const TabTareas: React.FC<{ lead: Client }> = ({ lead }) => {
       setTareas(prev => [data, ...prev]);
       setForm({ titulo: '', descripcion: '', prioridad: 'media', fecha_vencimiento: '' });
       setShowForm(false);
+    } else if (error) {
+      setCreateError('No se pudo crear la tarea. Intentá de nuevo.');
     }
     setSaving(false);
   };
@@ -759,12 +764,15 @@ const TabTareas: React.FC<{ lead: Client }> = ({ lead }) => {
               {saving ? 'Guardando...' : 'Crear tarea'}
             </button>
             <button
-              onClick={() => setShowForm(false)}
+              onClick={() => { setShowForm(false); setCreateError(null); }}
               className="px-4 py-2 bg-white border border-indigo-100 text-slate-500 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
             >
               Cancelar
             </button>
           </div>
+          {createError && (
+            <p className="text-[10px] font-bold text-rose-500 text-center">{createError}</p>
+          )}
         </div>
       )}
 
@@ -869,9 +877,11 @@ const TabAcciones: React.FC<{ lead: Client; onUpdate: (updated: Client) => void 
   const [notas, setNotas] = useState(lead.notas_internas ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError(null);
     const { data, error } = await supabase
       .from('leads')
       .update({
@@ -889,6 +899,8 @@ const TabAcciones: React.FC<{ lead: Client; onUpdate: (updated: Client) => void 
       onUpdate({ ...lead, ...data });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } else if (error) {
+      setSaveError('No se pudo guardar. Intentá de nuevo.');
     }
     setSaving(false);
   };
@@ -980,6 +992,9 @@ const TabAcciones: React.FC<{ lead: Client; onUpdate: (updated: Client) => void 
         >
           {saved ? <><CheckCircle2 size={14} /> Guardado</> : saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
+        {saveError && (
+          <p className="text-[10px] font-bold text-rose-500 text-center mt-2">{saveError}</p>
+        )}
       </div>
 
       {/* Acciones peligrosas */}
