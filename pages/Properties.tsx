@@ -707,11 +707,80 @@ const Properties = () => {
       );
     }
 
-    // Filtros avanzados: operaciones (tipo_operacion)
-    if (advancedFilters.operaciones && advancedFilters.operaciones.length > 0) {
+    const af = advancedFilters;
+
+    // Tipo de operación
+    if (af.tipoOperacionProp && af.tipoOperacionProp.length > 0) {
+      result = result.filter(p => af.tipoOperacionProp!.includes(p.tipo_operacion as string));
+    }
+
+    // Tipo de propiedad
+    if (af.tiposPropiedad && af.tiposPropiedad.length > 0) {
+      result = result.filter(p => af.tiposPropiedad!.includes(p.tipo as string));
+    }
+
+    // Barrios (partial match, case-insensitive)
+    if (af.barrios && af.barrios.length > 0) {
       result = result.filter(p =>
-        advancedFilters.operaciones!.includes(p.tipo_operacion as string)
+        af.barrios!.some(b => p.barrio?.toLowerCase().includes(b.toLowerCase()))
       );
+    }
+
+    // Portales publicados
+    if (af.portales && af.portales.length > 0) {
+      result = result.filter(p =>
+        af.portales!.some(portal => {
+          if (portal === 'zonaprop')     return p.publicada_zonaprop;
+          if (portal === 'argenprop')    return p.publicada_argenprop;
+          if (portal === 'mercadolibre') return p.publicada_mercadolibre;
+          if (portal === 'web_america')  return p.publicada_web_america;
+          return false;
+        })
+      );
+    }
+
+    // Precio venta (USD)
+    if (af.precioVentaMin != null) {
+      result = result.filter(p => p.precio_venta != null && p.precio_venta >= af.precioVentaMin!);
+    }
+    if (af.precioVentaMax != null) {
+      result = result.filter(p => p.precio_venta != null && p.precio_venta <= af.precioVentaMax!);
+    }
+
+    // Precio alquiler (ARS)
+    if (af.precioAlqMin != null) {
+      result = result.filter(p => p.precio_alquiler != null && p.precio_alquiler >= af.precioAlqMin!);
+    }
+    if (af.precioAlqMax != null) {
+      result = result.filter(p => p.precio_alquiler != null && p.precio_alquiler <= af.precioAlqMax!);
+    }
+
+    // Ambientes mínimos
+    if (af.ambientesMin != null) {
+      result = result.filter(p => p.ambientes != null && p.ambientes >= af.ambientesMin!);
+    }
+
+    // Dormitorios mínimos
+    if (af.dormitoriosMin != null) {
+      result = result.filter(p => p.dormitorios != null && p.dormitorios >= af.dormitoriosMin!);
+    }
+
+    // Superficie cubierta m²
+    if (af.superficieMin != null) {
+      result = result.filter(p => p.sup_cubierta != null && p.sup_cubierta >= af.superficieMin!);
+    }
+    if (af.superficieMax != null) {
+      result = result.filter(p => p.sup_cubierta != null && p.sup_cubierta <= af.superficieMax!);
+    }
+
+    // Fecha de publicación
+    if (af.fechaPubDesde) {
+      const desde = new Date(af.fechaPubDesde).getTime();
+      result = result.filter(p => p.fecha_publicacion && new Date(p.fecha_publicacion).getTime() >= desde);
+    }
+    if (af.fechaPubHasta) {
+      const hasta = new Date(af.fechaPubHasta).getTime();
+      result = result.filter(p => p.fecha_publicacion && new Date(p.fecha_publicacion).getTime() <= hasta);
     }
 
     return result;
