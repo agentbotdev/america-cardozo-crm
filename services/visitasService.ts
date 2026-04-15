@@ -117,12 +117,37 @@ export const visitasService = {
     data: Omit<Visita, 'id' | 'created_at' | 'lead'>
   ): Promise<Visita | null> {
     try {
+      const d = data as any;
+
+      // Construir payload con SOLO las columnas reales de la DB.
+      // NO usar ...data spread — pasa campos extra (google_event_id, property_titulo, etc.)
+      // que no existen en la tabla y Supabase/PostgREST rechaza con 400.
+      const payload: Record<string, any> = {
+        lead_id:          d.lead_id,
+        property_id:      d.property_id,
+        propiedad_id:     d.propiedad_id,
+        property_titulo:  d.property_titulo,
+        cliente_nombre:   d.cliente_nombre,
+        cliente_telefono: d.cliente_telefono,
+        fecha:            d.fecha,
+        hora:             d.hora,
+        fecha_visita:     d.fecha_visita,
+        estado:           d.estado,
+        pipeline_stage:   d.pipeline_stage,
+        tipo_reunion:     d.tipo_reunion,
+        mensaje_original: d.mensaje_original,
+        google_event_id:  d.google_event_id,
+        created_at:       new Date().toISOString(),
+      };
+
+      // Eliminar claves undefined para no mandar NULLs indeseados
+      Object.keys(payload).forEach(k => {
+        if (payload[k] === undefined) delete payload[k];
+      });
+
       const { data: created, error } = await supabase
         .from('visitas')
-        .insert([{
-          ...data,
-          created_at: new Date().toISOString(),
-        }])
+        .insert([payload])
         .select(VISITA_SELECT)
         .single();
 
