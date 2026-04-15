@@ -13,18 +13,6 @@ import {
   BarChart as ReBarChart, Bar as ReBar, LineChart, Line,
   CartesianGrid, PieChart, Pie, Cell
 } from 'recharts';
-import {
-  BarChart,
-  LinearXAxis,
-  LinearXAxisTickSeries,
-  LinearXAxisTickLabel,
-  LinearYAxis,
-  LinearYAxisTickSeries,
-  BarSeries,
-  Bar,
-  GridlineSeries,
-  Gridline
-} from 'reaviz';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -71,19 +59,27 @@ const GroupedIncidentReportCard = ({ title, metrics, chartData }: any) => {
       </div>
 
       <div className="h-[240px] mb-8 w-full">
-        <BarChart
-          height={240}
-          data={chartData || [
-            { key: 'Jan', data: [{ key: 'A', data: 20 }, { key: 'B', data: 35 }, { key: 'C', data: 45 }, { key: 'D', data: 15 }] },
-            { key: 'Feb', data: [{ key: 'A', data: 25 }, { key: 'B', data: 40 }, { key: 'C', data: 50 }, { key: 'D', data: 20 }] },
-            { key: 'Mar', data: [{ key: 'A', data: 15 }, { key: 'B', data: 30 }, { key: 'C', data: 40 }, { key: 'D', data: 25 }] },
-            { key: 'Apr', data: [{ key: 'A', data: 30 }, { key: 'B', data: 45 }, { key: 'C', data: 55 }, { key: 'D', data: 10 }] },
-          ]}
-          yAxis={<LinearYAxis axisLine={null} tickSeries={<LinearYAxisTickSeries line={null} label={null} />} />}
-          xAxis={<LinearXAxis type="category" tickSeries={<LinearXAxisTickSeries label={<LinearXAxisTickLabel padding={10} rotation={-45} fill="#94a3b8" />} />} />}
-          series={<BarSeries type="grouped" layout="vertical" bar={<Bar width={8} glow={{ blur: 20, opacity: 0.7 }} gradient={null} />} colorScheme={COLORS} groupPadding={20} />}
-          gridlines={<GridlineSeries line={<Gridline strokeColor="rgba(148, 163, 184, 0.1)" />} />}
-        />
+        <ResponsiveContainer width="100%" height="100%">
+          <ReBarChart
+            data={[
+              { name: 'Ene', Directo: 20, Web: 35, Referido: 45, Bot: 15 },
+              { name: 'Feb', Directo: 25, Web: 40, Referido: 50, Bot: 20 },
+              { name: 'Mar', Directo: 15, Web: 30, Referido: 40, Bot: 25 },
+              { name: 'Abr', Directo: 30, Web: 45, Referido: 55, Bot: 10 },
+            ]}
+            barCategoryGap="30%"
+            barGap={2}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" vertical={false} />
+            <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={40} />
+            <YAxis hide />
+            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', fontSize: 12 }} />
+            <ReBar dataKey="Directo" fill={COLORS[0]} radius={[4, 4, 0, 0]} maxBarSize={10} />
+            <ReBar dataKey="Web" fill={COLORS[1]} radius={[4, 4, 0, 0]} maxBarSize={10} />
+            <ReBar dataKey="Referido" fill={COLORS[2]} radius={[4, 4, 0, 0]} maxBarSize={10} />
+            <ReBar dataKey="Bot" fill={COLORS[3]} radius={[4, 4, 0, 0]} maxBarSize={10} />
+          </ReBarChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="space-y-5 border-t border-slate-50 pt-8 mt-auto">

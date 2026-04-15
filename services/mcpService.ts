@@ -1,5 +1,5 @@
 
-const MCP_URL = 'https://devn8n.agentbott.com/mcp/4536405b-c56f-4cd5-899e-a9a2184bfa26';
+const MCP_URL = import.meta.env.VITE_N8N_MCP_URL;
 
 export interface McpResponse<T> {
     result?: T;
@@ -12,6 +12,11 @@ export interface McpResponse<T> {
 
 export const mcpService = {
     async callTool<T>(toolName: string, args: any = {}): Promise<T> {
+        if (!MCP_URL) {
+            console.warn('⚠️ VITE_N8N_MCP_URL no configurada. El servicio MCP está desactivado.');
+            return undefined as T;
+        }
+
         try {
             const response = await fetch(MCP_URL, {
                 method: 'POST',

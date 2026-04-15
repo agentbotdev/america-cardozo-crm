@@ -476,7 +476,7 @@ const Leads: React.FC = () => {
   const filteredLeads = useMemo(() => {
     let result = leads.filter(lead => {
       const matchesSearch = (lead.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-      const matchesFilter = activeFilter === 'todos' || lead.estado_temperatura === activeFilter;
+      const matchesFilter = activeFilter === 'todos' || lead.temperatura === activeFilter;
       return matchesSearch && matchesFilter;
     });
 

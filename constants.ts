@@ -68,7 +68,7 @@ export const MOCK_PROPERTIES: Property[] = [
     publicada_zonaprop: true,
     publicada_argenprop: true,
     publicada_web_america: true,
-    fotos: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c'],
+    fotos: [{ url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c', es_portada: true, orden: 0 }],
     foto_portada: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c',
     cantidad_consultas: 14,
     vistas_totales: 450,
@@ -134,7 +134,7 @@ export const MOCK_PROPERTIES: Property[] = [
     publicada_zonaprop: true,
     publicada_argenprop: true,
     publicada_web_america: true,
-    fotos: ['https://images.unsplash.com/photo-1512917774080-9991f1c4c750'],
+    fotos: [{ url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750', es_portada: true, orden: 0 }],
     foto_portada: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750',
     cantidad_consultas: 8,
     vistas_totales: 320,
@@ -194,6 +194,7 @@ export const MOCK_VISITS: Visit[] = [
     hora: '10:00',
     estado: 'agendada',
     pipeline_stage: 'pendiente',
+    tipo_reunion: 'propiedad',
     created_at: '2023-10-25',
     updated_at: '2023-10-25'
   }

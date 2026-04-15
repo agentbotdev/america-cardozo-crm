@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { leadsService } from '../services/leadsService';
+import { clientesService } from '../services/clientesService';
 import { propertiesService } from '../services/propertiesService';
 import { Client, ClientStatus, SalesStage } from '../types';
 import {
-  User, Mail, Phone, ExternalLink, Plus, X, List as ListIcon,
-  Search, BarChart3, ArrowRight, LayoutGrid, Clock, Filter,
-  BrainCircuit, History, Home, Edit3, MessageCircle, Ticket, Check, MapPin, Edit
+  Phone, Plus, X, List as ListIcon,
+  Search, BarChart3, Edit, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { LeadDetailPanel } from './Leads';
 
@@ -18,7 +17,7 @@ const ClientFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: 
     telefono: '',
     busca_venta: true,
     busca_alquiler: false,
-    estado_temperatura: 'Tibio',
+    temperatura: 'tibio',
     etapa_proceso: 'Inicio'
   });
 
@@ -32,7 +31,7 @@ const ClientFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: 
         telefono: '',
         busca_venta: true,
         busca_alquiler: false,
-        estado_temperatura: 'Tibio',
+        temperatura: 'tibio',
         etapa_proceso: 'Inicio'
       });
     }
@@ -42,10 +41,8 @@ const ClientFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      id: clientToEdit?.id || `CL-${Math.floor(Math.random() * 10000)}`,
-      ...formData as Client
-    });
+    // Si hay clientToEdit ya tiene ID real de la DB; si no, la DB lo genera
+    onSave({ ...clientToEdit, ...formData } as Client);
     onClose();
   };
 
@@ -114,8 +111,8 @@ const ClientFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: 
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estado</label>
               <select
-                value={formData.estado_temperatura}
-                onChange={e => setFormData({ ...formData, estado_temperatura: e.target.value as any })}
+                value={formData.temperatura}
+                onChange={e => setFormData({ ...formData, temperatura: e.target.value as any })}
                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
               >
                 <option>Frio</option>
@@ -181,40 +178,68 @@ const Clients: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
 
-  React.useEffect(() => {
-    loadClients();
-  }, []);
-
-  const loadClients = async () => {
+  const loadClients = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const [clientsData, propsData] = await Promise.all([
-        leadsService.fetchLeads(),
-        propertiesService.fetchProperties()
+        clientesService.getClientes(),
+        propertiesService.fetchProperties(),
       ]);
-      // Filter for clients (leads with tipo_cliente defined or by some other logic)
-      // For now, in your schema, Lead and Client share the same table.
       setClients(clientsData as Client[]);
       setProperties(propsData as any[]);
-    } catch (error) {
-      console.error('Error loading clients:', error);
+    } catch (err) {
+      console.error('Error loading clients:', err);
+      setError('Error al cargar los clientes. Revisá tu conexión e intentá de nuevo.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadClients();
+  }, [loadClients]);
+
+  // Debounced search — 350ms tras el último keystroke
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      loadClients();
+      return;
+    }
+    const handler = setTimeout(async () => {
+      try {
+        setLoading(true);
+        const results = await clientesService.searchClientes(searchTerm);
+        setClients(results as Client[]);
+      } catch (err) {
+        console.error('Error searching clients:', err);
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   const handleSaveClient = async (clientData: Client) => {
     try {
-      await leadsService.saveLead(clientData);
+      if (clientData.id && !String(clientData.id).startsWith('CL-')) {
+        // ID real de DB → update
+        await clientesService.updateCliente(String(clientData.id), clientData);
+      } else {
+        // Sin ID o ID fake → create
+        const { id: _drop, ...dataWithoutId } = clientData as any;
+        await clientesService.createCliente(dataWithoutId);
+      }
       await loadClients();
       setIsModalOpen(false);
       setClientToEdit(null);
-    } catch (error) {
-      console.error('Error saving client:', error);
-      alert('Error al guardar el cliente');
+    } catch (err) {
+      console.error('Error saving client:', err);
+      alert('Error al guardar el cliente. Revisá los campos e intentá de nuevo.');
     }
   };
 
@@ -326,6 +351,20 @@ const Clients: React.FC = () => {
 
         {viewMode === 'metrics' && <ClientMetrics clients={clients} />}
 
+        {/* Error banner */}
+        {error && (
+          <div className="mb-6 flex items-center gap-4 px-6 py-4 bg-red-50 border border-red-100 rounded-[2rem] text-red-600">
+            <AlertTriangle size={18} className="shrink-0" />
+            <span className="text-xs font-bold flex-1">{error}</span>
+            <button
+              onClick={loadClients}
+              className="flex items-center gap-2 text-xs font-black uppercase tracking-widest bg-red-100 hover:bg-red-200 px-4 py-2 rounded-xl transition-all"
+            >
+              <RefreshCw size={14} /> Reintentar
+            </button>
+          </div>
+        )}
+
         {/* Main Content Card */}
         <div className="bg-white rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100 flex flex-col min-h-[700px]">
 
@@ -433,8 +472,14 @@ const Clients: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="py-20 text-center">
-                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay clientes</p>
+              <div className="py-20 text-center space-y-6">
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Todavía no hay clientes registrados.</p>
+                <button
+                  onClick={() => { setClientToEdit(null); setIsModalOpen(true); }}
+                  className="mx-auto flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all"
+                >
+                  <Plus size={14} strokeWidth={3} /> Agregá el primero
+                </button>
               </div>
             )}
           </div>
@@ -494,10 +539,7 @@ const Clients: React.FC = () => {
                         </div>
                       </td>
                       <td className="p-5 text-sm text-gray-500">
-                        <div className="flex flex-col gap-1">
-                          <span className="flex items-center gap-1"><Phone size={12} /> {client.telefono}</span>
-                          <span className="flex items-center gap-1 text-[10px] text-gray-400"><Clock size={10} /> 2d ago</span>
-                        </div>
+                        <span className="flex items-center gap-1"><Phone size={12} /> {client.telefono}</span>
                       </td>
                       <td className="p-5 text-right">
                         <button

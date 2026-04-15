@@ -1,13 +1,13 @@
 
 import React, { useState, useContext, createContext, useMemo, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '../services/supabaseClient';
 import {
   LayoutDashboard, Building2, Users, UserCircle, CalendarDays,
   BarChart3, LifeBuoy, MessageSquare, Settings, Menu, Bell, Search, LogOut, ChevronLeft, ChevronRight, X,
-  Bot, Zap
+  Bot, Zap, ListTodo
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MOCK_LEADS, MOCK_PROPERTIES, MOCK_CLIENTS } from '../constants';
 
 interface LayoutContextType {
   sidebarOpen: boolean;
@@ -99,14 +99,31 @@ const AppLayout: React.FC = () => {
     };
   }, []);
 
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return { leads: [], properties: [], clients: [] };
-    const query = searchQuery.toLowerCase();
-    return {
-      leads: MOCK_LEADS.filter(l => l.nombre.toLowerCase().includes(query)).slice(0, 3),
-      properties: MOCK_PROPERTIES.filter(p => p.titulo.toLowerCase().includes(query) || p.barrio.toLowerCase().includes(query)).slice(0, 3),
-      clients: MOCK_CLIENTS.filter(c => c.nombre.toLowerCase().includes(query)).slice(0, 3)
+  const [searchResults, setSearchResults] = useState<{ leads: any[], properties: any[] }>({ leads: [], properties: [] });
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults({ leads: [], properties: [] });
+        return;
+      }
+      
+      const query = searchQuery.toLowerCase();
+      
+      // Real-time search in Supabase — tablas reales
+      const [leadsRes, propsRes] = await Promise.all([
+        supabase.from('leads').select('id, nombre, telefono').ilike('nombre', `%${query}%`).limit(3),
+        supabase.from('propiedades').select('tokko_id, titulo, barrio, foto_portada_url').ilike('titulo', `%${query}%`).limit(3)
+      ]);
+
+      setSearchResults({
+        leads: leadsRes.data || [],
+        properties: propsRes.data || []
+      });
     };
+
+    const timer = setTimeout(fetchResults, 300);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   const navItems = [
@@ -118,6 +135,7 @@ const AppLayout: React.FC = () => {
     { to: '/reportes', icon: BarChart3, label: 'Reportes' },
     { to: '/control-center', icon: Zap, label: 'Control Center' },
     { to: '/live-chat', icon: MessageSquare, label: 'Live Chat' },
+    { to: '/tareas', icon: ListTodo, label: 'Tareas' },
     { to: '/soporte', icon: LifeBuoy, label: 'Soporte' },
     { to: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
@@ -170,7 +188,7 @@ const AppLayout: React.FC = () => {
                     className="whitespace-nowrap overflow-hidden"
                   >
                     <h1 className="text-lg font-black tracking-tight leading-none text-slate-900 uppercase">AgentBot</h1>
-                    <p className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase mt-1">CRM v1.5 PRO</p>
+                    <p className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase mt-1">CRM v2.0-estable</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -199,7 +217,28 @@ const AppLayout: React.FC = () => {
                   {isCollapsed ? <ChevronRight size={18} /> : <div className="flex items-center gap-2 px-2"><ChevronLeft size={18} /><span className="text-xs font-bold">Contraer Menú</span></div>}
                 </button>
               )}
-              <SidebarItem to="/logout" icon={LogOut} label="Cerrar Sesión" isCollapsed={isCollapsed} />
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  navigate('/login');
+                }}
+                title={isCollapsed ? "Cerrar Sesión" : ""}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold transition-all duration-300 ease-out mb-1 w-full active:scale-95 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm group ${isCollapsed ? 'justify-center px-0 w-12 mx-auto' : ''}`}
+              >
+                <LogOut size={18} className="shrink-0 transition-transform duration-300 group-hover:scale-110" />
+                <AnimatePresence mode="wait">
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      className="truncate whitespace-nowrap"
+                    >
+                      Cerrar Sesión
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
             </div>
           </div>
         </motion.aside>
@@ -243,8 +282,10 @@ const AppLayout: React.FC = () => {
                         <div className="mb-4">
                           <h3 className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-3 px-2">Propiedades</h3>
                           {searchResults.properties.map(p => (
-                            <button key={p.id} onClick={() => handleResultClick('/propiedades')} className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-all text-left">
-                              <div className="w-9 h-9 rounded-lg bg-slate-100 overflow-hidden shrink-0"><img src={p.imagen_principal} alt="" className="w-full h-full object-cover" /></div>
+                            <button key={p.tokko_id} onClick={() => handleResultClick('/propiedades')} className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-all text-left">
+                              <div className="w-9 h-9 rounded-lg bg-slate-100 overflow-hidden shrink-0">
+                                <img src={p.foto_portada_url || '/placeholder-prop.jpg'} alt="" className="w-full h-full object-cover" />
+                              </div>
                               <p className="text-xs font-bold text-slate-700 truncate">{p.titulo}</p>
                             </button>
                           ))}

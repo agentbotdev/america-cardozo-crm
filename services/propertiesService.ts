@@ -139,7 +139,7 @@ export const propertiesService = {
             const { error } = await supabase
                 .from('propiedades')
                 .update(mappedData)
-                .eq('id', id);
+                .eq('tokko_id', id);
             if (error) throw error;
             savedId = id;
         } else {

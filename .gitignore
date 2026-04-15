@@ -23,3 +23,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code Config
+.claude/
+
+# Archivos locales con valores reales — NO commitear
+VERCEL-ENV-VARS.md
+*.env.local
+.env.production
+
+# Archivos de auditoría y temporales — solo para desarrollo local
+AUDITORIA-*.md
+AUDITORIA-MINIMAX-2026.md
+DIAGNOSTICO-*.md
+MASTER-BASE-*.md
+MEMORY-*.md
+PLAN-*.md
+REPORTE-*.md
+opencodeauditoriav3.md
+git_diff_*.txt
+git_log*.txt
+_backup_good/
+supabase/.temp/

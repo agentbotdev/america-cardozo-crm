@@ -12,7 +12,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { Property } from '../types';
-import { openaiService } from '../services/openaiService';
+import { aiService } from '../services/aiService';
 
 interface PropertySearchProps {
     isOpen: boolean;
@@ -57,7 +57,7 @@ export const PropertySearch: React.FC<PropertySearchProps> = ({
         setChatHistory(prev => [...prev, { type: 'user', text: chatQuery }]);
 
         try {
-            const { properties: results, explanation } = await openaiService.searchPropertiesByChatbot(
+            const { properties: results, explanation } = await aiService.searchProperties(
                 chatQuery,
                 properties
             );

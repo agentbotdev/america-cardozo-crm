@@ -187,6 +187,7 @@ const Dashboard: React.FC = () => {
   const [stats, setStats] = useState({
     totalLeads: 0, propertiesCount: 0, visitsScheduled: 0, hotLeadsCount: 0,
     tasaConversion: 0, visitasSemana: 0, publicadas: 0, diasCierre: 0,
+    visitasEsteMes: 0,
   });
   const [charts, setCharts] = useState({
     leadStatusData: [] as any[],
@@ -226,14 +227,19 @@ const Dashboard: React.FC = () => {
       ]);
 
       setStats({
-        totalLeads:      statsData.totalLeads ?? 0,
+        totalLeads:      statsData.totalLeads      ?? 0,
         propertiesCount: statsData.propertiesCount ?? 0,
         visitsScheduled: statsData.visitsScheduled ?? 0,
-        hotLeadsCount:   statsData.hotLeadsCount ?? 0,
-        tasaConversion:  24,
-        visitasSemana:   statsData.visitsScheduled > 0 ? Math.min(statsData.visitsScheduled, 7) : 5,
+        hotLeadsCount:   statsData.hotLeadsCount   ?? 0,
+        // TODO Sprint 2: calcular tasa real (cierres / leads) — necesita campo 'cerrado' en DB
+        tasaConversion:  0,
+        // Visitas de esta semana — dato real desde visitasService.getVisitasStats()
+        visitasSemana:   statsData.visitasEstaSemana ?? 0,
+        // TODO Sprint 2: filtrar propiedades donde publicada_web_america = true
         publicadas:      statsData.propertiesCount ?? 0,
-        diasCierre:      18,
+        // TODO Sprint 2: calcular promédio de días entre created_at y fecha de cierre
+        diasCierre:      0,
+        visitasEsteMes:  statsData.visitasEsteMes  ?? 0,
       });
 
       setHotLeads((statsData as any).hotLeads || []);
@@ -281,7 +287,7 @@ const Dashboard: React.FC = () => {
         }, ...prev].slice(0, 20));
         loadDashboard();
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visits' }, payload => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitas' }, payload => {
         setNotifications(prev => [{
           id:      `visit-${Date.now()}`,
           type:    'visit',
@@ -386,10 +392,14 @@ const Dashboard: React.FC = () => {
           <KpiCard title="Stock Propiedades"  value={stats.propertiesCount} subtext="Activas"               icon={Building2}   delay={60}  color="emerald" sparkData={sparkProps} />
           <KpiCard title="Visitas Agendadas"  value={stats.visitsScheduled} subtext="Total hist."            icon={Calendar}    delay={120} color="indigo"  sparkData={sparkVisitas} />
           <KpiCard title="Hot Leads 🔥"       value={stats.hotLeadsCount}   subtext="+3 hoy" positive        icon={Flame}       delay={180} color="rose"    sparkData={[1,2,2,3,2,4,3]} />
-          <KpiCard title="Tasa Conversión"    value={stats.tasaConversion}  suffix="%" subtext="+4% semana" positive icon={Target}    delay={240} color="amber"   sparkData={sparkConv} />
+          {/* TODO Sprint 2: tasaConversion = cierres/leads — requiere campo cerrado en DB */}
+          <KpiCard title="Tasa Conversión"    value={stats.tasaConversion}  suffix="%" subtext="Próximo sprint"  icon={Target}    delay={240} color="amber"   sparkData={sparkConv} />
+          {/* Visitas Esta Semana — dato real desde visitasService.getVisitasStats() */}
           <KpiCard title="Visitas Esta Semana" value={stats.visitasSemana}                                   icon={Activity}    delay={300} color="violet"  sparkData={[2,3,1,4,3,2,5]} />
+          {/* TODO Sprint 2: filtrar por publicada_web_america = true */}
           <KpiCard title="Publicadas Activas" value={stats.publicadas}                                       icon={Home}        delay={360} color="cyan"    sparkData={sparkProps} />
-          <KpiCard title="Días Prom. Cierre"  value={stats.diasCierre}      subtext="-2 vs mes" positive     icon={Clock}       delay={420} color="slate"   sparkData={[22,20,21,19,20,18,18]} />
+          {/* TODO Sprint 2: calcular promedio de días entre created_at y cierre */}
+          <KpiCard title="Días Prom. Cierre"  value={stats.diasCierre}      subtext="Sprint 2"                icon={Clock}       delay={420} color="slate"   sparkData={[22,20,21,19,20,18,18]} />
         </div>
 
         {/* ── Fila principal: chart grande + sidebar ─────────────────────────── */}

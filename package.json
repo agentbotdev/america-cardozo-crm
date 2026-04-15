@@ -1,7 +1,7 @@
 {
-  "name": "agentbot-crm-v1",
+  "name": "america-cardozo-crm",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,9 +20,9 @@
     "react-countup": "^6.5.3",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.1.5",
-    "reaviz": "^16.0.0",
     "recharts": "^2.15.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

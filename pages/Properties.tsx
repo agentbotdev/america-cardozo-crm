@@ -10,7 +10,7 @@ import {
 import { propertiesService } from '../services/propertiesService';
 import { developmentsService, Development } from '../services/developmentsService';
 import { storageService } from '../services/storageService';
-import { openaiService } from '../services/openaiService';
+import { aiService } from '../services/aiService';
 import PropertySearch from '../components/PropertySearch';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -302,7 +302,7 @@ const PropertyDetailView = ({ property, onClose, onEdit }: any) => {
                   {precio?.toLocaleString()}
                 </h2>
                 <button
-                  onClick={() => navigate(`/visitas?propertyId=${property.id}`)}
+                  onClick={() => navigate(`/visitas?propertyId=${property.tokko_id}`)}
                   className="w-full py-5 md:py-6 bg-white text-slate-900 rounded-[1.5rem] md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Programar Visita</button>
               </div>
             </div>
@@ -379,7 +379,7 @@ const PropertyFormModal = ({ isOpen, onClose, onSave, propertyToEdit }: any) => 
                   <AIEnhanceButton
                     text={formData.titulo || ''}
                     onEnhance={async (text) => {
-                      const enhanced = await openaiService.enhancePropertyTitle(text, formData);
+                      const enhanced = await aiService.enhanceText(text, formData, 'title');
                       updateField('titulo', enhanced);
                     }}
                     label="Mejorar Título"
@@ -406,7 +406,7 @@ const PropertyFormModal = ({ isOpen, onClose, onSave, propertyToEdit }: any) => 
                   <AIEnhanceButton
                     text={formData.descripcion || ''}
                     onEnhance={async (text) => {
-                      const enhanced = await openaiService.enhancePropertyDescription(text, formData);
+                      const enhanced = await aiService.enhanceText(text, formData, 'description');
                       updateField('descripcion', enhanced);
                     }}
                     label="Mejorar Descripción"

@@ -1,11 +1,28 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Visit, VisitStatus, Lead, Property } from '../types';
-import { Calendar as CalendarIcon, Clock, MapPin, CheckCircle, Plus, LayoutList, CalendarDays, X, Check, Map, User, ChevronLeft, ChevronRight, Edit, ArrowRight, Share2, Globe, Mail, Trash2, Building, Building2, ChevronUp, ChevronDown, Search, Flame, Users } from 'lucide-react';
+import { Visit, VisitStatus, Visita, Lead, Property } from '../types';
+import { Calendar as CalendarIcon, Clock, MapPin, Plus, LayoutList, CalendarDays, X, Check, User, ChevronLeft, ChevronRight, Edit, ArrowRight, Globe, Building, Building2, ChevronDown, Search, Flame, Users, AlertTriangle, RefreshCw } from 'lucide-react';
 import { googleCalendarService } from '../services/googleCalendarService';
-import { visitsService } from '../services/visitsService';
-import { leadsService } from '../services/leadsService';
+import { visitasService } from '../services/visitasService';
+import { clientesService } from '../services/clientesService';
 import { propertiesService } from '../services/propertiesService';
+
+/** Normaliza Visita (shape DB real) → Visit (shape UI heredado) */
+const toVisitShape = (v: Visita): Visit => ({
+    id: v.id,
+    lead_id: v.lead_id || '',
+    lead_nombre: v.cliente_nombre || v.lead?.nombre || '(Sin nombre)',
+    property_id: v.property_id || v.propiedad_id || '',
+    property_titulo: v.property_titulo || '(Sin propiedad)',
+    vendedor_id: '',
+    fecha: v.fecha || (v.fecha_visita ? v.fecha_visita.split('T')[0] : ''),
+    hora: v.hora || (v.fecha_visita ? v.fecha_visita.split('T')[1]?.substring(0, 5) : '') || '',
+    estado: (v.estado as VisitStatus) || 'agendada',
+    pipeline_stage: (v.pipeline_stage as any) || 'pendiente',
+    tipo_reunion: (v.tipo_reunion as 'propiedad' | 'empresa') || 'propiedad',
+    created_at: v.created_at || '',
+    updated_at: '',
+});
 
 // ── LeadSearchInput: selector de lead con búsqueda ────────────────────────────
 const LeadSearchInput: React.FC<{
@@ -180,10 +197,8 @@ const VisitFormModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({
-            id: visitToEdit?.id || `VIS-${Math.floor(Math.random() * 10000)}`,
-            ...formData as Visit
-        });
+        // ID real viene de la DB; si editamos usamos el existente, si creamos lo omitimos
+        onSave({ ...visitToEdit, ...formData } as Visit);
         onClose();
     };
 
@@ -227,7 +242,7 @@ const VisitFormModal: React.FC<{
                             <select
                                 value={formData.property_id}
                                 onChange={e => {
-                                    const prop = properties.find(p => p.id === e.target.value);
+                                    const prop = properties.find(p => p.tokko_id === e.target.value);
                                     setFormData({ ...formData, property_id: e.target.value, property_titulo: prop?.titulo || '' });
                                 }}
                                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none"
@@ -568,79 +583,104 @@ const Visits: React.FC = () => {
 
     const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
     const [visits, setVisits] = useState<Visit[]>([]);
+    // Datos del formulario — se cargan lazy al abrir el modal
     const [leads, setLeads] = useState<Lead[]>([]);
     const [properties, setProperties] = useState<Property[]>([]);
+    const [loadingFormData, setLoadingFormData] = useState(false);
     const [visitToEdit, setVisitToEdit] = useState<Visit | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // ... useEffect to open modal if preselectedPropertyId changes ...
+    // Abre el modal y carga leads + propiedades en paralelo (lazy)
+    const abrirFormulario = useCallback(async (visitEdit: Visit | null = null) => {
+        setVisitToEdit(visitEdit);
+        setIsModalOpen(true);
+        if (leads.length === 0 || properties.length === 0) {
+            setLoadingFormData(true);
+            try {
+                const [lData, pData] = await Promise.all([
+                    clientesService.getClientes(),
+                    propertiesService.fetchProperties(),
+                ]);
+                setLeads(lData as Lead[]);
+                setProperties(pData as Property[]);
+            } catch (err) {
+                console.error('Error cargando datos del formulario:', err);
+            } finally {
+                setLoadingFormData(false);
+            }
+        }
+    }, [leads.length, properties.length]);
+
+    // Abre modal si hay propertyId en la URL
     useEffect(() => {
         if (preselectedPropertyId && properties.length > 0) {
             const prop = properties.find(p => p.id === preselectedPropertyId);
-            if (prop) {
-                setVisitToEdit(null);
-                setIsModalOpen(true);
-            }
+            if (prop) abrirFormulario(null);
         }
     }, [preselectedPropertyId, properties]);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
+    const cargarVisitas = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
         try {
-            const [vData, lData, pData] = await Promise.all([
-                visitsService.fetchVisits(),
-                leadsService.fetchLeads(),
-                propertiesService.fetchProperties()
-            ]);
-            setVisits(vData as Visit[]);
-            setLeads(lData as Lead[]);
-            setProperties(pData as Property[]);
-        } catch (error) {
-            console.error('Error loading data:', error);
+            const data = await visitasService.getVisitas();
+            setVisits(data.map(toVisitShape));
+        } catch (err) {
+            console.error('Error loading visits:', err);
+            setError('No se pudieron cargar las visitas. Intentá de nuevo.');
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => { cargarVisitas(); }, [cargarVisitas]);
 
     const handleSaveVisit = async (visitData: Visit & { sync_google?: boolean }) => {
         try {
             setIsSyncing(true);
-            const { sync_google, ...cleanVisit } = visitData;
+            const { sync_google, updated_at, vendedor_id, ...cleanVisit } = visitData as any;
 
-            // 1. Google Sync
+            // Construir fecha_visita ISO 8601 combinando fecha + hora
+            const visitaDb: any = {
+                ...cleanVisit,
+                fecha_visita: cleanVisit.fecha && cleanVisit.hora
+                    ? `${cleanVisit.fecha}T${cleanVisit.hora}:00`
+                    : cleanVisit.fecha ? `${cleanVisit.fecha}T00:00:00` : undefined,
+                cliente_nombre: cleanVisit.lead_nombre,
+            };
+            delete visitaDb.lead_nombre;
+
+            // 1. Google Sync (best-effort — no bloquea el save)
             if (sync_google) {
                 try {
                     if (visitToEdit?.google_event_id) {
                         await googleCalendarService.updateVisitEvent(visitToEdit.google_event_id, cleanVisit);
                     } else {
                         const event = await googleCalendarService.createVisitEvent(cleanVisit);
-                        cleanVisit.google_event_id = event.id;
+                        visitaDb.google_event_id = event?.id;
                     }
                 } catch (err) {
-                    console.error('Failed to sync with Google:', err);
+                    console.error('Google Calendar sync failed (non-blocking):', err);
                 }
             }
 
-            // 2. Database Save
-            const savedVisit = await visitsService.saveVisit(cleanVisit);
-
-            // 3. UI Update
-            if (visitToEdit) {
-                setVisits(visits.map(v => v.id === savedVisit.id ? savedVisit : v));
+            // 2. Guardar en DB via visitasService
+            if (visitToEdit?.id) {
+                await visitasService.updateVisita(visitToEdit.id, visitaDb);
             } else {
-                setVisits([savedVisit, ...visits]);
+                const { id: _drop, ...dataWithoutId } = visitaDb;
+                await visitasService.createVisita(dataWithoutId);
             }
 
+            // 3. Reload completo para mantener coherencia
+            await cargarVisitas();
             setIsModalOpen(false);
             setVisitToEdit(null);
-        } catch (error) {
-            console.error('Error saving visit:', error);
-            alert('Error al guardar la visita.');
+        } catch (err) {
+            console.error('Error saving visit:', err);
+            alert('Error al guardar la visita. Revisá los campos e intentá de nuevo.');
         } finally {
             setIsSyncing(false);
         }
@@ -648,25 +688,22 @@ const Visits: React.FC = () => {
 
     const handleStatusChange = async (visit: Visit, newStatus: VisitStatus) => {
         try {
-            let updatedVisit = { ...visit, estado: newStatus, updated_at: new Date().toISOString() };
-
-            if (newStatus === 'cancelada' && visit.google_event_id) {
+            if (newStatus === 'cancelada' && (visit as any).google_event_id) {
                 try {
                     const confirmCancel = window.confirm('¿Deseas eliminar también el evento de Google Calendar?');
                     if (confirmCancel) {
-                        await googleCalendarService.deleteVisitEvent(visit.google_event_id);
-                        updatedVisit.google_event_id = undefined;
+                        await googleCalendarService.deleteVisitEvent((visit as any).google_event_id);
                     }
                 } catch (err) {
                     console.error('Failed to delete Google event:', err);
                 }
             }
-
-            const saved = await visitsService.saveVisit(updatedVisit);
-            setVisits(visits.map(v => v.id === saved.id ? saved : v));
+            await visitasService.updateVisita(visit.id, { estado: newStatus });
+            await cargarVisitas();
             setSelectedVisit(null);
-        } catch (error) {
-            console.error('Error updating status:', error);
+        } catch (err) {
+            console.error('Error updating status:', err);
+            alert('No se pudo actualizar el estado de la visita.');
         }
     };
 
@@ -678,14 +715,30 @@ const Visits: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-full min-h-[400px]">
+            <div className="flex items-center justify-center h-full min-h-[400px] flex-col gap-4">
                 <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargando agenda...</p>
             </div>
         );
     }
 
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in pb-16">
+
+            {/* Error banner */}
+            {error && (
+                <div className="mb-6 flex items-center gap-4 px-6 py-4 bg-red-50 border border-red-100 rounded-[2rem] text-red-600">
+                    <AlertTriangle size={18} className="shrink-0" />
+                    <span className="text-xs font-bold flex-1">{error}</span>
+                    <button
+                        onClick={cargarVisitas}
+                        className="flex items-center gap-2 text-xs font-black uppercase tracking-widest bg-red-100 hover:bg-red-200 px-4 py-2 rounded-xl transition-all"
+                    >
+                        <RefreshCw size={14} /> Reintentar
+                    </button>
+                </div>
+            )}
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 md:mb-16 gap-6 md:gap-8 px-4 md:px-0">
                 <div>
                     <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-2 md:mb-3">Agenda Visitas</h1>
@@ -709,13 +762,14 @@ const Visits: React.FC = () => {
                     </div>
 
                     <button
-                        onClick={() => {
-                            setVisitToEdit(null);
-                            setIsModalOpen(true);
-                        }}
+                        onClick={() => abrirFormulario(null)}
                         className="flex-1 md:flex-none bg-slate-900 text-white px-6 md:px-12 py-4 md:py-5 rounded-[2rem] md:rounded-[2.5rem] font-black text-[10px] md:text-[12px] uppercase tracking-[0.2em] md:tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-2 md:gap-3 shadow-2xl shadow-indigo-100 active:scale-95"
                     >
-                        <Plus size={18} className="md:w-5 md:h-5" strokeWidth={3} /> <span className="hidden sm:inline">{isSyncing ? 'Guardando...' : 'NUEVA VISITA'}</span><span className="sm:hidden">NUEVA</span>
+                        <Plus size={18} className="md:w-5 md:h-5" strokeWidth={3} />
+                        <span className="hidden sm:inline">
+                            {isSyncing ? 'Guardando...' : loadingFormData ? 'Cargando...' : 'NUEVA VISITA'}
+                        </span>
+                        <span className="sm:hidden">NUEVA</span>
                     </button>
                 </div>
             </div>
@@ -732,15 +786,28 @@ const Visits: React.FC = () => {
                 properties={properties}
             />
 
+            {/* Empty state — solo cuando no carga y no hay visitas */}
+            {!isLoading && !error && visits.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
+                    <CalendarDays size={48} className="text-slate-200" />
+                    <p className="text-slate-400 font-black uppercase tracking-widest text-[11px]">Todavía no hay visitas registradas.</p>
+                    <button
+                        onClick={() => abrirFormulario(null)}
+                        className="flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-[2rem] font-black text-[11px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl"
+                    >
+                        <Plus size={16} strokeWidth={3} /> Agendá la primera
+                    </button>
+                </div>
+            )}
+
             {selectedVisit && (
                 <VisitDetailPanel
                     visit={selectedVisit}
                     onClose={() => setSelectedVisit(null)}
                     onStatusChange={handleStatusChange}
                     onEdit={(v) => {
-                        setVisitToEdit(v);
-                        setIsModalOpen(true);
                         setSelectedVisit(null);
+                        abrirFormulario(v);
                     }}
                 />
             )}

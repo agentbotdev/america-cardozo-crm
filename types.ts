@@ -185,6 +185,7 @@ export interface Lead {
   alq_presupuesto_max?: number;
 
   estado_temperatura: ClientStatus;
+  temperatura?: string;
   etapa_proceso: SalesStage;
   score: number;
   probabilidad_cierre?: number;
@@ -206,6 +207,13 @@ export interface Lead {
   tags?: string[];
   created_at: string;
   updated_at: string;
+
+  // Vendedor asignado — columnas reales en la DB
+  // vendedor_asignado_id → FK a profiles.id (uuid)
+  // vendedor_asignado_nombre → desnormalizado (text)
+  // NOTA: el slug de taxonomy se deriva del nombre al asignar
+  vendedor_asignado_id?: string;
+  vendedor_asignado_nombre?: string;
 }
 
 // Clientes
@@ -223,6 +231,36 @@ export interface Client extends Lead {
 // Visitas
 export type VisitStatus = 'agendada' | 'confirmada' | 'en_curso' | 'realizada' | 'cancelada' | 'reprogramada';
 export type VisitPipelineStage = 'pendiente' | 'preparacion' | 'seguimiento' | 'finalizada';
+
+/**
+ * Tipo canónico alineado con el schema real de la tabla 'visitas' en Supabase.
+ * La interfaz Visit (legacy) se mantiene para compatibilidad con código existente.
+ */
+export interface Visita {
+  id: string;                    // uuid, gen_random_uuid()
+  lead_id?: string;              // uuid FK → leads.id
+  property_id?: string;          // text (no FK formal; usa propiedad_id como alias)
+  propiedad_id?: string;         // text (duplicado de property_id — deuda técnica DB)
+  property_titulo?: string;      // text desnormalizado
+  cliente_nombre?: string;       // text desnormalizado
+  cliente_telefono?: string;     // text desnormalizado
+  fecha?: string;                // date (ISO: "YYYY-MM-DD")
+  hora?: string;                 // text ("HH:MM")
+  fecha_visita?: string;         // timestamptz alternativo
+  estado?: string;               // default: 'pendiente_confirmacion'
+  pipeline_stage?: string;       // default: 'pendiente'
+  tipo_reunion?: 'propiedad' | 'empresa' | string; // default: 'propiedad'
+  mensaje_original?: string;     // text
+  created_at?: string;           // timestamptz
+  // Nested — resultado del JOIN con leads (via lead_id FK)
+  lead?: {
+    id: string;
+    nombre?: string;
+    apellido?: string;
+    telefono?: string;
+    email?: string;
+  } | null;
+}
 
 export interface VisitTimeline {
   id: string;
@@ -271,13 +309,48 @@ export interface LeadHistory {
   user_name?: string;
 }
 
+// Soporte (Tickets)
 export interface SupportTicket {
   id: string;
-  subject: string;
-  category: 'Error Técnico' | 'Facturación' | 'Consulta General';
-  description: string;
-  status: 'Abierto' | 'Cerrado' | 'En Proceso';
+  numero_ticket: number;
+  asunto: string;
+  categoria: string;
+  prioridad: 'baja' | 'media' | 'alta' | 'urgente';
+  estado: 'abierto' | 'en_proceso' | 'resuelto' | 'cerrado';
+  creado_por?: string;
+  user_id?: string;
   created_at: string;
+  updated_at: string;
+}
+
+export interface SupportMessage {
+  id: string;
+  ticket_id: string;
+  usuario: string;
+  rol: 'cliente' | 'dev' | 'support';
+  texto: string;
+  created_at: string;
+}
+
+// Tareas
+export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
+export type TaskStatus = 'pendiente' | 'en_proceso' | 'en_revision' | 'completada' | 'cancelada';
+
+export interface CRMTask {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  prioridad: TaskPriority;
+  estado: TaskStatus;
+  fecha_vencimiento?: string;
+  responsable_id?: string;
+  lead_id?: string;
+  propiedad_id?: string;
+  asignados?: string[];
+  tags?: string[];
+  creado_por?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Stats for dashboard

@@ -1,36 +1,63 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
-import Dashboard from './pages/Dashboard';
-import Properties from './pages/Properties';
-import Leads from './pages/Leads';
-import Clients from './pages/Clients';
-import Visits from './pages/Visits';
-import Reports from './pages/Reports';
-import ControlCenter from './pages/ControlCenter';
-import Settings from './pages/Settings';
-import Support from './pages/Support';
+import ProtectedRoute from './components/ProtectedRoute';
 
-import LiveChat from './pages/LiveChat';
+// Lazy load pages
+const Login         = lazy(() => import('./pages/Login'));
+const Dashboard     = lazy(() => import('./pages/Dashboard'));
+const Properties    = lazy(() => import('./pages/Properties'));
+const Leads         = lazy(() => import('./pages/Leads'));
+const Clients       = lazy(() => import('./pages/Clients'));
+const Visits        = lazy(() => import('./pages/Visits'));
+const Reports       = lazy(() => import('./pages/Reports'));
+const ControlCenter = lazy(() => import('./pages/ControlCenter'));
+const Settings      = lazy(() => import('./pages/Settings'));
+const Support       = lazy(() => import('./pages/Support'));
+const Tasks         = lazy(() => import('./pages/Tasks'));
+const LiveChat      = lazy(() => import('./pages/LiveChat'));
 
 const App: React.FC = () => {
   return (
     <HashRouter>
-      <Routes>
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="propiedades" element={<Properties />} />
-          <Route path="leads" element={<Leads />} />
-          <Route path="clientes" element={<Clients />} />
-          <Route path="visitas" element={<Visits />} />
-          <Route path="reportes" element={<Reports />} />
-          <Route path="control-center" element={<ControlCenter />} />
-          <Route path="soporte" element={<Support />} />
-          <Route path="live-chat" element={<LiveChat />} />
-          <Route path="configuracion" element={<Settings />} />
+      <Suspense fallback={
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-8">
+          <div className="animate-spin w-12 h-12 border-[4px] border-indigo-500 border-t-transparent rounded-full shadow-2xl shadow-indigo-500/20"/>
+          <div className="flex flex-col items-center gap-2">
+            <h2 className="text-white font-black text-xs uppercase tracking-[0.6em] opacity-50">Iniciando Sistema</h2>
+            <div className="w-32 h-1 bg-white/5 rounded-full overflow-hidden">
+              <div className="w-full h-full bg-indigo-500 animate-[loading-bar_2s_ease-in-out_infinite]" />
+            </div>
+          </div>
+        </div>
+      }>
+        <Routes>
+          {/* Ruta pública — Login */}
+          <Route path="/login" element={<Suspense fallback={null}><Login /></Suspense>} />
+
+          {/* Rutas protegidas */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Suspense fallback={null}><Dashboard /></Suspense>} />
+            <Route path="propiedades" element={<Suspense fallback={null}><Properties /></Suspense>} />
+            <Route path="leads" element={<Suspense fallback={null}><Leads /></Suspense>} />
+            <Route path="clientes" element={<Suspense fallback={null}><Clients /></Suspense>} />
+            <Route path="visitas" element={<Suspense fallback={null}><Visits /></Suspense>} />
+            <Route path="reportes" element={<Suspense fallback={null}><Reports /></Suspense>} />
+            <Route path="control-center" element={<Suspense fallback={null}><ControlCenter /></Suspense>} />
+            <Route path="soporte" element={<Suspense fallback={null}><Support /></Suspense>} />
+            <Route path="tareas" element={<Suspense fallback={null}><Tasks /></Suspense>} />
+            <Route path="live-chat" element={<Suspense fallback={null}><LiveChat /></Suspense>} />
+            <Route path="configuracion" element={<Suspense fallback={null}><Settings /></Suspense>} />
+          </Route>
+
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+        </Routes>
+      </Suspense>
     </HashRouter>
   );
 };
