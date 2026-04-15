@@ -5,13 +5,14 @@ import {
   Plus, MapPin, Search, X, Heart,
   BedDouble, Bath, Ruler, ChevronLeft, ChevronRight, Home, Info, Layers,
   Building2, Image as ImageIcon, Edit, Upload, Trash2, CheckCircle2,
-  Trash, Save, Map as MapIcon, ArrowLeft, Clock, Sparkles, Loader2, Bot
+  Trash, Save, Map as MapIcon, ArrowLeft, Clock, Sparkles, Loader2, Bot, SlidersHorizontal
 } from 'lucide-react';
 import { propertiesService, PAGE_SIZE } from '../services/propertiesService';
 import { developmentsService, Development } from '../services/developmentsService';
 import { storageService } from '../services/storageService';
 import { aiService } from '../services/aiService';
 import { BuscadorIA } from '../components/properties/BuscadorIA';
+import { AdvancedFilterPanel, AdvancedFilters, INITIAL_ADVANCED_FILTERS, countActiveAdvancedFilters } from '../components/shared/AdvancedFilterPanel';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -638,6 +639,8 @@ const Properties = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(INITIAL_ADVANCED_FILTERS);
 
   useEffect(() => { loadData(); }, []);
 
@@ -692,13 +695,27 @@ const Properties = () => {
   const displayedProps = useMemo(() => {
     if (activeTab === 'emprendimientos') return [];
     const source = activeTab === 'acquisition' ? borradores : publishedProps;
-    if (!searchTerm) return source;
-    const term = searchTerm.toLowerCase();
-    return source.filter(p =>
-      p.titulo?.toLowerCase().includes(term) ||
-      p.barrio?.toLowerCase().includes(term)
-    );
-  }, [publishedProps, borradores, activeTab, searchTerm]);
+
+    let result = source;
+
+    // Filtro por texto
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(p =>
+        p.titulo?.toLowerCase().includes(term) ||
+        p.barrio?.toLowerCase().includes(term)
+      );
+    }
+
+    // Filtros avanzados: operaciones (tipo_operacion)
+    if (advancedFilters.operaciones && advancedFilters.operaciones.length > 0) {
+      result = result.filter(p =>
+        advancedFilters.operaciones!.includes(p.tipo_operacion as string)
+      );
+    }
+
+    return result;
+  }, [publishedProps, borradores, activeTab, searchTerm, advancedFilters]);
 
   const displayedDevs = useMemo(() => {
     if (activeTab !== 'emprendimientos') return [];
@@ -778,13 +795,27 @@ const Properties = () => {
             <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-100 rounded-[2.5rem] pl-20 pr-8 py-5 md:py-6 text-sm font-bold shadow-xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all" />
           </div>
           {activeTab === 'propiedades' && (
-            <button
-              onClick={() => setIsSearchModalOpen(true)}
-              className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
-            >
-              <Bot size={20} />
-              <span className="hidden md:inline">Buscador IA</span>
-            </button>
+            <>
+              <button
+                onClick={() => setIsFilterPanelOpen(true)}
+                className={`relative px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap border ${countActiveAdvancedFilters(advancedFilters) > 0 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl' : 'bg-white text-slate-700 border-slate-100 shadow-xl hover:border-indigo-300'}`}
+              >
+                <SlidersHorizontal size={18} />
+                <span className="hidden md:inline">Filtros</span>
+                {countActiveAdvancedFilters(advancedFilters) > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                    {countActiveAdvancedFilters(advancedFilters)}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setIsSearchModalOpen(true)}
+                className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 md:px-8 py-5 md:py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center gap-3 whitespace-nowrap"
+              >
+                <Bot size={20} />
+                <span className="hidden md:inline">Buscador IA</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -837,6 +868,16 @@ const Properties = () => {
       <BuscadorIA
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
+      />
+
+      {/* Filtros Avanzados */}
+      <AdvancedFilterPanel
+        isOpen={isFilterPanelOpen}
+        onClose={() => setIsFilterPanelOpen(false)}
+        module="propiedades"
+        currentFilters={advancedFilters}
+        onApply={(filters) => { setAdvancedFilters(filters); setIsFilterPanelOpen(false); }}
+        onReset={() => { setAdvancedFilters(INITIAL_ADVANCED_FILTERS); setIsFilterPanelOpen(false); }}
       />
     </div>
   );

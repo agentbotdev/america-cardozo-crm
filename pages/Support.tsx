@@ -326,6 +326,7 @@ const Support: React.FC = () => {
         prioridad: data.prioridad as any,
         estado: 'abierto',
         creado_por: 'Usuario',
+        user_id: null as any,
       });
       await supportService.sendMessage(ticket.id, 'Usuario', data.descripcion, 'cliente');
       addToast('Ticket creado', `Ticket #${ticket.numero_ticket} creado exitosamente`, 'success');

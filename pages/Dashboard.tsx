@@ -52,27 +52,17 @@ function useCountUp(target: number, duration = 1200) {
   return count;
 }
 
-// ── Mini Sparkline ─────────────────────────────────────────────────────────────
-const Sparkline: React.FC<{ data: number[]; color: string }> = ({ data, color }) => {
-  const max = Math.max(...data, 1);
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * 100},${100 - (v / max) * 80}`).join(' ');
-  return (
-    <svg viewBox="0 0 100 60" className="w-full h-8" preserveAspectRatio="none">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-};
 
 // ── KPI Card ───────────────────────────────────────────────────────────────────
 const colorMap = {
-  blue:    { bg: 'bg-blue-50',    icon: 'text-blue-600',    spark: '#3b82f6', badge: 'bg-blue-50 text-blue-600 border-blue-100' },
-  emerald: { bg: 'bg-emerald-50', icon: 'text-emerald-600', spark: '#10b981', badge: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-  indigo:  { bg: 'bg-indigo-50',  icon: 'text-indigo-600',  spark: '#6366f1', badge: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-  rose:    { bg: 'bg-rose-50',    icon: 'text-rose-600',    spark: '#f43f5e', badge: 'bg-rose-50 text-rose-600 border-rose-100' },
-  amber:   { bg: 'bg-amber-50',   icon: 'text-amber-600',   spark: '#f59e0b', badge: 'bg-amber-50 text-amber-600 border-amber-100' },
-  violet:  { bg: 'bg-indigo-50',  icon: 'text-indigo-600',  spark: '#6366f1', badge: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-  cyan:    { bg: 'bg-blue-50',    icon: 'text-blue-600',    spark: '#3b82f6', badge: 'bg-blue-50 text-blue-600 border-blue-100' },
-  slate:   { bg: 'bg-slate-50',   icon: 'text-slate-600',   spark: '#64748b', badge: 'bg-slate-50 text-slate-600 border-slate-200' },
+  blue:    { bg: 'bg-blue-50',    icon: 'text-blue-600',    badge: 'bg-blue-50 text-blue-600 border-blue-100' },
+  emerald: { bg: 'bg-emerald-50', icon: 'text-emerald-600', badge: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+  indigo:  { bg: 'bg-indigo-50',  icon: 'text-indigo-600',  badge: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+  rose:    { bg: 'bg-rose-50',    icon: 'text-rose-600',    badge: 'bg-rose-50 text-rose-600 border-rose-100' },
+  amber:   { bg: 'bg-amber-50',   icon: 'text-amber-600',   badge: 'bg-amber-50 text-amber-600 border-amber-100' },
+  violet:  { bg: 'bg-indigo-50',  icon: 'text-indigo-600',  badge: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+  cyan:    { bg: 'bg-blue-50',    icon: 'text-blue-600',    badge: 'bg-blue-50 text-blue-600 border-blue-100' },
+  slate:   { bg: 'bg-slate-50',   icon: 'text-slate-600',   badge: 'bg-slate-50 text-slate-600 border-slate-200' },
 };
 type ColorKey = keyof typeof colorMap;
 
@@ -85,10 +75,9 @@ interface KpiCardProps {
   icon: React.ElementType;
   delay: number;
   color: ColorKey;
-  sparkData?: number[];
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, suffix = '', subtext, positive = true, icon: Icon, delay, color, sparkData }) => {
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, suffix = '', subtext, positive = true, icon: Icon, delay, color }) => {
   const theme = colorMap[color];
   const animated = useCountUp(value);
 
@@ -110,11 +99,6 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, suffix = '', subtext, p
       </div>
       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{title}</p>
       <h3 className="text-3xl font-black text-slate-800 tracking-tight">{animated}{suffix}</h3>
-      {sparkData && sparkData.length > 1 && (
-        <div className="mt-3 opacity-60 group-hover:opacity-100 transition-opacity">
-          <Sparkline data={sparkData} color={theme.spark} />
-        </div>
-      )}
     </div>
   );
 };
@@ -247,12 +231,6 @@ const Dashboard: React.FC = () => {
     tempData:       { name: string; value: number; fill: string }[];
     vendedoresData: { nombre: string; cierres: number; leads: number }[];
   }>({ funnelData: [], actividadData: [], tempData: [], vendedoresData: [] });
-
-  // Sparkline data: simulados (7 días)
-  const sparkLeads   = useMemo(() => [4, 7, 5, 9, 6, 11, 8], []);
-  const sparkProps   = useMemo(() => [12, 12, 13, 11, 14, 13, 14], []);
-  const sparkVisitas = useMemo(() => [2, 3, 1, 4, 3, 2, 5], []);
-  const sparkConv    = useMemo(() => [18, 22, 19, 25, 21, 28, 24], []);
 
   // Visitas semanales (datos de ejemplo para el Area chart principal)
   const visitasSemanalesBase = useMemo(() => [
@@ -495,18 +473,18 @@ const Dashboard: React.FC = () => {
 
         {/* ── 8 KPI Cards ───────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard title="Total Leads"        value={stats.totalLeads}      subtext="+12% vs mes" positive  icon={Users}       delay={0}   color="blue"    sparkData={sparkLeads} />
-          <KpiCard title="Stock Propiedades"  value={stats.propertiesCount} subtext="Activas"               icon={Building2}   delay={60}  color="emerald" sparkData={sparkProps} />
-          <KpiCard title="Visitas Agendadas"  value={stats.visitsScheduled} subtext="Total hist."            icon={Calendar}    delay={120} color="indigo"  sparkData={sparkVisitas} />
-          <KpiCard title="Hot Leads 🔥"       value={stats.hotLeadsCount}   subtext="+3 hoy" positive        icon={Flame}       delay={180} color="rose"    sparkData={[1,2,2,3,2,4,3]} />
+          <KpiCard title="Total Leads"         value={stats.totalLeads}      subtext="+12% vs mes" positive  icon={Users}     delay={0}   color="blue"    />
+          <KpiCard title="Stock Propiedades"   value={stats.propertiesCount} subtext="Activas"               icon={Building2} delay={60}  color="emerald" />
+          <KpiCard title="Visitas Agendadas"   value={stats.visitsScheduled} subtext="Total hist."           icon={Calendar}  delay={120} color="indigo"  />
+          <KpiCard title="Hot Leads 🔥"        value={stats.hotLeadsCount}   subtext="+3 hoy" positive       icon={Flame}     delay={180} color="rose"    />
           {/* TODO Sprint 2: tasaConversion = cierres/leads — requiere campo cerrado en DB */}
-          <KpiCard title="Tasa Conversión"    value={stats.tasaConversion}  suffix="%" subtext="Próximo sprint"  icon={Target}    delay={240} color="amber"   sparkData={sparkConv} />
+          <KpiCard title="Tasa Conversión"     value={stats.tasaConversion}  suffix="%" subtext="Próximo sprint" icon={Target} delay={240} color="amber"  />
           {/* Visitas Esta Semana — dato real desde visitasService.getVisitasStats() */}
-          <KpiCard title="Visitas Esta Semana" value={stats.visitasSemana}                                   icon={Activity}    delay={300} color="violet"  sparkData={[2,3,1,4,3,2,5]} />
+          <KpiCard title="Visitas Esta Semana" value={stats.visitasSemana}                                   icon={Activity}  delay={300} color="violet"  />
           {/* TODO Sprint 2: filtrar por publicada_web_america = true */}
-          <KpiCard title="Publicadas Activas" value={stats.publicadas}                                       icon={Home}        delay={360} color="cyan"    sparkData={sparkProps} />
+          <KpiCard title="Publicadas Activas"  value={stats.publicadas}                                      icon={Home}      delay={360} color="cyan"    />
           {/* TODO Sprint 2: calcular promedio de días entre created_at y cierre */}
-          <KpiCard title="Días Prom. Cierre"  value={stats.diasCierre}      subtext="Sprint 2"                icon={Clock}       delay={420} color="slate"   sparkData={[22,20,21,19,20,18,18]} />
+          <KpiCard title="Días Prom. Cierre"   value={stats.diasCierre}      subtext="Sprint 2"              icon={Clock}     delay={420} color="slate"   />
         </div>
 
         {/* ── Fila principal: chart grande + sidebar ─────────────────────────── */}

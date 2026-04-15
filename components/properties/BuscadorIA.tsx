@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, Sparkles, Loader2, Home, BedDouble, DollarSign, MapPin } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
@@ -278,7 +279,7 @@ export const BuscadorIA: React.FC<BuscadorIAProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -291,13 +292,15 @@ export const BuscadorIA: React.FC<BuscadorIAProps> = ({ isOpen, onClose }) => {
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40"
           />
 
-          {/* Modal */}
+          {/* Centering shell — flexbox, sin depender de transforms del padre */}
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[6vh] px-4 pointer-events-none">
+          {/* Modal con glass effect */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed top-[6%] left-1/2 -translate-x-1/2 w-[95vw] max-w-2xl bg-white rounded-[2.5rem] shadow-2xl z-50 overflow-hidden flex flex-col"
+            className="w-full max-w-2xl bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col pointer-events-auto"
             style={{ maxHeight: '85vh' }}
           >
             {/* Header / Input */}
@@ -413,9 +416,11 @@ export const BuscadorIA: React.FC<BuscadorIAProps> = ({ isOpen, onClose }) => {
               )}
             </div>
           </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

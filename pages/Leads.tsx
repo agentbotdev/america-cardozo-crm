@@ -7,7 +7,7 @@ import {
   Layers, Zap, Info, MessageSquare, Bot, Target, Edit, Home, Eye,
   SlidersHorizontal, List, Columns
 } from 'lucide-react';
-import { Lead, ChatMessage, LeadHistory } from '../types';
+import { Lead, ChatMessage, LeadHistory, Client } from '../types';
 import { leadsService } from '../services/leadsService';
 import { propertiesService } from '../services/propertiesService';
 import { supabase } from '../services/supabaseClient';
@@ -16,6 +16,7 @@ import AdvancedFilterPanel, {
   INITIAL_ADVANCED_FILTERS,
   countActiveAdvancedFilters,
 } from '../components/shared/AdvancedFilterPanel';
+import PanelCliente from '../components/shared/PanelCliente';
 
 const statusColors: Record<string, string> = {
   frio: 'bg-blue-100 text-blue-600',
@@ -604,29 +605,16 @@ const Leads: React.FC = () => {
 
   return (
     <>
-      <AnimatePresence>
-        {selectedLead && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/40 z-[190]"
-              onClick={() => setSelectedLead(null)}
-            />
-            <LeadDetailPanel
-              lead={selectedLead}
-              properties={properties}
-              onClose={() => setSelectedLead(null)}
-              onEdit={(l) => {
-                setSelectedLead(null);
-                setEditingLead(l);
-                setIsModalOpen(true);
-              }}
-            />
-          </>
-        )}
-      </AnimatePresence>
+      {selectedLead && (
+        <PanelCliente
+          lead={selectedLead as Client}
+          onClose={() => setSelectedLead(null)}
+          onUpdate={(updated) => {
+            setLeads(prev => prev.map(l => l.id === updated.id ? (updated as Lead) : l));
+            setSelectedLead(updated as Lead);
+          }}
+        />
+      )}
 
       <AdvancedFilterPanel
         isOpen={advFiltersOpen}
@@ -742,14 +730,70 @@ const Leads: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile View (Cards) */}
+          {/* Mobile View (Cards | Kanban) */}
           <div className="lg:hidden p-6 space-y-4">
+            {/* Vista toggle — mobile */}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setVista('tabla')}
+                title="Vista tabla"
+                className={`p-3 rounded-[1.5rem] border transition-all ${vista === 'tabla' ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100'}`}
+              >
+                <List size={15} />
+              </button>
+              <button
+                onClick={() => setVista('kanban')}
+                title="Vista kanban"
+                className={`p-3 rounded-[1.5rem] border transition-all ${vista === 'kanban' ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100'}`}
+              >
+                <Columns size={15} />
+              </button>
+            </div>
+
             {loading ? (
               <div className="py-20 text-center">
                 <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Oportunidades...</p>
               </div>
+            ) : vista === 'kanban' ? (
+              /* ── KANBAN MOBILE ─────────────────────────────────────── */
+              <div className="overflow-x-auto no-scrollbar -mx-6 px-6 pb-2">
+                <div className="flex gap-4" style={{ minWidth: `${KANBAN_COLS.length * 240}px` }}>
+                  {KANBAN_COLS.map(col => {
+                    const colLeads = filteredLeads.filter(
+                      l => col.etapas.includes(l.etapa_proceso || l.etapa || '')
+                    );
+                    return (
+                      <div key={col.id} className="flex-shrink-0 w-56">
+                        <div className="flex items-center justify-between mb-3 px-1">
+                          <span className={`px-2.5 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest ${col.color}`}>
+                            {col.label}
+                          </span>
+                          <span className="w-5 h-5 flex items-center justify-center bg-slate-100 text-slate-500 rounded-lg text-[9px] font-black">
+                            {colLeads.length}
+                          </span>
+                        </div>
+                        <div className="space-y-3">
+                          {colLeads.map(lead => (
+                            <KanbanCard
+                              key={lead.id}
+                              lead={lead}
+                              onClick={() => setSelectedLead(lead)}
+                            />
+                          ))}
+                          {colLeads.length === 0 && (
+                            <div className="border-2 border-dashed border-slate-100 rounded-[1.5rem] p-4 text-center">
+                              <p className="text-[9px] text-slate-300 font-black uppercase tracking-widest">Sin leads</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             ) : filteredLeads.length > 0 ? (
+              /* ── CARDS MOBILE ──────────────────────────────────────── */
               filteredLeads.map((lead) => (
                 <div
                   key={lead.id}

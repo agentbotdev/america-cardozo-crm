@@ -647,7 +647,7 @@ const Visits: React.FC = () => {
     const handleSaveVisit = async (visitData: Visit & { sync_google?: boolean }) => {
         try {
             setIsSyncing(true);
-            const { sync_google, updated_at, vendedor_id, ...cleanVisit } = visitData as any;
+            const { sync_google, updated_at, vendedor_id, notas, invitados, timeline, ...cleanVisit } = visitData as any;
 
             // Construir fecha_visita ISO 8601 combinando fecha + hora
             const visitaDb: any = {
