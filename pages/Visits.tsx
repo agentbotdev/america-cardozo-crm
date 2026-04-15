@@ -205,12 +205,13 @@ const VisitFormModal: React.FC<{
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/60" onClick={onClose}></div>
-            <div className="bg-white w-full max-w-lg rounded-[2rem] md:rounded-[2.5rem] shadow-2xl relative animate-fade-in p-4 md:p-10 border border-slate-100 max-h-[95vh] md:max-h-none flex flex-col">
-                <div className="flex justify-between items-center mb-6 md:mb-8">
+            <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl relative animate-fade-in border border-slate-100 max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-center shrink-0 px-6 pt-6 pb-5 border-b border-slate-100">
                     <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{visitToEdit ? 'Editar Visita' : 'Agendar Visita'}</h2>
                     <button onClick={onClose} className="p-2 md:p-3 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-xl md:rounded-2xl transition-all" aria-label="Cerrar"><X size={20} /></button>
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 overflow-y-auto no-scrollbar pr-2 flex-1">
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
                     <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-4">
                         <button
                             type="button"
@@ -329,9 +330,15 @@ const VisitFormModal: React.FC<{
                             <Globe size={14} className="text-indigo-400" /> Sincronizar con Google Calendar
                         </label>
                     </div>
-                    <button type="submit" className="w-full py-4 md:py-5 rounded-xl md:rounded-2xl text-[11px] md:text-[12px] font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-indigo-600 shadow-xl transition-all active:scale-95 mt-4">
-                        {visitToEdit ? 'Guardar Cambios' : 'Agendar Visita'}
-                    </button>
+                    </div>
+                    <div className="shrink-0 px-6 pb-6 pt-4 border-t border-slate-100 flex gap-3">
+                        <button type="button" onClick={onClose} className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95">
+                            Cancelar
+                        </button>
+                        <button type="submit" className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-indigo-600 shadow-xl transition-all active:scale-95">
+                            {visitToEdit ? 'Guardar Cambios' : 'Agendar Visita'}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

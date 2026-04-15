@@ -37,8 +37,8 @@ export const tasksService = {
     return (data || []).map(t => ({
       ...t,
       id: String(t.id),
-      asignados: t.asignado_a || [],
-      // Map estado to match CRMTask type
+      asignados: t.asignados || [],
+      tags: t.etiquetas || [],
       estado: t.estado as any,
     })) as CRMTask[];
   },
@@ -53,13 +53,10 @@ export const tasksService = {
           prioridad: task.prioridad || 'media',
           estado: task.estado || 'pendiente',
           fecha_vencimiento: task.fecha_vencimiento,
-          creado_por: task.creado_por || 'Sistema',
-          asignado_a: task.asignados || [],
+          asignados: task.asignados || [],
           lead_id: task.lead_id,
           propiedad_id: task.propiedad_id,
-          tags: task.tags || [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          etiquetas: task.tags || [],
         },
       ])
       .select()
@@ -73,7 +70,8 @@ export const tasksService = {
     return {
       ...data,
       id: String(data.id),
-      asignados: data.asignado_a || [],
+      asignados: data.asignados || [],
+      tags: data.etiquetas || [],
       estado: data.estado as any,
     } as CRMTask;
   },
@@ -93,10 +91,10 @@ export const tasksService = {
         prioridad: task.prioridad,
         estado: task.estado,
         fecha_vencimiento: task.fecha_vencimiento,
-        asignado_a: task.asignados || [],
+        asignados: task.asignados || [],
         lead_id: task.lead_id,
         propiedad_id: task.propiedad_id,
-        tags: task.tags,
+        etiquetas: task.tags,
         updated_at: new Date().toISOString(),
       })
       .eq('id', task.id)
@@ -111,7 +109,8 @@ export const tasksService = {
     return {
       ...data,
       id: String(data.id),
-      asignados: data.asignado_a || [],
+      asignados: data.asignados || [],
+      tags: data.etiquetas || [],
       estado: data.estado as any,
     } as CRMTask;
   },

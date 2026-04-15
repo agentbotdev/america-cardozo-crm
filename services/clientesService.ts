@@ -48,7 +48,7 @@ const toDbShape = (data: Partial<Lead>): Record<string, any> => {
             : busca_alquiler
             ? 'alquiler'
             : undefined,
-        propiedades_recomendadas: propiedades_enviadas_ids,
+        propiedades_enviadas_ids: propiedades_enviadas_ids,
         updated_at: new Date().toISOString(),
     };
 };

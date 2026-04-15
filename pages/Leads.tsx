@@ -4,18 +4,24 @@ import {
   Users, Search, Filter, MoreVertical, Phone, Mail, Clock, Shield,
   Smartphone, MapPin, Send, DollarSign, X, CheckCircle2,
   TrendingUp, ArrowRight, Star, Plus, MessageCircle, BrainCircuit,
-  Layers, Zap, Info, MessageSquare, Bot, Target, Edit, Home, Eye
+  Layers, Zap, Info, MessageSquare, Bot, Target, Edit, Home, Eye,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Lead, ChatMessage, LeadHistory } from '../types';
 import { leadsService } from '../services/leadsService';
 import { propertiesService } from '../services/propertiesService';
 import { supabase } from '../services/supabaseClient';
+import AdvancedFilterPanel, {
+  AdvancedFilters,
+  INITIAL_ADVANCED_FILTERS,
+  countActiveAdvancedFilters,
+} from '../components/shared/AdvancedFilterPanel';
 
 const statusColors: Record<string, string> = {
   frio: 'bg-blue-100 text-blue-600',
   tibio: 'bg-amber-100 text-amber-600',
   caliente: 'bg-rose-100 text-rose-600',
-  ultra_caliente: 'bg-red-100 text-red-600',
+  ultra: 'bg-red-100 text-red-600',
   pausado: 'bg-slate-100 text-slate-600',
   perdido: 'bg-red-100 text-red-600',
   derivado: 'bg-orange-100 text-orange-600',
@@ -109,7 +115,7 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
     <motion.div
       initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed top-0 right-0 w-full sm:w-[500px] lg:w-[600px] h-full bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] z-200 flex flex-col border-l border-slate-100"
+      className="fixed top-0 right-0 w-full sm:w-[500px] lg:w-[600px] h-full bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] z-[200] flex flex-col border-l border-slate-100"
     >
       <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
         <div className="flex items-center gap-5">
@@ -368,7 +374,7 @@ const LeadFormModal = ({ isOpen, onClose, onSave, leadToEdit }: any) => {
         className="bg-white w-full max-w-xl rounded-[2.5rem] md:rounded-[3rem] shadow-2xl relative z-[210] overflow-hidden flex flex-col max-h-[90vh]"
       >
         <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{leadToEdit ? 'Editar Lead' : 'Nuevo Lead'}</h2>
+          <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{leadToEdit ? 'Editar Oportunidad' : 'Nueva Oportunidad'}</h2>
           <button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-2xl transition-all"><X size={24} /></button>
         </div>
 
@@ -452,6 +458,8 @@ const Leads: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'todos' | 'caliente' | 'tibio' | 'frio'>('todos');
   const [sortBy, setSortBy] = useState<'date' | 'price_asc' | 'price_desc'>('date');
+  const [advFiltersOpen, setAdvFiltersOpen] = useState(false);
+  const [advFilters, setAdvFilters] = useState<AdvancedFilters>(INITIAL_ADVANCED_FILTERS);
 
   useEffect(() => {
     loadData();
@@ -485,8 +493,69 @@ const Leads: React.FC = () => {
     } else if (sortBy === 'price_desc') {
       result.sort((a, b) => (b.presupuesto_max || 0) - (a.presupuesto_max || 0));
     }
+
+    // Advanced filters
+    if (advFilters.searchText.trim()) {
+      const q = advFilters.searchText.toLowerCase();
+      result = result.filter(
+        l =>
+          (l.nombre?.toLowerCase().includes(q) ?? false) ||
+          (l.email?.toLowerCase().includes(q) ?? false) ||
+          (l.telefono?.toLowerCase().includes(q) ?? false),
+      );
+    }
+    if (advFilters.temperaturas.length > 0) {
+      result = result.filter(l => advFilters.temperaturas.includes(l.temperatura ?? ''));
+    }
+    if (advFilters.etapas.length > 0) {
+      result = result.filter(l => advFilters.etapas.includes(l.etapa_proceso ?? ''));
+    }
+    if (advFilters.operaciones.length > 0) {
+      result = result.filter(
+        l =>
+          (advFilters.operaciones.includes('venta') && l.busca_venta) ||
+          (advFilters.operaciones.includes('alquiler') && l.busca_alquiler) ||
+          (advFilters.operaciones.includes('inversion') && l.busca_inversion) ||
+          (advFilters.operaciones.includes('temporario') && l.busca_temporario),
+      );
+    }
+    if (advFilters.vendedores.length > 0) {
+      result = result.filter(l => advFilters.vendedores.includes(l.vendedor_asignado_nombre ?? ''));
+    }
+    if (advFilters.fuentes.length > 0) {
+      result = result.filter(l => advFilters.fuentes.includes(l.fuente ?? ''));
+    }
+    if (advFilters.presupuestoVentaMin !== undefined) {
+      result = result.filter(l => (l.presupuesto_venta_usd ?? 0) >= advFilters.presupuestoVentaMin!);
+    }
+    if (advFilters.presupuestoVentaMax !== undefined) {
+      result = result.filter(l => (l.presupuesto_venta_usd ?? Infinity) <= advFilters.presupuestoVentaMax!);
+    }
+    if (advFilters.presupuestoAlqMin !== undefined) {
+      result = result.filter(l => (l.presupuesto_alquiler_ars ?? 0) >= advFilters.presupuestoAlqMin!);
+    }
+    if (advFilters.presupuestoAlqMax !== undefined) {
+      result = result.filter(l => (l.presupuesto_alquiler_ars ?? Infinity) <= advFilters.presupuestoAlqMax!);
+    }
+    if (advFilters.scoreMin !== undefined) {
+      result = result.filter(l => (l.score ?? 0) >= advFilters.scoreMin!);
+    }
+    if (advFilters.inactividadDias !== undefined) {
+      const cutoff = new Date(Date.now() - advFilters.inactividadDias * 86400000).toISOString();
+      result = result.filter(l => !l.updated_at || l.updated_at <= cutoff);
+    }
+    if (advFilters.fechaDesde) {
+      result = result.filter(l => l.created_at && l.created_at >= advFilters.fechaDesde!);
+    }
+    if (advFilters.fechaHasta) {
+      result = result.filter(l => l.created_at && l.created_at <= advFilters.fechaHasta! + 'T23:59:59');
+    }
+    if (advFilters.conVisitaProxima) {
+      result = result.filter(l => l.proxima_visita != null);
+    }
+
     return result;
-  }, [searchTerm, activeFilter, sortBy, leads]);
+  }, [searchTerm, activeFilter, sortBy, leads, advFilters]);
 
   return (
     <>
@@ -514,11 +583,20 @@ const Leads: React.FC = () => {
         )}
       </AnimatePresence>
 
+      <AdvancedFilterPanel
+        isOpen={advFiltersOpen}
+        onClose={() => setAdvFiltersOpen(false)}
+        module="oportunidades"
+        currentFilters={advFilters}
+        onApply={(f) => { setAdvFilters(f); setAdvFiltersOpen(false); }}
+        onReset={() => setAdvFilters(INITIAL_ADVANCED_FILTERS)}
+      />
+
       <div className="max-w-[1600px] mx-auto animate-fade-in pb-16 px-4 md:px-0">
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-8">
           <div>
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-3">Lead Pipeline</h1>
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-3">Oportunidades</h1>
             <p className="text-slate-400 font-bold text-xs md:text-base uppercase tracking-[0.2em]">Gestión inteligente y calificación con AgentBot IA.</p>
           </div>
           <button
@@ -579,15 +657,29 @@ const Leads: React.FC = () => {
               </div>
             </div>
 
-            <div className="relative group w-full lg:w-[450px]">
-              <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre o interés..."
-                className="w-full pl-16 pr-8 py-5 rounded-[2.2rem] bg-slate-50/50 border border-slate-100 text-sm font-bold text-slate-700 outline-none focus:ring-[10px] focus:ring-indigo-50/50 focus:border-indigo-100 transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              <div className="relative group flex-1 lg:w-[450px]">
+                <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre o interés..."
+                  className="w-full pl-16 pr-8 py-5 rounded-[2.2rem] bg-slate-50/50 border border-slate-100 text-sm font-bold text-slate-700 outline-none focus:ring-[10px] focus:ring-indigo-50/50 focus:border-indigo-100 transition-all"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <button
+                onClick={() => setAdvFiltersOpen(true)}
+                className="flex items-center gap-2 px-4 py-4 rounded-[2.2rem] bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-100 text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
+              >
+                <SlidersHorizontal size={13} />
+                Filtros
+                {countActiveAdvancedFilters(advFilters) > 0 && (
+                  <span className="bg-indigo-600 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                    {countActiveAdvancedFilters(advFilters)}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -596,7 +688,7 @@ const Leads: React.FC = () => {
             {loading ? (
               <div className="py-20 text-center">
                 <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Leads...</p>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Oportunidades...</p>
               </div>
             ) : filteredLeads.length > 0 ? (
               filteredLeads.map((lead) => (
@@ -637,7 +729,7 @@ const Leads: React.FC = () => {
               ))
             ) : (
               <div className="py-20 text-center">
-                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay leads</p>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No hay oportunidades</p>
               </div>
             )}
           </div>
@@ -647,7 +739,7 @@ const Leads: React.FC = () => {
             {loading ? (
               <div className="py-48 text-center bg-slate-50/20">
                 <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-400 font-black uppercase tracking-[0.4em]">Cargando Leads...</p>
+                <p className="text-slate-400 font-black uppercase tracking-[0.4em]">Cargando Oportunidades...</p>
               </div>
             ) : (
               <table className="w-full text-left border-collapse min-w-[1000px]">

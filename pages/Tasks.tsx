@@ -1090,14 +1090,15 @@ const Tasks: React.FC = () => {
         await tasksService.saveTask({ ...taskToEdit, ...formData } as CRMTask);
         addToast('Tarea actualizada', `"${formData.titulo}" se actualizó correctamente.`, 'success');
       } else {
-        await tasksService.createTask(formData as any);
+        await tasksService.createTask(formData as Omit<CRMTask, 'id' | 'created_at' | 'updated_at'>);
         addToast('Tarea creada', `"${formData.titulo}" fue creada.`, 'success');
       }
       setIsModalOpen(false);
       setTaskToEdit(null);
       loadTasks();
     } catch (e) {
-      addToast('Error', 'No se pudo guardar la tarea.', 'error');
+      const msg = e instanceof Error ? e.message : 'No se pudo guardar la tarea.';
+      addToast('Error', msg, 'error');
     }
   };
 

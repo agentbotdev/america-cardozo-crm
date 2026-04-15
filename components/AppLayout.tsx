@@ -129,7 +129,7 @@ const AppLayout: React.FC = () => {
   const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/propiedades', icon: Building2, label: 'Propiedades' },
-    { to: '/leads', icon: Users, label: 'Leads' },
+    { to: '/leads', icon: Users, label: 'Oportunidades' },
     { to: '/clientes', icon: UserCircle, label: 'Clientes' },
     { to: '/visitas', icon: CalendarDays, label: 'Visitas' },
     { to: '/reportes', icon: BarChart3, label: 'Reportes' },
@@ -293,7 +293,7 @@ const AppLayout: React.FC = () => {
                       )}
                       {searchResults.leads.length > 0 && (
                         <div>
-                          <h3 className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-3 px-2">Leads</h3>
+                          <h3 className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-3 px-2">Oportunidades</h3>
                           {searchResults.leads.map(l => (
                             <button key={l.id} onClick={() => handleResultClick('/leads')} className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-all text-left">
                               <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xs">{l.nombre.charAt(0)}</div>
