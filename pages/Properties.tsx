@@ -12,7 +12,7 @@ import { developmentsService, Development } from '../services/developmentsServic
 import { storageService } from '../services/storageService';
 import { aiService } from '../services/aiService';
 import { BuscadorIA } from '../components/properties/BuscadorIA';
-import { AdvancedFilterPanel, AdvancedFilters, INITIAL_ADVANCED_FILTERS, countActiveAdvancedFilters } from '../components/shared/AdvancedFilterPanel';
+import AdvancedFilterPanel, { AdvancedFilters, INITIAL_ADVANCED_FILTERS, countActiveAdvancedFilters } from '../components/shared/AdvancedFilterPanel';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { motion, AnimatePresence } from 'framer-motion';
 
