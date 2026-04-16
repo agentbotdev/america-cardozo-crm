@@ -29,7 +29,7 @@ export const googleCalendarService = {
     },
 
     exchangeCodeForToken: async (code: string) => {
-        const response = await supabase.functions.invoke('google-calendar-auth', {
+        const response = await supabase.functions.invoke('google-auth', {
             body: { action: 'exchange', code, client_id: CLIENT_ID, redirect_uri: REDIRECT_URI }
         });
 
@@ -84,7 +84,7 @@ export const googleCalendarService = {
     },
 
     refreshAccessToken: async (refresh_token: string) => {
-        const response = await supabase.functions.invoke('google-calendar-auth', {
+        const response = await supabase.functions.invoke('google-auth', {
             body: { action: 'refresh', refresh_token, client_id: CLIENT_ID }
         });
 
