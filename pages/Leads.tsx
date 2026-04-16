@@ -58,7 +58,13 @@ const KanbanCard: React.FC<{ lead: Lead; onClick: () => void }> = ({ lead, onCli
     animate={{ opacity: 1, scale: 1 }}
     whileHover={{ y: -2 }}
     onClick={onClick}
-    className="bg-white border border-slate-100 p-4 rounded-[1.8rem] shadow-sm hover:shadow-lg transition-all cursor-pointer group"
+    draggable
+    onDragStart={(e: any) => {
+      e.dataTransfer?.setData('leadId', lead.id);
+      e.currentTarget.style.opacity = '0.5';
+    }}
+    onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
+    className="bg-white border border-slate-100 p-4 rounded-[1.8rem] shadow-sm hover:shadow-lg transition-all cursor-grab active:cursor-grabbing group"
   >
     <div className="flex items-center gap-3 mb-3">
       <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -764,7 +770,22 @@ const Leads: React.FC = () => {
                       l => col.etapas.includes(l.etapa_proceso || l.etapa || '')
                     );
                     return (
-                      <div key={col.id} className="flex-shrink-0 w-56">
+                      <div
+                        key={col.id}
+                        className="flex-shrink-0 w-56"
+                        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-indigo-300', 'rounded-2xl', 'bg-indigo-50/30'); }}
+                        onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-indigo-300', 'rounded-2xl', 'bg-indigo-50/30'); }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove('ring-2', 'ring-indigo-300', 'rounded-2xl', 'bg-indigo-50/30');
+                          const leadId = e.dataTransfer.getData('leadId');
+                          if (!leadId) return;
+                          try {
+                            await supabase.from('leads').update({ etapa: col.etapas[0], updated_at: new Date().toISOString() }).eq('id', leadId);
+                            loadData();
+                          } catch (err) { console.error('Error moving lead:', err); }
+                        }}
+                      >
                         <div className="flex items-center justify-between mb-3 px-1">
                           <span className={`px-2.5 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest ${col.color}`}>
                             {col.label}
@@ -773,7 +794,7 @@ const Leads: React.FC = () => {
                             {colLeads.length}
                           </span>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-3 min-h-[40px]">
                           {colLeads.map(lead => (
                             <KanbanCard
                               key={lead.id}
@@ -853,7 +874,25 @@ const Leads: React.FC = () => {
                       l => col.etapas.includes(l.etapa_proceso || l.etapa || '')
                     );
                     return (
-                      <div key={col.id} className="flex-shrink-0 w-64">
+                      <div
+                        key={col.id}
+                        className="flex-shrink-0 w-64"
+                        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-indigo-300', 'rounded-3xl', 'bg-indigo-50/30'); }}
+                        onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-indigo-300', 'rounded-3xl', 'bg-indigo-50/30'); }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove('ring-2', 'ring-indigo-300', 'rounded-3xl', 'bg-indigo-50/30');
+                          const leadId = e.dataTransfer.getData('leadId');
+                          if (!leadId) return;
+                          const targetEtapa = col.etapas[0]; // primera etapa de la columna
+                          try {
+                            await supabase.from('leads').update({ etapa: targetEtapa, updated_at: new Date().toISOString() }).eq('id', leadId);
+                            loadData();
+                          } catch (err) {
+                            console.error('Error moving lead:', err);
+                          }
+                        }}
+                      >
                         {/* Column header */}
                         <div className="flex items-center justify-between mb-4 px-1">
                           <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest ${col.color}`}>
@@ -864,7 +903,7 @@ const Leads: React.FC = () => {
                           </span>
                         </div>
                         {/* Cards */}
-                        <div className="space-y-3">
+                        <div className="space-y-3 min-h-[60px] transition-all">
                           {colLeads.map(lead => (
                             <KanbanCard
                               key={lead.id}
