@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   User, Shield, Users, Bell, Calendar, Palette,
   Save, Loader2, CheckCircle2, XCircle, Eye, EyeOff,
-  Globe, ChevronRight,
+  Globe, ChevronRight, Download, Smartphone,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { googleCalendarService } from '../services/googleCalendarService';
@@ -526,6 +526,35 @@ const PanelApariencia = () => {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('crm_dark_mode') === 'true');
   const [timeZone, setTimeZone] = useState(() => localStorage.getItem('crm_timezone') || 'America/Argentina/Buenos_Aires');
   const [saved, setSaved] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    // Detectar si ya está instalada (modo standalone)
+    const mq = window.matchMedia('(display-mode: standalone)');
+    setIsInstalled(mq.matches);
+    const onMqChange = (e: MediaQueryListEvent) => setIsInstalled(e.matches);
+    mq.addEventListener('change', onMqChange);
+
+    // Capturar el prompt nativo antes de que el browser lo descarte
+    const onBeforeInstall = (e: BeforeInstallPromptEvent) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+
+    return () => {
+      mq.removeEventListener('change', onMqChange);
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall as EventListener);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') setInstallPrompt(null);
+  };
 
   const handleSave = () => {
     localStorage.setItem('crm_dark_mode', String(darkMode));
@@ -550,6 +579,36 @@ const PanelApariencia = () => {
           </div>
           <Toggle checked={darkMode} onChange={() => setDarkMode(v => !v)} />
         </div>
+
+        {/* Instalar app */}
+        {!isInstalled && installPrompt && (
+          <div className="flex items-center justify-between p-5 bg-indigo-50/60 rounded-2xl border border-indigo-100">
+            <div>
+              <p className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <Smartphone size={15} className="text-indigo-500" />
+                Instalar app
+              </p>
+              <p className="text-[10px] text-slate-400 font-bold mt-0.5">Agregá el CRM a tu pantalla de inicio</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleInstall}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-200"
+            >
+              <Download size={13} strokeWidth={2.5} />
+              Instalar
+            </button>
+          </div>
+        )}
+        {isInstalled && (
+          <div className="flex items-center gap-3 p-5 bg-emerald-50/60 rounded-2xl border border-emerald-100">
+            <CheckCircle2 size={15} className="text-emerald-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-black text-slate-900">App instalada</p>
+              <p className="text-[10px] text-slate-400 font-bold mt-0.5">Ya está en tu pantalla de inicio</p>
+            </div>
+          </div>
+        )}
 
         {/* Zona horaria */}
         <div>
