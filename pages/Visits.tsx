@@ -370,7 +370,7 @@ const VisitDetailPanel: React.FC<{
     onStatusChange: (v: Visit, s: VisitStatus) => void;
 }> = ({ visit, onClose, onEdit, onStatusChange }) => {
     return (
-        <div className="fixed inset-y-0 right-0 w-full sm:w-[90%] md:w-[550px] bg-white shadow-2xl z-200 transform transition-transform duration-500 animate-slide-in-right p-4 md:p-10 border-l border-slate-100 flex flex-col overflow-y-auto">
+        <div className="fixed inset-y-0 right-0 w-full sm:w-[90%] md:w-[550px] bg-white shadow-2xl z-[200] transform transition-transform duration-500 animate-slide-in-right p-4 md:p-10 border-l border-slate-100 flex flex-col overflow-y-auto">
             <div className="flex justify-between items-start mb-6 md:mb-10">
                 <div>
                     <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Detalle Visita</h2>
@@ -779,8 +779,8 @@ const Visits: React.FC = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 md:mb-16 gap-6 md:gap-8 px-4 md:px-0">
                 <div>
-                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-2 md:mb-3">Agenda Visitas</h1>
-                    <p className="text-slate-400 font-bold text-[10px] md:text-xs lg:text-base uppercase tracking-[0.15em] md:tracking-[0.2em]">Gestión de citas y recorridos presenciales.</p>
+                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none mb-2 md:mb-3">Calendario</h1>
+                    <p className="text-slate-400 font-bold text-[10px] md:text-xs lg:text-base uppercase tracking-[0.15em] md:tracking-[0.2em]">Visitas, reuniones y tareas programadas.</p>
                 </div>
 
                 <div className="flex items-center gap-3 md:gap-5 w-full md:w-auto">
@@ -841,6 +841,8 @@ const Visits: React.FC = () => {
             )}
 
             {selectedVisit && (
+                <>
+                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[199]" onClick={() => setSelectedVisit(null)} />
                 <VisitDetailPanel
                     visit={selectedVisit}
                     onClose={() => setSelectedVisit(null)}
@@ -850,6 +852,7 @@ const Visits: React.FC = () => {
                         abrirFormulario(v);
                     }}
                 />
+                </>
             )}
 
             {view === 'calendar' ? (

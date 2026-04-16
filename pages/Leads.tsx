@@ -52,19 +52,16 @@ const KANBAN_COLS = [
 ];
 
 const KanbanCard: React.FC<{ lead: Lead; onClick: () => void }> = ({ lead, onClick }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    whileHover={{ y: -2 }}
-    onClick={onClick}
+  <div
     draggable
-    onDragStart={(e: any) => {
-      e.dataTransfer?.setData('leadId', lead.id);
-      e.currentTarget.style.opacity = '0.5';
+    onDragStart={(e) => {
+      e.dataTransfer.setData('text/plain', lead.id);
+      e.dataTransfer.effectAllowed = 'move';
+      (e.currentTarget as HTMLElement).style.opacity = '0.4';
     }}
-    onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
-    className="bg-white border border-slate-100 p-4 rounded-[1.8rem] shadow-sm hover:shadow-lg transition-all cursor-grab active:cursor-grabbing group"
+    onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+    onClick={onClick}
+    className="bg-white border border-slate-100 p-4 rounded-[1.8rem] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-grab active:cursor-grabbing group"
   >
     <div className="flex items-center gap-3 mb-3">
       <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -89,7 +86,7 @@ const KanbanCard: React.FC<{ lead: Lead; onClick: () => void }> = ({ lead, onCli
         <span className="text-[9px] font-black text-slate-400">{lead.score}</span>
       </div>
     </div>
-  </motion.div>
+  </div>
 );
 
 // ... ChatBubble remains same ...
@@ -778,7 +775,7 @@ const Leads: React.FC = () => {
                         onDrop={async (e) => {
                           e.preventDefault();
                           e.currentTarget.classList.remove('ring-2', 'ring-indigo-300', 'rounded-2xl', 'bg-indigo-50/30');
-                          const leadId = e.dataTransfer.getData('leadId');
+                          const leadId = e.dataTransfer.getData('text/plain');
                           if (!leadId) return;
                           try {
                             await supabase.from('leads').update({ etapa: col.etapas[0], updated_at: new Date().toISOString() }).eq('id', leadId);
@@ -882,7 +879,7 @@ const Leads: React.FC = () => {
                         onDrop={async (e) => {
                           e.preventDefault();
                           e.currentTarget.classList.remove('ring-2', 'ring-indigo-300', 'rounded-3xl', 'bg-indigo-50/30');
-                          const leadId = e.dataTransfer.getData('leadId');
+                          const leadId = e.dataTransfer.getData('text/plain');
                           if (!leadId) return;
                           const targetEtapa = col.etapas[0]; // primera etapa de la columna
                           try {

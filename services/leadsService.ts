@@ -59,12 +59,22 @@ export const leadsService = {
 
         const dataToSave: any = {
             ...rest,
-            temperatura: estado_temperatura,
-            etapa: etapa_proceso,
-            tipo_operacion_buscada: busca_venta ? 'venta' : (busca_alquiler ? 'alquiler' : undefined),
-            propiedades_recomendadas: propiedades_enviadas_ids,
+            // Map virtual fields back to DB columns (only if set)
+            ...(estado_temperatura !== undefined && { temperatura: estado_temperatura }),
+            ...(etapa_proceso !== undefined && { etapa: etapa_proceso }),
+            ...(busca_venta !== undefined && { tipo_operacion_buscada: busca_venta ? 'venta' : (busca_alquiler ? 'alquiler' : undefined) }),
+            ...(propiedades_enviadas_ids !== undefined && { propiedades_recomendadas: propiedades_enviadas_ids }),
             updated_at: new Date().toISOString()
         };
+
+        // Remove virtual/computed fields that don't exist as DB columns
+        delete dataToSave.estado_temperatura;
+        delete dataToSave.etapa_proceso;
+        delete dataToSave.busca_venta;
+        delete dataToSave.busca_alquiler;
+        delete dataToSave.propiedades_enviadas_ids;
+        delete dataToSave.lead_nombre;
+        delete dataToSave.created_at; // Don't overwrite on update
 
         let savedId;
         if (id && !id.toString().startsWith('temp-')) {

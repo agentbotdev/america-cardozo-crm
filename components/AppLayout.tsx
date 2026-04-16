@@ -147,7 +147,7 @@ const AppLayout: React.FC = () => {
     { to: '/propiedades', icon: Building2, label: 'Propiedades' },
     { to: '/leads', icon: Users, label: 'Oportunidades' },
     { to: '/clientes', icon: UserCircle, label: 'Clientes' },
-    { to: '/visitas', icon: CalendarDays, label: 'Visitas' },
+    { to: '/visitas', icon: CalendarDays, label: 'Calendario' },
     { to: '/reportes', icon: BarChart3, label: 'Reportes' },
     { to: '/control-center', icon: Zap, label: 'Control Center' },
     { to: '/tareas', icon: ListTodo, label: 'Tareas' },
