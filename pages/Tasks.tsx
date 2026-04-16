@@ -189,11 +189,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, taskToEd
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estado</label>
-              <select value={form.estado || 'pendiente'} onChange={e => setForm({ ...form, estado: e.target.value as TaskStatus })}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                <option value="pendiente">Pendiente</option>
-                <option value="en_proceso">En Progreso</option>
-              </select>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'pendiente', label: 'Pendiente', icon: '○', color: 'bg-slate-50 text-slate-500 border-slate-200' },
+                  { value: 'en_proceso', label: 'En Progreso', icon: '◐', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+                  { value: 'completada', label: 'Completada', icon: '●', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+                  { value: 'cancelada', label: 'Cancelada', icon: '✕', color: 'bg-rose-50 text-rose-500 border-rose-200' },
+                ].map(s => (
+                  <button key={s.value} type="button" onClick={() => setForm({ ...form, estado: s.value as TaskStatus })}
+                    className={`px-3 py-2 rounded-xl text-[11px] font-black border transition-all flex items-center gap-1.5 ${form.estado === s.value ? `${s.color} ring-2 ring-offset-1 ring-current` : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                    <span>{s.icon}</span> {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
