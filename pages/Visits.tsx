@@ -7,6 +7,9 @@ import { visitasService } from '../services/visitasService';
 import { clientesService } from '../services/clientesService';
 import { propertiesService } from '../services/propertiesService';
 import { useRealtimeTable } from '../hooks/useRealtimeTable';
+import { tasksService } from '../services/tasksService';
+import { CRMTask } from '../types';
+import { ListTodo } from 'lucide-react';
 
 /** Normaliza Visita (shape DB real) → Visit (shape UI heredado) */
 const toVisitShape = (v: Visita): Visit => ({
@@ -467,11 +470,12 @@ const VisitDetailPanel: React.FC<{
 // Full Month Calendar Grid
 const CalendarGrid: React.FC<{
     visits: Visit[];
+    tasks?: CRMTask[];
     onVisitClick: (v: Visit) => void;
     onDayDoubleClick?: (date: string) => void;
-    onDayClick?: (date: string, dayVisits: Visit[]) => void;
+    onDayClick?: (date: string, dayVisits: Visit[], dayTasks: CRMTask[]) => void;
     selectedDay?: string | null;
-}> = ({ visits, onVisitClick, onDayDoubleClick, onDayClick, selectedDay }) => {
+}> = ({ visits, tasks = [], onVisitClick, onDayDoubleClick, onDayClick, selectedDay }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -526,6 +530,11 @@ const CalendarGrid: React.FC<{
         return visits.filter(v => v.fecha === dateString);
     }
 
+    const getTasksForDay = (date: Date) => {
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        return tasks.filter(t => t.fecha_vencimiento && t.fecha_vencimiento.startsWith(dateStr));
+    }
+
     const monthNames = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -564,6 +573,7 @@ const CalendarGrid: React.FC<{
                     <div className="grid grid-cols-7 gap-1.5 md:gap-3 flex-1 pb-2 md:pb-4">
                         {calendarDays.map((dayObj, idx) => {
                             const dayVisits = getVisitsForDay(dayObj.date);
+                            const dayTasks = getTasksForDay(dayObj.date);
                             const isToday = dayObj.date.toDateString() === new Date().toDateString();
 
                             return (
@@ -574,7 +584,7 @@ const CalendarGrid: React.FC<{
                                             const m2 = String(dayObj.date.getMonth() + 1).padStart(2, '0');
                                             const d2 = String(dayObj.date.getDate()).padStart(2, '0');
                                             const ds = `${y2}-${m2}-${d2}`;
-                                            onDayClick(ds, getVisitsForDay(dayObj.date));
+                                            onDayClick(ds, dayVisits, dayTasks);
                                         }
                                     }}
                                     onDoubleClick={() => {
@@ -612,6 +622,21 @@ const CalendarGrid: React.FC<{
                                                 <div className="truncate">{v.lead_nombre}</div>
                                             </div>
                                         ))}
+                                        {dayTasks.map(t => (
+                                            <div
+                                                key={`task-${t.id}`}
+                                                onClick={(e) => { e.stopPropagation(); }}
+                                                className={`text-[8px] md:text-[9px] p-1.5 md:p-2.5 rounded-lg md:rounded-xl font-bold tracking-tight transition-all border-l-[2px] md:border-l-[3px] shadow-sm
+                                                    ${t.prioridad === 'urgente' ? 'bg-rose-50 text-rose-600 border-rose-400' :
+                                                        t.prioridad === 'alta' ? 'bg-amber-50 text-amber-700 border-amber-400' :
+                                                            'bg-violet-50 text-violet-600 border-violet-400'}`}
+                                            >
+                                                <div className="hidden md:flex items-center gap-1 opacity-60 mb-0.5 text-[8px]">
+                                                    <ListTodo size={8} /> Tarea
+                                                </div>
+                                                <div className="truncate">{t.titulo}</div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             );
@@ -642,8 +667,10 @@ const Visits: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [prefillDate, setPrefillDate] = useState<string | null>(null);
+    const [tasks, setTasks] = useState<CRMTask[]>([]);
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
     const [selectedDayVisits, setSelectedDayVisits] = useState<Visit[]>([]);
+    const [selectedDayTasks, setSelectedDayTasks] = useState<CRMTask[]>([]);
 
     // Abre el modal y carga leads + propiedades en paralelo (lazy)
     const abrirFormulario = useCallback(async (visitEdit: Visit | null = null, dateStr?: string) => {
@@ -679,11 +706,15 @@ const Visits: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await visitasService.getVisitas();
-            setVisits(data.map(toVisitShape));
+            const [visitasData, tareasData] = await Promise.all([
+                visitasService.getVisitas(),
+                tasksService.fetchTasks(),
+            ]);
+            setVisits(visitasData.map(toVisitShape));
+            setTasks(tareasData.filter(t => t.estado !== 'completada' && t.estado !== 'cancelada'));
         } catch (err) {
-            console.error('Error loading visits:', err);
-            setError('No se pudieron cargar las visitas. Intentá de nuevo.');
+            console.error('Error loading calendar data:', err);
+            setError('No se pudieron cargar los datos. Intentá de nuevo.');
         } finally {
             setIsLoading(false);
         }
@@ -692,6 +723,7 @@ const Visits: React.FC = () => {
     useEffect(() => { cargarVisitas(); }, [cargarVisitas]);
 
     useRealtimeTable('visitas', cargarVisitas);
+    useRealtimeTable('tareas', cargarVisitas);
 
     const handleSaveVisit = async (visitData: Visit & { sync_google?: boolean }) => {
         try {
@@ -877,11 +909,13 @@ const Visits: React.FC = () => {
                 <>
                 <CalendarGrid
                     visits={visits}
+                    tasks={tasks}
                     onVisitClick={setSelectedVisit}
                     onDayDoubleClick={(dateStr) => abrirFormulario(null, dateStr)}
-                    onDayClick={(dateStr, dayVisits) => {
+                    onDayClick={(dateStr, dayVisits, dayTasks) => {
                         setSelectedDay(dateStr);
                         setSelectedDayVisits(dayVisits);
+                        setSelectedDayTasks(dayTasks);
                     }}
                     selectedDay={selectedDay}
                 />
@@ -899,7 +933,7 @@ const Visits: React.FC = () => {
                                         {new Date(selectedDay + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
                                     </h3>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                        {selectedDayVisits.length} visita{selectedDayVisits.length !== 1 ? 's' : ''} programada{selectedDayVisits.length !== 1 ? 's' : ''}
+                                        {selectedDayVisits.length} visita{selectedDayVisits.length !== 1 ? 's' : ''} · {selectedDayTasks.length} tarea{selectedDayTasks.length !== 1 ? 's' : ''}
                                     </p>
                                 </div>
                             </div>
@@ -911,7 +945,7 @@ const Visits: React.FC = () => {
                                     <Plus size={14} strokeWidth={3} /> Nueva reunión
                                 </button>
                                 <button
-                                    onClick={() => { setSelectedDay(null); setSelectedDayVisits([]); }}
+                                    onClick={() => { setSelectedDay(null); setSelectedDayVisits([]); setSelectedDayTasks([]); }}
                                     className="p-3 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
                                 >
                                     <X size={16} />
@@ -919,42 +953,69 @@ const Visits: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="p-6">
-                            {selectedDayVisits.length === 0 ? (
+                        <div className="p-6 space-y-5">
+                            {/* Visitas */}
+                            {selectedDayVisits.length > 0 && (
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                        <CalendarDays size={11} /> Visitas
+                                    </p>
+                                    <div className="space-y-2">
+                                        {selectedDayVisits.map(v => (
+                                            <div key={v.id} onClick={() => setSelectedVisit(v)}
+                                                className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-indigo-100 hover:shadow-md cursor-pointer transition-all group">
+                                                <div className={`w-1.5 h-12 rounded-full shrink-0 ${
+                                                    v.estado === 'confirmada' ? 'bg-emerald-500' : v.estado === 'cancelada' ? 'bg-rose-400' :
+                                                    v.estado === 'realizada' ? 'bg-slate-300' : 'bg-indigo-500'}`} />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Clock size={12} className="text-slate-400" />
+                                                        <span className="text-xs font-black text-slate-500">{v.hora || '--:--'}</span>
+                                                        <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider ${
+                                                            v.estado === 'confirmada' ? 'bg-emerald-50 text-emerald-600' : v.estado === 'cancelada' ? 'bg-rose-50 text-rose-500' :
+                                                            v.estado === 'realizada' ? 'bg-slate-100 text-slate-500' : 'bg-indigo-50 text-indigo-600'}`}>{v.estado}</span>
+                                                    </div>
+                                                    <p className="font-black text-slate-900 text-sm truncate">{v.lead_nombre}</p>
+                                                    <p className="text-[11px] text-slate-400 font-bold truncate">{v.property_titulo}</p>
+                                                </div>
+                                                <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors shrink-0" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Tareas */}
+                            {selectedDayTasks.length > 0 && (
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                        <ListTodo size={11} /> Tareas
+                                    </p>
+                                    <div className="space-y-2">
+                                        {selectedDayTasks.map(t => (
+                                            <div key={t.id} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 transition-all">
+                                                <div className={`w-1.5 h-12 rounded-full shrink-0 ${
+                                                    t.prioridad === 'urgente' ? 'bg-rose-500' : t.prioridad === 'alta' ? 'bg-amber-500' : 'bg-violet-400'}`} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-black text-slate-900 text-sm truncate">{t.titulo}</p>
+                                                    <p className="text-[11px] text-slate-400 font-bold truncate">{t.descripcion || 'Sin descripción'}</p>
+                                                </div>
+                                                <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg border shrink-0 ${
+                                                    t.estado === 'en_proceso' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
+                                                    {t.estado === 'en_proceso' ? 'En progreso' : 'Pendiente'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Empty state */}
+                            {selectedDayVisits.length === 0 && selectedDayTasks.length === 0 && (
                                 <div className="py-12 text-center">
                                     <CalendarDays size={32} className="text-slate-200 mx-auto mb-3" />
                                     <p className="text-sm font-bold text-slate-400">Sin eventos para este día</p>
                                     <p className="text-[10px] text-slate-300 mt-1">Hacé doble click o usá el botón para agendar</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {selectedDayVisits.map(v => (
-                                        <div
-                                            key={v.id}
-                                            onClick={() => setSelectedVisit(v)}
-                                            className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-indigo-100 hover:shadow-md cursor-pointer transition-all group"
-                                        >
-                                            <div className={`w-1.5 h-12 rounded-full shrink-0 ${
-                                                v.estado === 'confirmada' ? 'bg-emerald-500' :
-                                                v.estado === 'cancelada' ? 'bg-rose-400' :
-                                                v.estado === 'realizada' ? 'bg-slate-300' : 'bg-indigo-500'
-                                            }`} />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <Clock size={12} className="text-slate-400" />
-                                                    <span className="text-xs font-black text-slate-500">{v.hora || '--:--'}</span>
-                                                    <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider ${
-                                                        v.estado === 'confirmada' ? 'bg-emerald-50 text-emerald-600' :
-                                                        v.estado === 'cancelada' ? 'bg-rose-50 text-rose-500' :
-                                                        v.estado === 'realizada' ? 'bg-slate-100 text-slate-500' : 'bg-indigo-50 text-indigo-600'
-                                                    }`}>{v.estado}</span>
-                                                </div>
-                                                <p className="font-black text-slate-900 text-sm truncate">{v.lead_nombre}</p>
-                                                <p className="text-[11px] text-slate-400 font-bold truncate">{v.property_titulo}</p>
-                                            </div>
-                                            <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors shrink-0" />
-                                        </div>
-                                    ))}
                                 </div>
                             )}
                         </div>

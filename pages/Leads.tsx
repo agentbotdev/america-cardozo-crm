@@ -183,7 +183,7 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
         </div>
       </div>
 
-      <div className="flex border-b border-slate-50 bg-white px-8 h-12 shrink-0">
+      <div className="flex overflow-x-auto no-scrollbar border-b border-slate-50 bg-white px-4 md:px-8 h-12 shrink-0 gap-1">
         {[
           { id: 'info', icon: Info, label: 'Info' },
           { id: 'historial', icon: Clock, label: 'Timeline' },
@@ -193,13 +193,13 @@ export const LeadDetailPanel: React.FC<{ lead: Lead; properties: any[]; onClose:
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-6 border-b-2 transition-all text-[10px] font-black uppercase tracking-widest ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+            className={`flex items-center gap-1.5 px-3 md:px-5 border-b-2 transition-all text-[10px] font-black uppercase tracking-widest whitespace-nowrap shrink-0 ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
           >
             {tab.id === 'chat' ? (
               <div className="w-4 h-4 rounded-[4px] overflow-hidden flex items-center justify-center shadow-sm border border-slate-100">
                 <img src="/LOGOCORTOAGENT.jpg" alt="Logo" className="w-full h-full object-cover" />
               </div>
-            ) : <tab.icon size={14} />} {tab.label}
+            ) : <tab.icon size={13} />} {tab.label}
           </button>
         ))}
       </div>
