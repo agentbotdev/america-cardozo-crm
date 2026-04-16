@@ -15,6 +15,7 @@ import { BuscadorIA } from '../components/properties/BuscadorIA';
 import AdvancedFilterPanel, { AdvancedFilters, INITIAL_ADVANCED_FILTERS, countActiveAdvancedFilters } from '../components/shared/AdvancedFilterPanel';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 // --- SKELETON CARD ---
 const PropertyCardSkeleton = () => (
@@ -642,8 +643,6 @@ const Properties = () => {
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(INITIAL_ADVANCED_FILTERS);
 
-  useEffect(() => { loadData(); }, []);
-
   const loadData = async () => {
     setLoading(true);
     try {
@@ -676,6 +675,9 @@ const Properties = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => { loadData(); }, []);
+  useRealtimeTable('propiedades', loadData);
 
   const loadMore = async () => {
     if (loadingMore) return;

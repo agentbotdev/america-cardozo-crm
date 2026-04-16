@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../contexts/ToastContext';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 // ════════════════════════════════════════
 // CONSTANTS
@@ -330,6 +331,8 @@ const Support: React.FC = () => {
   };
 
   useEffect(() => { loadTickets(); }, []);
+
+  useRealtimeTable('soporte_tickets', loadTickets);
 
   const filteredTickets = filterEstado === 'todos'
     ? tickets

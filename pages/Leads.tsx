@@ -17,6 +17,7 @@ import AdvancedFilterPanel, {
   countActiveAdvancedFilters,
 } from '../components/shared/AdvancedFilterPanel';
 import PanelCliente from '../components/shared/PanelCliente';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 const statusColors: Record<string, string> = {
   frio: 'bg-blue-100 text-blue-600',
@@ -507,10 +508,6 @@ const Leads: React.FC = () => {
   const [advFilters, setAdvFilters] = useState<AdvancedFilters>(INITIAL_ADVANCED_FILTERS);
   const [vista, setVista] = useState<'tabla' | 'kanban'>('tabla');
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -526,6 +523,9 @@ const Leads: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => { loadData(); }, []);
+  useRealtimeTable('leads', loadData);
 
   const filteredLeads = useMemo(() => {
     let result = leads.filter(lead => {

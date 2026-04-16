@@ -6,6 +6,7 @@ import { googleCalendarService } from '../services/googleCalendarService';
 import { visitasService } from '../services/visitasService';
 import { clientesService } from '../services/clientesService';
 import { propertiesService } from '../services/propertiesService';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 /** Normaliza Visita (shape DB real) → Visit (shape UI heredado) */
 const toVisitShape = (v: Visita): Visit => ({
@@ -157,7 +158,8 @@ const VisitFormModal: React.FC<{
     visitToEdit?: Visit | null;
     leads: Lead[];
     properties: Property[];
-}> = ({ isOpen, onClose, onSave, visitToEdit, leads, properties }) => {
+    prefillDate?: string | null;
+}> = ({ isOpen, onClose, onSave, visitToEdit, leads, properties, prefillDate }) => {
     const [formData, setFormData] = useState<Partial<Visit> & { sync_google?: boolean }>({
         lead_id: '',
         lead_nombre: '',
@@ -184,7 +186,7 @@ const VisitFormModal: React.FC<{
                 lead_nombre: leads[0]?.nombre || '',
                 property_id: properties[0]?.id || '',
                 property_titulo: properties[0]?.titulo || '',
-                fecha: new Date().toISOString().split('T')[0],
+                fecha: prefillDate || new Date().toISOString().split('T')[0],
                 hora: '10:00',
                 estado: 'agendada',
                 tipo_reunion: 'propiedad',
@@ -193,7 +195,7 @@ const VisitFormModal: React.FC<{
                 sync_google: true
             });
         }
-    }, [visitToEdit, isOpen, leads, properties]);
+    }, [visitToEdit, isOpen, leads, properties, prefillDate]);
 
     if (!isOpen) return null;
 
@@ -463,7 +465,7 @@ const VisitDetailPanel: React.FC<{
 }
 
 // Full Month Calendar Grid
-const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void }> = ({ visits, onVisitClick }) => {
+const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void; onDayDoubleClick?: (date: string) => void }> = ({ visits, onVisitClick, onDayDoubleClick }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -559,9 +561,18 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
                             const isToday = dayObj.date.toDateString() === new Date().toDateString();
 
                             return (
-                                <div key={idx} className={`min-h-[80px] sm:min-h-[100px] md:min-h-[120px] border border-slate-50/50 rounded-lg md:rounded-[2.5rem] p-1.5 md:p-4 transition-all relative flex flex-col gap-1 md:gap-2 
-                                    ${dayObj.currentMonth ? 'bg-white shadow-sm' : 'bg-slate-50/30 opacity-40'} 
-                                    ${isToday ? 'ring-2 ring-indigo-500/20 bg-indigo-50/10' : 'hover:shadow-lg hover:-translate-y-1'}`}>
+                                <div key={idx}
+                                    onDoubleClick={() => {
+                                        if (dayObj.currentMonth && onDayDoubleClick) {
+                                            const y2 = dayObj.date.getFullYear();
+                                            const m2 = String(dayObj.date.getMonth() + 1).padStart(2, '0');
+                                            const d2 = String(dayObj.date.getDate()).padStart(2, '0');
+                                            onDayDoubleClick(`${y2}-${m2}-${d2}`);
+                                        }
+                                    }}
+                                    className={`min-h-[80px] sm:min-h-[100px] md:min-h-[120px] border border-slate-50/50 rounded-lg md:rounded-[2rem] p-1.5 md:p-4 transition-all relative flex flex-col gap-1 md:gap-2 hover:z-10 cursor-pointer
+                                    ${dayObj.currentMonth ? 'bg-white shadow-sm' : 'bg-slate-50/30 opacity-40'}
+                                    ${isToday ? 'ring-2 ring-indigo-500/20 bg-indigo-50/10' : 'hover:shadow-lg'}`}>
 
                                     <span className={`text-[10px] md:text-[11px] font-black w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-lg md:rounded-xl mb-1
                                         ${isToday ? 'bg-slate-900 text-white shadow-indigo-200' : 'text-slate-400'}`}>
@@ -614,10 +625,12 @@ const Visits: React.FC = () => {
     const [isSyncing, setIsSyncing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [prefillDate, setPrefillDate] = useState<string | null>(null);
 
     // Abre el modal y carga leads + propiedades en paralelo (lazy)
-    const abrirFormulario = useCallback(async (visitEdit: Visit | null = null) => {
+    const abrirFormulario = useCallback(async (visitEdit: Visit | null = null, dateStr?: string) => {
         setVisitToEdit(visitEdit);
+        setPrefillDate(dateStr || null);
         setIsModalOpen(true);
         if (leads.length === 0 || properties.length === 0) {
             setLoadingFormData(true);
@@ -659,6 +672,8 @@ const Visits: React.FC = () => {
     }, []);
 
     useEffect(() => { cargarVisitas(); }, [cargarVisitas]);
+
+    useRealtimeTable('visitas', cargarVisitas);
 
     const handleSaveVisit = async (visitData: Visit & { sync_google?: boolean }) => {
         try {
@@ -802,11 +817,13 @@ const Visits: React.FC = () => {
                 onClose={() => {
                     setIsModalOpen(false);
                     setVisitToEdit(null);
+                    setPrefillDate(null);
                 }}
                 onSave={handleSaveVisit}
                 visitToEdit={visitToEdit}
                 leads={leads}
                 properties={properties}
+                prefillDate={prefillDate}
             />
 
             {/* Empty state — solo cuando no carga y no hay visitas */}
@@ -836,7 +853,11 @@ const Visits: React.FC = () => {
             )}
 
             {view === 'calendar' ? (
-                <CalendarGrid visits={visits} onVisitClick={setSelectedVisit} />
+                <CalendarGrid
+                    visits={visits}
+                    onVisitClick={setSelectedVisit}
+                    onDayDoubleClick={(dateStr) => abrirFormulario(null, dateStr)}
+                />
             ) : (
                 <div className="flex gap-8 overflow-x-auto pb-8 h-[calc(100vh-350px)] no-scrollbar px-4 md:px-0">
                     {pipelineStages.map(stage => (

@@ -36,9 +36,9 @@ const SidebarItem = React.memo(({ to, icon: Icon, label, onClick, isCollapsed }:
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold transition-all duration-300 ease-out mb-1 relative overflow-hidden group active:scale-95
         ${isActive
-          ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 ring-1 ring-slate-800'
-          : 'text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm'
-        } ${isCollapsed ? 'justify-center px-0 w-12 mx-auto' : ''}`
+          ? 'bg-slate-900 text-white shadow-lg'
+          : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
+        } ${isCollapsed ? 'justify-center !px-3 !py-3' : ''}`
       }
     >
       <Icon size={18} className="shrink-0 transition-transform duration-300 group-hover:scale-110" />
@@ -60,13 +60,29 @@ const SidebarItem = React.memo(({ to, icon: Icon, label, onClick, isCollapsed }:
 
 const AppLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // default collapsed on desktop
+  const [isHovering, setIsHovering] = useState(false);  // hover-to-expand
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Desktop: collapsed visually expands on hover
+  const effectiveCollapsed = isMobile ? false : (isCollapsed && !isHovering);
+
+  const handleSidebarMouseEnter = () => {
+    if (isMobile || !isCollapsed) return;
+    hoverTimerRef.current = setTimeout(() => setIsHovering(true), 150);
+  };
+
+  const handleSidebarMouseLeave = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    setIsHovering(false);
+  };
 
   useEffect(() => {
     // Check for Google OAuth code in the root URL (due to Google redirecting away from HashRouter paths)
@@ -146,7 +162,7 @@ const AppLayout: React.FC = () => {
   };
 
   return (
-    <LayoutContext.Provider value={{ sidebarOpen, setSidebarOpen, isMobile, isCollapsed, setIsCollapsed }}>
+    <LayoutContext.Provider value={{ sidebarOpen, setSidebarOpen, isMobile, isCollapsed: effectiveCollapsed, setIsCollapsed }}>
       <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans transform-gpu">
 
         {/* Mobile Overlay */}
@@ -164,21 +180,25 @@ const AppLayout: React.FC = () => {
 
         {/* Sidebar */}
         <motion.aside
+          ref={sidebarRef}
+          onMouseEnter={handleSidebarMouseEnter}
+          onMouseLeave={handleSidebarMouseLeave}
           initial={isMobile ? { x: -280 } : false}
           animate={{
-            width: isMobile ? (sidebarOpen ? 280 : 0) : (isCollapsed ? 80 : 280),
+            width: isMobile ? (sidebarOpen ? 280 : 0) : (effectiveCollapsed ? 72 : 280),
             x: isMobile ? (sidebarOpen ? 0 : -280) : 0,
           }}
-          transition={{ type: 'spring', damping: 25, stiffness: 220, mass: 0.8 }}
-          className={`flex-shrink-0 h-full z-[100] border-r border-slate-100 bg-white/80 backdrop-blur-xl ${isMobile ? 'fixed' : 'relative'}`}
+          transition={{ type: 'spring', damping: 28, stiffness: 300, mass: 0.6 }}
+          className={`flex-shrink-0 h-full z-[100] border-r border-slate-100/60 bg-white/90 backdrop-blur-2xl ${isMobile ? 'fixed' : 'relative'}`}
+          style={{ willChange: 'width' }}
         >
-          <div className="h-full flex flex-col p-5 overflow-hidden">
+          <div className="h-full flex flex-col p-4 overflow-hidden">
             <div className="h-16 flex items-center gap-3 mb-8 px-2 shrink-0">
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg ring-1 ring-slate-100">
                 <img src="/LOGOCORTOAGENT.jpg" alt="Logo" className="w-full h-full object-cover" />
               </div>
               <AnimatePresence>
-                {!isCollapsed && (
+                {!effectiveCollapsed && (
                   <motion.div
                     // Fixed duplicate opacity keys in initial, animate, and exit props
                     initial={{ opacity: 0 }}
@@ -200,7 +220,7 @@ const AppLayout: React.FC = () => {
                   to={item.to}
                   icon={item.icon}
                   label={item.label}
-                  isCollapsed={isCollapsed}
+                  isCollapsed={effectiveCollapsed}
                   onClick={() => isMobile && setSidebarOpen(false)}
                 />
               ))}
@@ -211,9 +231,9 @@ const AppLayout: React.FC = () => {
                 <button
                   onClick={() => setIsCollapsed(!isCollapsed)}
                   className="w-full flex items-center justify-center py-3 text-slate-400 hover:text-slate-900 hover:bg-white rounded-2xl transition-all group"
-                  title={isCollapsed ? "Expandir" : "Contraer"}
+                  title={effectiveCollapsed ? "Fijar abierto" : "Contraer"}
                 >
-                  {isCollapsed ? <ChevronRight size={18} /> : <div className="flex items-center gap-2 px-2"><ChevronLeft size={18} /><span className="text-xs font-bold">Contraer Menú</span></div>}
+                  {effectiveCollapsed ? <ChevronRight size={18} /> : <div className="flex items-center gap-2 px-2"><ChevronLeft size={18} /><span className="text-xs font-bold">Contraer Menú</span></div>}
                 </button>
               )}
               <button
@@ -221,12 +241,12 @@ const AppLayout: React.FC = () => {
                   await supabase.auth.signOut();
                   navigate('/login');
                 }}
-                title={isCollapsed ? "Cerrar Sesión" : ""}
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold transition-all duration-300 ease-out mb-1 w-full active:scale-95 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm group ${isCollapsed ? 'justify-center px-0 w-12 mx-auto' : ''}`}
+                title={effectiveCollapsed ? "Cerrar Sesión" : ""}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold transition-all duration-300 ease-out mb-1 w-full active:scale-95 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm group ${effectiveCollapsed ? 'justify-center px-0 w-12 mx-auto' : ''}`}
               >
                 <LogOut size={18} className="shrink-0 transition-transform duration-300 group-hover:scale-110" />
                 <AnimatePresence mode="wait">
-                  {!isCollapsed && (
+                  {!effectiveCollapsed && (
                     <motion.span
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}

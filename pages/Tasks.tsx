@@ -16,6 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 // ════════════════════════════════════════
 // CONSTANTS
@@ -1096,6 +1097,8 @@ const Tasks: React.FC = () => {
   };
 
   useEffect(() => { loadTasks(); }, []);
+
+  useRealtimeTable('tareas', loadTasks);
 
   const handleSaveTask = async (formData: Partial<CRMTask>) => {
     try {
