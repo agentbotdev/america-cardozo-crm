@@ -172,6 +172,8 @@ const VisitFormModal: React.FC<{
         sync_google: true
     });
     const [newAttendee, setNewAttendee] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     useEffect(() => {
         if (visitToEdit) {
@@ -194,9 +196,6 @@ const VisitFormModal: React.FC<{
     }, [visitToEdit, isOpen, leads, properties]);
 
     if (!isOpen) return null;
-
-    const [saving, setSaving] = useState(false);
-    const [saveError, setSaveError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

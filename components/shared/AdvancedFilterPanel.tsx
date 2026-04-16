@@ -204,15 +204,14 @@ const FECHA_PRESETS = [
 ];
 
 const TIPOS_PROPIEDAD = [
-  { value: 'departamento', label: 'Depto' },
-  { value: 'casa',         label: 'Casa' },
-  { value: 'ph',           label: 'PH' },
-  { value: 'duplex',       label: 'Dúplex' },
-  { value: 'local',        label: 'Local' },
-  { value: 'lote',         label: 'Lote' },
-  { value: 'oficina',      label: 'Oficina' },
-  { value: 'cochera',      label: 'Cochera' },
-  { value: 'campo',        label: 'Campo' },
+  { value: 'Departamento', label: 'Depto' },
+  { value: 'Casa',         label: 'Casa' },
+  { value: 'PH',           label: 'PH' },
+  { value: 'Terreno',      label: 'Terreno' },
+  { value: 'Local',        label: 'Local' },
+  { value: 'Oficina',      label: 'Oficina' },
+  { value: 'Quinta',       label: 'Quinta' },
+  { value: 'Edificio Comercial', label: 'Edif. Comercial' },
 ];
 
 const PORTALES_PROP = [
@@ -290,7 +289,7 @@ const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
 
           if (localFilters.searchText.trim()) {
             const q = `%${localFilters.searchText.trim()}%`;
-            query = query.or(`titulo.ilike.${q},barrio.ilike.${q},direccion_completa.ilike.${q}`);
+            query = query.or(`titulo.ilike.${q},barrio.ilike.${q},direccion.ilike.${q}`);
           }
 
           if (localFilters.tipoOperacionProp?.length) {
@@ -298,7 +297,7 @@ const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
           }
 
           if (localFilters.tiposPropiedad?.length) {
-            query = query.in('tipo', localFilters.tiposPropiedad);
+            query = query.in('tipo_propiedad', localFilters.tiposPropiedad);
           }
 
           if (localFilters.barrios?.length) {
@@ -330,31 +329,10 @@ const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
           }
 
           if (localFilters.superficieMin !== undefined) {
-            query = query.gte('sup_cubierta', localFilters.superficieMin);
+            query = query.gte('superficie_cubierta', localFilters.superficieMin);
           }
           if (localFilters.superficieMax !== undefined) {
-            query = query.lte('sup_cubierta', localFilters.superficieMax);
-          }
-
-          if (localFilters.portales?.length) {
-            const portalParts = localFilters.portales
-              .map(p => {
-                if (p === 'zonaprop')     return 'publicada_zonaprop.eq.true';
-                if (p === 'argenprop')    return 'publicada_argenprop.eq.true';
-                if (p === 'mercadolibre') return 'publicada_mercadolibre.eq.true';
-                if (p === 'web_america')  return 'publicada_web_america.eq.true';
-                return null;
-              })
-              .filter(Boolean)
-              .join(',');
-            if (portalParts) query = query.or(portalParts);
-          }
-
-          if (localFilters.fechaPubDesde) {
-            query = query.gte('fecha_publicacion', localFilters.fechaPubDesde);
-          }
-          if (localFilters.fechaPubHasta) {
-            query = query.lte('fecha_publicacion', localFilters.fechaPubHasta + 'T23:59:59');
+            query = query.lte('superficie_cubierta', localFilters.superficieMax);
           }
 
           const { count, error: countError } = await query;
@@ -728,59 +706,7 @@ const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
                     )}
                   </FilterSection>
 
-                  {/* PORTALES */}
-                  <FilterSection title="Publicado en portales">
-                    <div className="flex flex-wrap gap-2">
-                      {PORTALES_PROP.map(p => (
-                        <FilterPill
-                          key={p.value}
-                          label={p.label}
-                          active={(localFilters.portales || []).includes(p.value)}
-                          onClick={() => toggleArr('portales', p.value)}
-                          activeClass={p.activeClass}
-                        />
-                      ))}
-                    </div>
-                  </FilterSection>
-
-                  {/* FECHA DE PUBLICACIÓN */}
-                  <FilterSection title="Fecha de publicación">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <label className="text-[9px] font-black text-slate-300 uppercase tracking-widest block mb-1.5">
-                          Desde
-                        </label>
-                        <input
-                          type="date"
-                          className="w-full bg-slate-50 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all"
-                          value={localFilters.fechaPubDesde ?? ''}
-                          onChange={e =>
-                            setLocalFilters(prev => ({
-                              ...prev,
-                              fechaPubDesde: e.target.value || undefined,
-                            }))
-                          }
-                        />
-                      </div>
-                      <div className="text-slate-300 font-black text-xs mt-4">—</div>
-                      <div className="flex-1">
-                        <label className="text-[9px] font-black text-slate-300 uppercase tracking-widest block mb-1.5">
-                          Hasta
-                        </label>
-                        <input
-                          type="date"
-                          className="w-full bg-slate-50 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 border border-slate-100 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all"
-                          value={localFilters.fechaPubHasta ?? ''}
-                          onChange={e =>
-                            setLocalFilters(prev => ({
-                              ...prev,
-                              fechaPubHasta: e.target.value || undefined,
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-                  </FilterSection>
+                  {/* Portales y Fecha de publicación — columnas no disponibles en DB */}
                 </>
               ) : (
                 /* ═══════════════════════════════════════════════

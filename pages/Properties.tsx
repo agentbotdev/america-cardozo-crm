@@ -714,9 +714,9 @@ const Properties = () => {
       result = result.filter(p => af.tipoOperacionProp!.includes(p.tipo_operacion as string));
     }
 
-    // Tipo de propiedad
+    // Tipo de propiedad (columna real: tipo_propiedad)
     if (af.tiposPropiedad && af.tiposPropiedad.length > 0) {
-      result = result.filter(p => af.tiposPropiedad!.includes(p.tipo as string));
+      result = result.filter(p => af.tiposPropiedad!.includes((p as any).tipo_propiedad as string));
     }
 
     // Barrios (partial match, case-insensitive)
@@ -726,18 +726,7 @@ const Properties = () => {
       );
     }
 
-    // Portales publicados
-    if (af.portales && af.portales.length > 0) {
-      result = result.filter(p =>
-        af.portales!.some(portal => {
-          if (portal === 'zonaprop')     return p.publicada_zonaprop;
-          if (portal === 'argenprop')    return p.publicada_argenprop;
-          if (portal === 'mercadolibre') return p.publicada_mercadolibre;
-          if (portal === 'web_america')  return p.publicada_web_america;
-          return false;
-        })
-      );
-    }
+    // Portales — columnas publicada_* no existen en DB, skip
 
     // Precio venta (USD)
     if (af.precioVentaMin != null) {
@@ -765,23 +754,15 @@ const Properties = () => {
       result = result.filter(p => p.dormitorios != null && p.dormitorios >= af.dormitoriosMin!);
     }
 
-    // Superficie cubierta m²
+    // Superficie cubierta m² (columna real: superficie_cubierta)
     if (af.superficieMin != null) {
-      result = result.filter(p => p.sup_cubierta != null && p.sup_cubierta >= af.superficieMin!);
+      result = result.filter(p => (p as any).superficie_cubierta != null && (p as any).superficie_cubierta >= af.superficieMin!);
     }
     if (af.superficieMax != null) {
-      result = result.filter(p => p.sup_cubierta != null && p.sup_cubierta <= af.superficieMax!);
+      result = result.filter(p => (p as any).superficie_cubierta != null && (p as any).superficie_cubierta <= af.superficieMax!);
     }
 
-    // Fecha de publicación
-    if (af.fechaPubDesde) {
-      const desde = new Date(af.fechaPubDesde).getTime();
-      result = result.filter(p => p.fecha_publicacion && new Date(p.fecha_publicacion).getTime() >= desde);
-    }
-    if (af.fechaPubHasta) {
-      const hasta = new Date(af.fechaPubHasta).getTime();
-      result = result.filter(p => p.fecha_publicacion && new Date(p.fecha_publicacion).getTime() <= hasta);
-    }
+    // fecha_publicacion no existe en DB — skip
 
     return result;
   }, [publishedProps, borradores, activeTab, searchTerm, advancedFilters]);
