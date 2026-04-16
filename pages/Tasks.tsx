@@ -91,6 +91,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, taskToEd
   const [propResults, setPropResults] = useState<any[]>([]);
   const [selectedLeadName, setSelectedLeadName] = useState('');
   const [selectedPropName, setSelectedPropName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (taskToEdit) {
@@ -289,10 +291,21 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, taskToEd
           </div>
         </form>
 
+        {saveError && (
+          <div className="mx-8 px-4 py-3 bg-rose-50 border border-rose-100 rounded-2xl text-sm font-bold text-rose-600">
+            ⚠ {saveError}
+          </div>
+        )}
         <div className="p-8 pt-4 shrink-0">
-          <button type="submit" onClick={() => { if (form.titulo?.trim()) onSave(form); }}
-            className="w-full py-4 text-white bg-slate-900 hover:bg-indigo-600 rounded-2xl font-black text-sm transition-colors shadow-xl active:scale-[0.98]">
-            {taskToEdit ? 'Guardar Cambios' : 'Crear Tarea'}
+          <button type="button" disabled={saving || !form.titulo?.trim()} onClick={async () => {
+              if (saving || !form.titulo?.trim()) return;
+              setSaving(true); setSaveError(null);
+              try { await onSave(form); } catch (err: any) { setSaveError(err?.message ?? 'Error al guardar'); } finally { setSaving(false); }
+            }}
+            className={`w-full py-4 rounded-2xl font-black text-sm transition-colors shadow-xl flex items-center justify-center gap-2 text-white ${saving ? 'bg-indigo-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-indigo-600 active:scale-[0.98]'} disabled:opacity-60`}>
+            {saving ? (
+              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> Guardando...</>
+            ) : taskToEdit ? 'Guardar Cambios' : 'Crear Tarea'}
           </button>
         </div>
       </motion.div>
@@ -1099,6 +1112,7 @@ const Tasks: React.FC = () => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'No se pudo guardar la tarea.';
       addToast('Error', msg, 'error');
+      throw e; // Re-throw para que el modal muestre el error
     }
   };
 

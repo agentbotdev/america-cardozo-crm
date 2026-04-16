@@ -136,7 +136,6 @@ export const visitasService = {
         pipeline_stage:   d.pipeline_stage,
         tipo_reunion:     d.tipo_reunion,
         mensaje_original: d.mensaje_original,
-        google_event_id:  d.google_event_id,
         created_at:       new Date().toISOString(),
       };
 

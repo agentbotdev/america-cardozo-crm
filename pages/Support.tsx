@@ -67,6 +67,8 @@ const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, onSave }) =>
   const [categoria, setCategoria] = useState('bug');
   const [prioridad, setPrioridad] = useState('media');
   const [descripcion, setDescripcion] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -79,10 +81,18 @@ const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, onSave }) =>
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!asunto.trim() || !descripcion.trim()) return;
-    onSave({ asunto: asunto.trim(), categoria, prioridad, descripcion: descripcion.trim() });
+    if (saving || !asunto.trim() || !descripcion.trim()) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onSave({ asunto: asunto.trim(), categoria, prioridad, descripcion: descripcion.trim() });
+    } catch (err: any) {
+      setSaveError(err?.message ?? 'Error al crear el ticket');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -135,10 +145,17 @@ const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, onSave }) =>
           </div>
         </form>
 
+        {saveError && (
+          <div className="mx-8 px-4 py-3 bg-rose-50 border border-rose-100 rounded-2xl text-sm font-bold text-rose-600">
+            ⚠ {saveError}
+          </div>
+        )}
         <div className="p-8 pt-4 shrink-0">
-          <button type="submit" onClick={handleSubmit as any}
-            className="w-full py-4 text-white bg-slate-900 hover:bg-indigo-600 rounded-2xl font-black text-sm transition-colors shadow-xl active:scale-[0.98]">
-            Enviar Ticket de Soporte
+          <button type="submit" disabled={saving || !asunto.trim() || !descripcion.trim()} onClick={handleSubmit as any}
+            className={`w-full py-4 rounded-2xl font-black text-sm transition-colors shadow-xl flex items-center justify-center gap-2 text-white ${saving ? 'bg-indigo-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-indigo-600 active:scale-[0.98]'} disabled:opacity-60`}>
+            {saving ? (
+              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> Enviando...</>
+            ) : 'Enviar Ticket de Soporte'}
           </button>
         </div>
       </motion.div>
@@ -326,7 +343,6 @@ const Support: React.FC = () => {
         prioridad: data.prioridad as any,
         estado: 'abierto',
         creado_por: 'Usuario',
-        user_id: null as any,
       });
       await supportService.sendMessage(ticket.id, 'Usuario', data.descripcion, 'cliente');
       addToast('Ticket creado', `Ticket #${ticket.numero_ticket} creado exitosamente`, 'success');
@@ -335,6 +351,7 @@ const Support: React.FC = () => {
       setSelectedTicket(ticket);
     } catch (e) {
       addToast('Error', 'No se pudo crear el ticket', 'error');
+      throw e; // Re-throw para que el modal muestre el error
     }
   };
 

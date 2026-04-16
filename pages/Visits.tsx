@@ -195,11 +195,21 @@ const VisitFormModal: React.FC<{
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // ID real viene de la DB; si editamos usamos el existente, si creamos lo omitimos
-        onSave({ ...visitToEdit, ...formData } as Visit);
-        onClose();
+        if (saving) return;
+        setSaving(true);
+        setSaveError(null);
+        try {
+            await onSave({ ...visitToEdit, ...formData } as Visit);
+        } catch (err: any) {
+            setSaveError(err?.message ?? 'Error al guardar la visita');
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -331,12 +341,19 @@ const VisitFormModal: React.FC<{
                         </label>
                     </div>
                     </div>
+                    {saveError && (
+                        <div className="mx-6 px-4 py-3 bg-rose-50 border border-rose-100 rounded-2xl text-sm font-bold text-rose-600">
+                            ⚠ {saveError}
+                        </div>
+                    )}
                     <div className="shrink-0 px-6 pb-6 pt-4 border-t border-slate-100 flex gap-3">
-                        <button type="button" onClick={onClose} className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95">
+                        <button type="button" onClick={onClose} disabled={saving} className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50">
                             Cancelar
                         </button>
-                        <button type="submit" className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-indigo-600 shadow-xl transition-all active:scale-95">
-                            {visitToEdit ? 'Guardar Cambios' : 'Agendar Visita'}
+                        <button type="submit" disabled={saving} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white shadow-xl transition-all flex items-center justify-center gap-2 ${saving ? 'bg-indigo-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-indigo-600 active:scale-95'}`}>
+                            {saving ? (
+                                <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> Guardando...</>
+                            ) : visitToEdit ? 'Guardar Cambios' : 'Agendar Visita'}
                         </button>
                     </div>
                 </form>
@@ -687,7 +704,7 @@ const Visits: React.FC = () => {
             setVisitToEdit(null);
         } catch (err) {
             console.error('Error saving visit:', err);
-            alert('Error al guardar la visita. Revisá los campos e intentá de nuevo.');
+            throw err; // Re-throw para que el modal muestre el error
         } finally {
             setIsSyncing(false);
         }

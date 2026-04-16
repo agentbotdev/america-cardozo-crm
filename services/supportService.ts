@@ -46,7 +46,6 @@ export const supportService = {
             prioridad: ticket.prioridad || 'media',
             estado: ticket.estado || 'abierto',
             creado_por: ticket.creado_por,
-            user_id: ticket.user_id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
