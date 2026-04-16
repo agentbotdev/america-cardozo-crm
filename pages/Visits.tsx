@@ -465,7 +465,13 @@ const VisitDetailPanel: React.FC<{
 }
 
 // Full Month Calendar Grid
-const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void; onDayDoubleClick?: (date: string) => void }> = ({ visits, onVisitClick, onDayDoubleClick }) => {
+const CalendarGrid: React.FC<{
+    visits: Visit[];
+    onVisitClick: (v: Visit) => void;
+    onDayDoubleClick?: (date: string) => void;
+    onDayClick?: (date: string, dayVisits: Visit[]) => void;
+    selectedDay?: string | null;
+}> = ({ visits, onVisitClick, onDayDoubleClick, onDayClick, selectedDay }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -562,6 +568,15 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
 
                             return (
                                 <div key={idx}
+                                    onClick={() => {
+                                        if (dayObj.currentMonth && onDayClick) {
+                                            const y2 = dayObj.date.getFullYear();
+                                            const m2 = String(dayObj.date.getMonth() + 1).padStart(2, '0');
+                                            const d2 = String(dayObj.date.getDate()).padStart(2, '0');
+                                            const ds = `${y2}-${m2}-${d2}`;
+                                            onDayClick(ds, getVisitsForDay(dayObj.date));
+                                        }
+                                    }}
                                     onDoubleClick={() => {
                                         if (dayObj.currentMonth && onDayDoubleClick) {
                                             const y2 = dayObj.date.getFullYear();
@@ -570,8 +585,9 @@ const CalendarGrid: React.FC<{ visits: Visit[]; onVisitClick: (v: Visit) => void
                                             onDayDoubleClick(`${y2}-${m2}-${d2}`);
                                         }
                                     }}
-                                    className={`min-h-[80px] sm:min-h-[100px] md:min-h-[120px] border border-slate-50/50 rounded-lg md:rounded-[2rem] p-1.5 md:p-4 transition-all relative flex flex-col gap-1 md:gap-2 hover:z-10 cursor-pointer
+                                    className={`min-h-[80px] sm:min-h-[100px] md:min-h-[120px] border rounded-lg md:rounded-[2rem] p-1.5 md:p-4 transition-all relative flex flex-col gap-1 md:gap-2 hover:z-10 cursor-pointer
                                     ${dayObj.currentMonth ? 'bg-white shadow-sm' : 'bg-slate-50/30 opacity-40'}
+                                    ${selectedDay === `${dayObj.date.getFullYear()}-${String(dayObj.date.getMonth()+1).padStart(2,'0')}-${String(dayObj.date.getDate()).padStart(2,'0')}` ? 'ring-2 ring-indigo-500 border-indigo-200 bg-indigo-50/20' : 'border-slate-50/50'}
                                     ${isToday ? 'ring-2 ring-indigo-500/20 bg-indigo-50/10' : 'hover:shadow-lg'}`}>
 
                                     <span className={`text-[10px] md:text-[11px] font-black w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-lg md:rounded-xl mb-1
@@ -626,6 +642,8 @@ const Visits: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [prefillDate, setPrefillDate] = useState<string | null>(null);
+    const [selectedDay, setSelectedDay] = useState<string | null>(null);
+    const [selectedDayVisits, setSelectedDayVisits] = useState<Visit[]>([]);
 
     // Abre el modal y carga leads + propiedades en paralelo (lazy)
     const abrirFormulario = useCallback(async (visitEdit: Visit | null = null, dateStr?: string) => {
@@ -856,11 +874,93 @@ const Visits: React.FC = () => {
             )}
 
             {view === 'calendar' ? (
+                <>
                 <CalendarGrid
                     visits={visits}
                     onVisitClick={setSelectedVisit}
                     onDayDoubleClick={(dateStr) => abrirFormulario(null, dateStr)}
+                    onDayClick={(dateStr, dayVisits) => {
+                        setSelectedDay(dateStr);
+                        setSelectedDayVisits(dayVisits);
+                    }}
+                    selectedDay={selectedDay}
                 />
+
+                {/* Day Detail Panel */}
+                {selectedDay && (
+                    <div className="mt-6 bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden animate-fade-in">
+                        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-50 bg-slate-50/30">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center font-black text-lg shadow-lg">
+                                    {new Date(selectedDay + 'T12:00:00').getDate()}
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-slate-900 text-base tracking-tight">
+                                        {new Date(selectedDay + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                    </h3>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        {selectedDayVisits.length} visita{selectedDayVisits.length !== 1 ? 's' : ''} programada{selectedDayVisits.length !== 1 ? 's' : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => abrirFormulario(null, selectedDay)}
+                                    className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg active:scale-95"
+                                >
+                                    <Plus size={14} strokeWidth={3} /> Nueva reunión
+                                </button>
+                                <button
+                                    onClick={() => { setSelectedDay(null); setSelectedDayVisits([]); }}
+                                    className="p-3 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            {selectedDayVisits.length === 0 ? (
+                                <div className="py-12 text-center">
+                                    <CalendarDays size={32} className="text-slate-200 mx-auto mb-3" />
+                                    <p className="text-sm font-bold text-slate-400">Sin eventos para este día</p>
+                                    <p className="text-[10px] text-slate-300 mt-1">Hacé doble click o usá el botón para agendar</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {selectedDayVisits.map(v => (
+                                        <div
+                                            key={v.id}
+                                            onClick={() => setSelectedVisit(v)}
+                                            className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-indigo-100 hover:shadow-md cursor-pointer transition-all group"
+                                        >
+                                            <div className={`w-1.5 h-12 rounded-full shrink-0 ${
+                                                v.estado === 'confirmada' ? 'bg-emerald-500' :
+                                                v.estado === 'cancelada' ? 'bg-rose-400' :
+                                                v.estado === 'realizada' ? 'bg-slate-300' : 'bg-indigo-500'
+                                            }`} />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Clock size={12} className="text-slate-400" />
+                                                    <span className="text-xs font-black text-slate-500">{v.hora || '--:--'}</span>
+                                                    <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider ${
+                                                        v.estado === 'confirmada' ? 'bg-emerald-50 text-emerald-600' :
+                                                        v.estado === 'cancelada' ? 'bg-rose-50 text-rose-500' :
+                                                        v.estado === 'realizada' ? 'bg-slate-100 text-slate-500' : 'bg-indigo-50 text-indigo-600'
+                                                    }`}>{v.estado}</span>
+                                                </div>
+                                                <p className="font-black text-slate-900 text-sm truncate">{v.lead_nombre}</p>
+                                                <p className="text-[11px] text-slate-400 font-bold truncate">{v.property_titulo}</p>
+                                            </div>
+                                            <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors shrink-0" />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+                </>
             ) : (
                 <div className="flex gap-8 overflow-x-auto pb-8 h-[calc(100vh-350px)] no-scrollbar px-4 md:px-0">
                     {pipelineStages.map(stage => (
