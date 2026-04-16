@@ -143,7 +143,7 @@ const AppLayout: React.FC = () => {
   }, [searchQuery]);
 
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/', icon: LayoutDashboard, label: 'Home' },
     { to: '/propiedades', icon: Building2, label: 'Propiedades' },
     { to: '/leads', icon: Users, label: 'Oportunidades' },
     { to: '/clientes', icon: UserCircle, label: 'Clientes' },

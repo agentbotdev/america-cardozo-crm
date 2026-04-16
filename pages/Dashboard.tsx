@@ -4,7 +4,7 @@ import {
   Users, CheckCircle2, Calendar, DollarSign, TrendingUp, ArrowUpRight,
   Sparkles, Zap, Star, Building2, Bell, BellOff, X, Activity,
   Clock, Target, BarChart3, ChevronRight, Flame, AlertCircle,
-  RefreshCw, Home, UserPlus
+  RefreshCw, Home, UserPlus, ListTodo
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
@@ -13,6 +13,7 @@ import {
 import { motion } from 'framer-motion';
 import { supabase } from '../services/supabaseClient';
 import { dashboardService } from '../services/dashboardService';
+import { tasksService } from '../services/tasksService';
 import { Lead } from '../types';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -83,7 +84,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, suffix = '', subtext, p
 
   return (
     <div
-      className="bg-white border border-slate-100 p-5 rounded-3xl relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-200/60"
+      className="bg-white/70 backdrop-blur-sm border border-slate-100/60 p-5 rounded-3xl relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-200/60"
       style={{ opacity: 0, transform: 'translateY(16px)', animation: `slideUp 0.5s ease forwards ${delay}ms` }}
     >
       <div className="flex justify-between items-start mb-3">
@@ -220,6 +221,7 @@ const Dashboard: React.FC = () => {
     visitasSemanales: [] as any[],
   });
   const [hotLeads, setHotLeads] = useState<Lead[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
@@ -337,6 +339,11 @@ const Dashboard: React.FC = () => {
         .slice(0, 5);
 
       setAnalyticsData({ funnelData, actividadData, tempData, vendedoresData });
+
+      // Tareas pendientes
+      const tasksData = await tasksService.fetchTasks();
+      setPendingTasks(tasksData.filter((t: any) => t.estado !== 'completada' && t.estado !== 'cancelada').slice(0, 5));
+
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Dashboard load error:', err);
@@ -444,10 +451,8 @@ const Dashboard: React.FC = () => {
         {/* Header con título + campanita + refresh */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-slate-800">Dashboard</h1>
-            <p className="text-xs text-slate-400 font-semibold mt-0.5">
-              Actualizado {lastUpdated.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-            </p>
+            <p className="text-sm font-bold text-slate-400 mb-1">Bienvenido de vuelta</p>
+            <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">Home</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -494,7 +499,7 @@ const Dashboard: React.FC = () => {
           <div className="xl:col-span-2 space-y-6">
 
             {/* Area chart dual: leads + visitas */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-slate-100/60 shadow-sm">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="text-base font-black text-slate-800">Actividad Semanal</h3>
@@ -522,7 +527,7 @@ const Dashboard: React.FC = () => {
                     <YAxis hide />
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <Tooltip
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.12)', background: '#1e293b', color: '#fff' }}
+                      contentStyle={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', color: '#fff', padding: '12px 16px' }}
                       itemStyle={{ color: '#fff' }}
                       labelStyle={{ color: '#94a3b8', fontWeight: 700 }}
                     />
@@ -536,7 +541,7 @@ const Dashboard: React.FC = () => {
             {/* Dos charts: Pie pipeline + Bar fuentes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Pie */}
-              <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+              <div className="bg-white/70 backdrop-blur-sm p-5 rounded-3xl border border-slate-100/60 shadow-sm">
                 <h3 className="text-sm font-black text-slate-800 mb-4">Estado del Pipeline</h3>
                 <div className="h-44 relative">
                   <ResponsiveContainer width="100%" height="100%">
@@ -551,7 +556,7 @@ const Dashboard: React.FC = () => {
                           <Cell key={i} fill={charts.leadStatusData[i].color} stroke="none" />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', background: '#1e293b', color: '#fff' }} itemStyle={{ color: '#fff' }} />
+                      <Tooltip contentStyle={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', color: '#fff', padding: '12px 16px' }} itemStyle={{ color: '#fff' }} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
@@ -570,14 +575,14 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Bar fuentes */}
-              <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+              <div className="bg-white/70 backdrop-blur-sm p-5 rounded-3xl border border-slate-100/60 shadow-sm">
                 <h3 className="text-sm font-black text-slate-800 mb-4">Fuente de Leads</h3>
                 <div className="h-44">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={charts.leadsBySourceData} layout="vertical" barSize={14} margin={{ left: 8, right: 16 }}>
                       <XAxis type="number" hide />
                       <YAxis dataKey="name" type="category" width={65} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                      <Tooltip cursor={{ fill: 'rgba(100,116,139,0.06)' }} contentStyle={{ borderRadius: '8px', background: '#1e293b', color: '#fff', border: 'none' }} itemStyle={{ color: '#fff' }} />
+                      <Tooltip cursor={{ fill: 'rgba(100,116,139,0.06)' }} contentStyle={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', color: '#fff', padding: '12px 16px' }} itemStyle={{ color: '#fff' }} />
                       <Bar dataKey="value" fill="#64748b" radius={[0, 6, 6, 0]}>
                         {charts.leadsBySourceData.map((_, i) => (
                           <Cell key={i} fill={['#3b82f6','#6366f1','#10b981','#f59e0b','#f43f5e'][i % 5]} />
@@ -617,7 +622,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Accesos rápidos funcionales */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="bg-white/70 backdrop-blur-sm p-5 rounded-3xl border border-slate-100/60 shadow-sm">
               <h3 className="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
                 <Zap size={15} className="text-amber-500" /> Accesos Rápidos
               </h3>
@@ -632,7 +637,7 @@ const Dashboard: React.FC = () => {
                   <button
                     key={i}
                     onClick={action}
-                    className="w-full group bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-200 p-3 rounded-2xl transition-all duration-200 flex items-center gap-3 hover:shadow-md active:scale-[0.98]"
+                    className="w-full group bg-white/50 hover:bg-white/80 backdrop-blur-sm border border-slate-100 hover:border-slate-200 p-3 rounded-2xl transition-all duration-200 flex items-center gap-3 hover:shadow-md active:scale-[0.98]"
                   >
                     <div className={`w-9 h-9 rounded-xl ${color} flex items-center justify-center transition-transform group-hover:scale-110`}>
                       <Ic size={17} />
@@ -648,7 +653,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Hot Leads */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="bg-white/70 backdrop-blur-sm p-5 rounded-3xl border border-slate-100/60 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-black text-slate-800 text-sm flex items-center gap-1.5">
                   <Flame size={15} className="text-rose-500" /> Hot Leads
@@ -681,6 +686,42 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Tareas Pendientes */}
+            <div className="bg-white/70 backdrop-blur-sm p-5 rounded-3xl border border-slate-100/60 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-black text-slate-800 text-sm flex items-center gap-1.5">
+                  <ListTodo size={15} className="text-indigo-500" /> Mis Tareas
+                </h3>
+                <button onClick={() => navigate('/tareas')} className="text-[10px] text-slate-400 hover:text-slate-800 font-black transition-colors flex items-center gap-1">
+                  Ver todo <ChevronRight size={11} />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {pendingTasks.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-4">Sin tareas pendientes</p>
+                ) : pendingTasks.map((task: any) => (
+                  <div
+                    key={task.id}
+                    onClick={() => navigate('/tareas')}
+                    className="flex items-center gap-3 p-2.5 bg-slate-50/80 hover:bg-white rounded-2xl transition-all duration-200 border border-slate-100/60 hover:border-slate-200 hover:shadow-sm cursor-pointer group"
+                  >
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${
+                      task.prioridad === 'urgente' ? 'bg-rose-500' :
+                      task.prioridad === 'alta' ? 'bg-amber-500' :
+                      task.prioridad === 'media' ? 'bg-blue-500' : 'bg-slate-300'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-700 truncate group-hover:text-slate-900">{task.titulo}</p>
+                      <p className="text-[10px] text-slate-400">{task.fecha_vencimiento ? new Date(task.fecha_vencimiento).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : 'Sin fecha'}</p>
+                    </div>
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border shrink-0 ${
+                      task.estado === 'en_proceso' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+                    }`}>{task.estado === 'en_proceso' ? 'En progreso' : 'Pendiente'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -691,7 +732,7 @@ const Dashboard: React.FC = () => {
           <div className="space-y-6">
 
             {/* ChartFunnel */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-slate-100/60 shadow-sm">
               <div className="mb-5">
                 <h3 className="text-base font-black text-slate-800">Embudo de Pipeline</h3>
                 <p className="text-xs text-slate-400 font-semibold mt-0.5">Leads por etapa de proceso</p>
@@ -721,7 +762,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* ChartActividad */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-slate-100/60 shadow-sm">
               <div className="mb-5">
                 <h3 className="text-base font-black text-slate-800">Nuevas Oportunidades</h3>
                 <p className="text-xs text-slate-400 font-semibold mt-0.5">Ingresos diarios — últimos 14 días</p>
@@ -751,7 +792,7 @@ const Dashboard: React.FC = () => {
           <div className="space-y-6">
 
             {/* ChartTemperatura */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-slate-100/60 shadow-sm">
               <h3 className="text-base font-black text-slate-800 mb-1">Temperatura de Leads</h3>
               <p className="text-xs text-slate-400 font-semibold mb-4">Distribución actual</p>
               <div className="h-44 relative">
@@ -781,7 +822,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* ChartVendedores */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-slate-100/60 shadow-sm">
               <h3 className="text-base font-black text-slate-800 mb-1">Ranking Vendedores</h3>
               <p className="text-xs text-slate-400 font-semibold mb-4">Top 5 por cierres</p>
               <div className="space-y-3">
