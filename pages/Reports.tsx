@@ -1,5 +1,6 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { supabase } from '../services/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, DollarSign, Home, Key, Zap, Target,
@@ -413,6 +414,8 @@ const CaptacionDashboard = () => (
 const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'leads' | 'sales' | 'alquiler' | 'stock' | 'captacion'>('leads');
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isPrintMode, setIsPrintMode] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ desde: '', hasta: '', vendedor: '', tipo: 'todos' });
   const contentRef = useRef<HTMLDivElement>(null);
@@ -430,43 +433,126 @@ const Reports: React.FC = () => {
     { id: 'captacion', label: 'CAPTACIÓN', icon: Target, color: 'text-rose-600', bg: 'bg-rose-50' },
   ];
 
-  // Export CSV real
-  const handleExportCSV = () => {
-    const csvRows = [
-      ['Sección', 'Métrica', 'Valor', 'Tendencia'],
-      ['Leads', 'Total', '1,248', '+12%'],
-      ['Leads', 'Hot Leads', '87', '+5%'],
-      ['Ventas', 'Operaciones', '156', '+8%'],
-      ['Alquiler', 'Contratos Activos', '482', '+14%'],
-      ['Stock', 'Unidades', '842', '+32'],
-      ['Captación', 'Exclusivas', '38', '+19%'],
-    ];
-    const csvContent = csvRows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href     = url;
-    link.download = `reporte_${activeTab}_${new Date().toISOString().slice(0,10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  // Export CSV with real Supabase data
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      let csvRows: string[][] = [];
+
+      if (activeTab === 'leads') {
+        const { data, error } = await supabase
+          .from('leads')
+          .select('nombre, telefono, email, temperatura, etapa, score, created_at');
+        if (error) throw error;
+        csvRows = [
+          ['Nombre', 'Teléfono', 'Email', 'Temperatura', 'Etapa', 'Score', 'Fecha Creación'],
+          ...(data || []).map((r: any) => [
+            r.nombre || '', r.telefono || '', r.email || '',
+            r.temperatura || '', r.etapa || '', String(r.score ?? ''),
+            r.created_at ? new Date(r.created_at).toLocaleDateString('es-AR') : ''
+          ])
+        ];
+      } else if (activeTab === 'stock' || activeTab === 'captacion') {
+        const { data, error } = await supabase
+          .from('propiedades')
+          .select('titulo, tipo_propiedad, tipo_operacion, barrio, precio_venta, ambientes, dormitorios');
+        if (error) throw error;
+        csvRows = [
+          ['Título', 'Tipo Propiedad', 'Tipo Operación', 'Barrio', 'Precio Venta', 'Ambientes', 'Dormitorios'],
+          ...(data || []).map((r: any) => [
+            r.titulo || '', r.tipo_propiedad || '', r.tipo_operacion || '',
+            r.barrio || '', String(r.precio_venta ?? ''), String(r.ambientes ?? ''),
+            String(r.dormitorios ?? '')
+          ])
+        ];
+      } else if (activeTab === 'sales') {
+        const { data, error } = await supabase
+          .from('leads')
+          .select('nombre, telefono, email, temperatura, etapa, score, created_at')
+          .eq('tipo_operacion_buscada', 'venta');
+        if (error) throw error;
+        csvRows = [
+          ['Nombre', 'Teléfono', 'Email', 'Temperatura', 'Etapa', 'Score', 'Fecha Creación'],
+          ...(data || []).map((r: any) => [
+            r.nombre || '', r.telefono || '', r.email || '',
+            r.temperatura || '', r.etapa || '', String(r.score ?? ''),
+            r.created_at ? new Date(r.created_at).toLocaleDateString('es-AR') : ''
+          ])
+        ];
+      } else if (activeTab === 'alquiler') {
+        const { data, error } = await supabase
+          .from('leads')
+          .select('nombre, telefono, email, temperatura, etapa, score, created_at')
+          .eq('tipo_operacion_buscada', 'alquiler');
+        if (error) throw error;
+        csvRows = [
+          ['Nombre', 'Teléfono', 'Email', 'Temperatura', 'Etapa', 'Score', 'Fecha Creación'],
+          ...(data || []).map((r: any) => [
+            r.nombre || '', r.telefono || '', r.email || '',
+            r.temperatura || '', r.etapa || '', String(r.score ?? ''),
+            r.created_at ? new Date(r.created_at).toLocaleDateString('es-AR') : ''
+          ])
+        ];
+      }
+
+      // Escape CSV values that contain commas or quotes
+      const escapeCsv = (val: string) => {
+        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+          return `"${val.replace(/"/g, '""')}"`;
+        }
+        return val;
+      };
+
+      const csvContent = csvRows.map(r => r.map(escapeCsv).join(',')).join('\n');
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `reporte_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error exporting CSV:', err);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
-  // Export PDF via print
+  // Export PDF via print with print mode
   const handleExportPDF = () => {
     setIsExporting(true);
+    setIsPrintMode(true);
     setTimeout(() => {
       window.print();
+      setIsPrintMode(false);
       setIsExporting(false);
-    }, 300);
+    }, 400);
   };
 
-  const handleExport = handleExportCSV;
+  // Close export menu on outside click
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClickOutside = () => setShowExportMenu(false);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showExportMenu]);
 
   return (
     <div className="max-w-[1600px] mx-auto pb-24 animate-fade-in px-4 md:px-0 transform-gpu bg-[#F8FAFC]">
 
+      {/* Print-mode styles */}
+      {isPrintMode && (
+        <style>{`
+          @media print {
+            nav, header, .no-print, [data-no-print] { display: none !important; }
+            body { background: white !important; }
+          }
+        `}</style>
+      )}
+
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-12 gap-10 pt-6">
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-end mb-12 gap-10 pt-6 ${isPrintMode ? 'no-print' : ''}`}>
         <div className="space-y-5 max-w-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-1.5 bg-slate-900 rounded-full shadow-lg"></div>
@@ -479,15 +565,29 @@ const Reports: React.FC = () => {
         </div>
 
         <div className="flex w-full lg:w-auto gap-4 p-4 rounded-[3.5rem] bg-white border border-slate-100 shadow-2xl shadow-slate-200/50">
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowExportMenu(!showExportMenu); }}
+              disabled={isExporting}
+              className="flex items-center gap-3 px-8 py-5 bg-slate-900 text-white rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+            >
+              {isExporting ? <RotateCcw size={16} className="animate-spin" /> : <Download size={16} />}
+              {isExporting ? 'GENERANDO...' : 'EXPORTAR'}
+            </button>
+            {showExportMenu && (
+              <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 min-w-[200px]">
+                <button onClick={() => { handleExportCSV(); setShowExportMenu(false); }}
+                  className="w-full text-left px-5 py-4 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                  Exportar como CSV
+                </button>
+                <button onClick={() => { handleExportPDF(); setShowExportMenu(false); }}
+                  className="w-full text-left px-5 py-4 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-3 border-t border-slate-50">
+                  Exportar como PDF
+                </button>
+              </div>
+            )}
+          </div>
           <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 sm:px-10 py-4 sm:py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-[10px] sm:text-[12px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl active:scale-95 disabled:opacity-50 whitespace-nowrap"
-          >
-            {isExporting ? <RotateCcw size={16} className="animate-spin" /> : <Download size={16} />}
-            {isExporting ? 'GENERANDO...' : 'EXPORT BI REPORT'}
-          </button>
-          <button 
             onClick={() => setShowFilters(!showFilters)}
             className={`p-6 transition-colors rounded-full border shadow-inner ${showFilters ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'text-slate-500 hover:text-slate-900 bg-slate-50 border-slate-100'}`}
           >
@@ -498,7 +598,7 @@ const Reports: React.FC = () => {
 
       {/* Panel filtros avanzados (slide-down) */}
       {showFilters && (
-        <div className="mb-8 p-5 bg-white border border-slate-100 rounded-3xl shadow-lg animate-fade-in">
+        <div className={`mb-8 p-5 bg-white border border-slate-100 rounded-3xl shadow-lg animate-fade-in ${isPrintMode ? 'no-print' : ''}`}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
               <SlidersHorizontal size={15} className="text-indigo-500" /> Filtros Avanzados
@@ -552,7 +652,7 @@ const Reports: React.FC = () => {
       )}
 
       {/* Tabs centrados + flechas navegación */}
-      <div className="flex items-center gap-2 mb-16 overflow-x-auto no-scrollbar pb-2">
+      <div className={`flex items-center gap-2 mb-16 overflow-x-auto no-scrollbar pb-2 ${isPrintMode ? 'no-print' : ''}`}>
         {/* Flecha izquierda */}
         <button
           onClick={goPrev}
