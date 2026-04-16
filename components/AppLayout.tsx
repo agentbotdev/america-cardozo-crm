@@ -34,10 +34,10 @@ const SidebarItem = React.memo(({ to, icon: Icon, label, onClick, isCollapsed }:
       onClick={onClick}
       title={isCollapsed ? label : ""} // Simple native tooltip for collapsed state
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold transition-all duration-300 ease-out mb-1 relative overflow-hidden group active:scale-95
+        `flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-semibold transition-all duration-200 ease-out mb-0.5 relative group active:scale-[0.97]
         ${isActive
-          ? 'bg-slate-900 text-white shadow-lg'
-          : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
+          ? 'bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-lg shadow-slate-900/20'
+          : 'text-slate-500 hover:bg-white/80 hover:text-slate-900 hover:shadow-sm'
         } ${isCollapsed ? 'justify-center !px-3 !py-3' : ''}`
       }
     >
@@ -163,7 +163,7 @@ const AppLayout: React.FC = () => {
 
   return (
     <LayoutContext.Provider value={{ sidebarOpen, setSidebarOpen, isMobile, isCollapsed: effectiveCollapsed, setIsCollapsed }}>
-      <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans transform-gpu">
+      <div className="flex h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden font-sans transform-gpu">
 
         {/* Mobile Overlay */}
         <AnimatePresence>
@@ -189,7 +189,7 @@ const AppLayout: React.FC = () => {
             x: isMobile ? (sidebarOpen ? 0 : -280) : 0,
           }}
           transition={{ type: 'spring', damping: 28, stiffness: 300, mass: 0.6 }}
-          className={`flex-shrink-0 h-full z-[100] border-r border-slate-100/60 bg-white/90 backdrop-blur-2xl ${isMobile ? 'fixed' : 'relative'}`}
+          className={`flex-shrink-0 h-full z-[100] border-r border-slate-100/40 glass ${isMobile ? 'fixed' : 'relative'}`}
           style={{ willChange: 'width' }}
         >
           <div className="h-full flex flex-col p-4 overflow-hidden">
@@ -263,7 +263,7 @@ const AppLayout: React.FC = () => {
         </motion.aside>
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-          <header className="h-20 flex items-center justify-between px-6 lg:px-10 shrink-0 bg-white/80 backdrop-blur-md border-b border-white/60 sticky top-0 z-[90]">
+          <header className="h-20 flex items-center justify-between px-6 lg:px-10 shrink-0 glass border-b border-slate-100/40 sticky top-0 z-[90]">
             <div className="flex items-center flex-1">
               <button
                 onClick={() => setSidebarOpen(true)}
@@ -344,7 +344,7 @@ const AppLayout: React.FC = () => {
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto px-6 lg:px-10 py-8 no-scrollbar scroll-smooth bg-[#F8FAFC]">
+          <main className="flex-1 overflow-y-auto px-6 lg:px-10 py-8 no-scrollbar scroll-smooth">
             <Outlet />
           </main>
         </div>

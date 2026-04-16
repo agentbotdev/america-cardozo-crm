@@ -34,7 +34,7 @@ const App: React.FC = () => {
       }>
         <Routes>
           {/* Ruta pública — Login */}
-          <Route path="/login" element={<Suspense fallback={null}><Login /></Suspense>} />
+          <Route path="/login" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Login /></Suspense>} />
 
           {/* Rutas protegidas */}
           <Route path="/" element={
@@ -42,18 +42,18 @@ const App: React.FC = () => {
               <AppLayout />
             </ProtectedRoute>
           }>
-            <Route index element={<Suspense fallback={null}><Dashboard /></Suspense>} />
-            <Route path="propiedades" element={<Suspense fallback={null}><Properties /></Suspense>} />
-            <Route path="leads" element={<Suspense fallback={null}><Leads /></Suspense>} />
-            <Route path="clientes" element={<Suspense fallback={null}><Clients /></Suspense>} />
-            <Route path="visitas" element={<Suspense fallback={null}><Visits /></Suspense>} />
-            <Route path="reportes" element={<Suspense fallback={null}><Reports /></Suspense>} />
-            <Route path="control-center" element={<Suspense fallback={null}><ControlCenter /></Suspense>} />
-            <Route path="soporte" element={<Suspense fallback={null}><Support /></Suspense>} />
-            <Route path="tareas" element={<Suspense fallback={null}><Tasks /></Suspense>} />
+            <Route index element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Dashboard /></Suspense>} />
+            <Route path="propiedades" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Properties /></Suspense>} />
+            <Route path="leads" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Leads /></Suspense>} />
+            <Route path="clientes" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Clients /></Suspense>} />
+            <Route path="visitas" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Visits /></Suspense>} />
+            <Route path="reportes" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Reports /></Suspense>} />
+            <Route path="control-center" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><ControlCenter /></Suspense>} />
+            <Route path="soporte" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Support /></Suspense>} />
+            <Route path="tareas" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Tasks /></Suspense>} />
             {/* TODO: removed - live chat deprecated */}
-            {/* <Route path="live-chat" element={<Suspense fallback={null}><LiveChat /></Suspense>} /> */}
-            <Route path="configuracion" element={<Suspense fallback={null}><Settings /></Suspense>} />
+            {/* <Route path="live-chat" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><LiveChat /></Suspense>} /> */}
+            <Route path="configuracion" element={<Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-[3px] border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>}><Settings /></Suspense>} />
           </Route>
 
           {/* Fallback */}

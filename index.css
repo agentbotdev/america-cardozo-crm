@@ -1,13 +1,86 @@
-/* Main CSS File */
+/* Main CSS File — America Cardozo CRM */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ═══ BASE ═══ */
 body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══ SMOOTH SCROLLING ═══ */
+* { scroll-behavior: smooth; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ═══ GLASSMORPHISM UTILITIES ═══ */
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+  .glass-dark {
+    background: rgba(15, 23, 42, 0.78);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+  .glass-subtle {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+  }
+}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in      { animation: fade-in 0.4s ease-out both; }
+.animate-slide-in-right { animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-slide-up     { animation: slide-up 0.35s ease-out both; }
+.animate-pulse-soft   { animation: pulse-soft 2s ease-in-out infinite; }
+
+/* ═══ GPU ACCELERATION ═══ */
+.transform-gpu {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* ═══ SELECTION STYLE ═══ */
+::selection {
+  background: rgba(99, 102, 241, 0.15);
+  color: #312e81;
+}
+
+/* ═══ PRINT STYLES ═══ */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; }
 }
